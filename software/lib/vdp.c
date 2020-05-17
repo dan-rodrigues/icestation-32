@@ -55,12 +55,12 @@ const uint16_t SPRITE_PAL_SHIFT = 12;
 #define VDP_SPRITE_BLOCK_ADDRESS (*((VDP_REG) VDP_BASE + 0))
 #define VDP_SPRITE_DATA (*((VDP_REG) VDP_BASE + 1))
 
-#define VDP_PALETTE_ADDRESS_L (*((volatile uint16_t *) VDP_BASE + 2))
-#define VDP_PALETTE_DATA_L (*((volatile uint16_t *) VDP_BASE + 3))
+#define VDP_PALETTE_ADDRESS (*((volatile uint16_t *) VDP_BASE + 2))
+#define VDP_PALETTE_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 3))
 
-#define VDP_GFX_ADDRESS_L (*((volatile uint16_t *) VDP_BASE + 4))
-#define VDP_GFX_DATA_L (*((volatile uint16_t *) VDP_BASE + 5))
-#define VDP_ADDRESS_INCREMENT_L (*((volatile uint16_t *) VDP_BASE + 6))
+#define VDP_VRAM_ADDRESS (*((volatile uint16_t *) VDP_BASE + 4))
+#define VDP_VRAM_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 5))
+#define VDP_ADDRESS_INCREMENT (*((volatile uint16_t *) VDP_BASE + 6))
 
 volatile uint16_t *const VDP_SPRITE_CTRL_BASE = (VDP_REG)(0x010002);
 
@@ -72,8 +72,8 @@ void vdp_set_layer_tile_base(uint8_t layer, uint16_t address) {
     VDP_SCROLL_TILE_ADDRESS_BASE[layer] = address / 2;
 }
 
-void vdp_set_alpha_over_layers(VDPLayer mask) {
-    VDP_ALPHA_OVER_ENABLE = mask;
+void vdp_set_alpha_over_layers(VDPLayer layers) {
+    VDP_ALPHA_OVER_ENABLE = layers;
 }
 
 void vdp_enable_layers(VDPLayer layers) {
@@ -81,38 +81,38 @@ void vdp_enable_layers(VDPLayer layers) {
 }
 
 void vdp_write_vram(uint16_t word) {
-    VDP_GFX_DATA_L = word;
+    VDP_VRAM_WRITE_DATA = word;
 }
 
 void vdp_fill_vram(uint16_t count, uint16_t word) {
     for (uint16_t i = 0; i < count; i++) {
-        VDP_GFX_DATA_L = word;
+        VDP_VRAM_WRITE_DATA = word;
     }
 }
 
 void vdp_seek_vram(uint16_t address) {
-    VDP_GFX_ADDRESS_L = address;
+    VDP_VRAM_ADDRESS = address;
 }
 
 void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, uint16_t *palette_start) {
-    VDP_PALETTE_ADDRESS_L = color_id_start;
+    VDP_PALETTE_ADDRESS = color_id_start;
 
     for (uint16_t i = 0; i < count; i++) {
-        VDP_PALETTE_DATA_L = palette_start[i];
+        VDP_PALETTE_WRITE_DATA = palette_start[i];
     }
 }
 
 void vdp_set_single_palette_color(uint8_t color_id, uint16_t color) {
-    VDP_PALETTE_ADDRESS_L = color_id;
-    VDP_PALETTE_DATA_L = color;
+    VDP_PALETTE_ADDRESS = color_id;
+    VDP_PALETTE_WRITE_DATA = color;
 }
 
 void vdp_seek_palette(uint8_t color_id) {
-    VDP_PALETTE_ADDRESS_L = color_id;
+    VDP_PALETTE_ADDRESS = color_id;
 }
 
 void vdp_write_palette_color(uint16_t color) {
-    VDP_PALETTE_DATA_L = color;
+    VDP_PALETTE_WRITE_DATA = color;
 }
 
 void vdp_set_layer_scroll(uint8_t layer, uint16_t scroll_x, uint16_t scroll_y) {
@@ -122,7 +122,7 @@ void vdp_set_layer_scroll(uint8_t layer, uint16_t scroll_x, uint16_t scroll_y) {
 }
 
 void vdp_set_vram_increment(uint8_t increment) {
-    VDP_ADDRESS_INCREMENT_L = increment;
+    VDP_ADDRESS_INCREMENT = increment;
 }
 
 void vdp_write_single_sprite_meta(uint8_t sprite_id, uint16_t x_block, uint16_t y_block, uint16_t g_block) {
@@ -159,8 +159,8 @@ void vdp_clear_all_sprites() {
     }
 }
 
-void vdp_set_wide_map_layers(VDPLayer mask) {
-    VDP_SCROLL_WIDE_MAP_ENABLE = mask;
+void vdp_set_wide_map_layers(VDPLayer layers) {
+    VDP_SCROLL_WIDE_MAP_ENABLE = layers;
 }
 
 void vdp_set_target_raster_x(uint16_t x) {
