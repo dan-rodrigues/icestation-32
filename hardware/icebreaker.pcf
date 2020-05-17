@@ -1,7 +1,5 @@
-# 12 MHz clock
 set_io -nowarn clk_12m        35
 
-# Some random LED
 set_io -nowarn led_b 37
 set_io -nowarn led_r 11
 

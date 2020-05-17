@@ -1,0 +1,10 @@
+# GCC
+
+*.elf
+*.bin
+*.hex
+
+# Optional disassembly
+
+dasm
+
