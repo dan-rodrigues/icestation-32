@@ -6,7 +6,7 @@
 
 `default_nettype none
 
-`include "debug.inc"
+`include "debug.vh"
 
 // this is being minimised when the BRAM-based software IPL is added
 // that would make this hardware IPL redundant
