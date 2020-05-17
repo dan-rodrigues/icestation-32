@@ -30,6 +30,7 @@ This repo is still in its early stages and its and contents (including this READ
 * yosys
 * nextpnr-ice40
 * icetools
+* GNU RISC-V toolchain
 
 
 ### Creating bitstream
