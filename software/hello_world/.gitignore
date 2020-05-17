@@ -4,7 +4,9 @@
 *.bin
 *.hex
 
+/sections_p.lds
+
 # Optional disassembly
 
-dasm
+/dasm
 
