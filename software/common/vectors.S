@@ -1,7 +1,7 @@
 #define STACK 0x00010000
 
-	.section .text
-	.global irq
+    .section .text
+    .global irq
 
 reset_vec:
     lui sp, %hi(STACK)

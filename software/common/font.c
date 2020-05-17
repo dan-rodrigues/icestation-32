@@ -1,9 +1,8 @@
+// font.c
 //
-//  font.c
-//  
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
-//  Created by Dan Rodrigues on 17/5/20.
-//
+// SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 
@@ -12,7 +11,7 @@
 
 #include "font8x8_basic.h"
 
-// this converts the monochrome font tiles to the required 16 color format
+// this converts the 1bpp font tiles to the required 4bpp color format
 
 void upload_font(uint16_t vram_base) {
     const uint16_t char_total = 128;

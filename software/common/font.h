@@ -1,9 +1,8 @@
+// font.c
 //
-//  font.h
-//  
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
-//  Created by Dan Rodrigues on 17/5/20.
-//
+// SPDX-License-Identifier: MIT
 
 #ifndef font_h
 #define font_h
