@@ -1,36 +1,36 @@
 MEMORY
 {
-	SPRAM (xrw)      	: ORIGIN = 0x00000000, LENGTH = 0x10000
+    SPRAM (xrw) : ORIGIN = 0x00000000, LENGTH = 0x10000
 
-	// This memory region would be used if the progam was XIP from the flash
-	// Instead it is copied to the SPRAM
-	// FLASH_IPL (xr)		: ORIGIN = 0x00040000, LENGTH = 0x010000
+    // This memory region would be used if the progam was XIP from the flash
+    // Instead it is copied to the SPRAM
+    // FLASH_IPL (xr) : ORIGIN = 0x00040000, LENGTH = 0x010000
 
-	FLASH_ASSETS (xr)	: ORIGIN = 0x00050000, LENGTH = 0x030000
+    FLASH_ASSETS (xr) : ORIGIN = 0x00050000, LENGTH = 0x030000
 }
 
 SECTIONS {
-	.assets : AT (0x10000)
-	{
-		. = ALIGN(4);
-		_flash_assets_start = .;
+    .assets : AT (0x10000)
+    {
+        . = ALIGN(4);
+        _flash_assets_start = .;
 
-		// -flto means some sections don't get matched here depending on how
-		// the file is used. The .gnu.lto.* sections containing the data do
-		// not get included here. -flto is disabled for rc-* files because of
-		// this
-		rc-*(.*)
+        // -flto means some sections don't get matched here depending on how
+        // the file is used. The .gnu.lto.* sections containing the data do
+        // not get included here. -flto is disabled for rc-* files because of
+        // this
+        rc-*(.*)
 
-		_flash_assets_end = .;
-	} >FLASH_ASSETS
+        _flash_assets_end = .;
+    } >FLASH_ASSETS
 
-	// Main program and constants to be stored in first 64Kbyte of flash and
-	// then loaded to the SPRAM during IPL
+    // Main program and constants to be stored in first 64Kbyte of flash and
+    // then loaded to the SPRAM during IPL
 
     .text : AT (0)
     {
         . = ALIGN(4);
-		vectors*(.text)
+        vectors*(.text)
         *(.text)           /* .text sections (code) */
         *(.text*)          /* .text* sections (code) */
         *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -42,10 +42,10 @@ SECTIONS {
         _sidata = _etext;  /* This is used by the startup in order to initialize the .data secion */
     } >SPRAM
 
-	// Data section is also loaded during IPL
-	// The .text and .data sections are loaded to the same SPRAM region
+    // Data section is also loaded during IPL
+    // The .text and .data sections are loaded to the same SPRAM region
 
-	.data :
+    .data :
     {
         . = ALIGN(4);
         _sdata = .;        /* create a global symbol at data start; used by startup code in order to initialise the .data section in RAM */
@@ -57,8 +57,8 @@ SECTIONS {
         *(.sdata*)          /* .sdata* sections */
         . = ALIGN(4);
 
-		// There is no need for a separate copy of .data section from flash
-		// It is copied to SPRAM, along with the main program, by bootloader
+        // There is no need for a separate copy of .data section from flash
+        // It is copied to SPRAM, along with the main program, by bootloader
         // _edata = .;
     } >SPRAM
 
@@ -77,7 +77,7 @@ SECTIONS {
         _ebss = .;         /* define a global symbol at bss end; used by startup code */
     } >SPRAM
 
-	
+    
     /* this is to define the start of the heap, and make sure we have a minimum size */
     .heap :
     {
