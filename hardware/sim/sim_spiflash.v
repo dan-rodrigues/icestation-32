@@ -1,3 +1,6 @@
+// This file is from the icotools repo:
+// https://github.com/cliffordwolf/icotools
+
 module sim_spiflash (
 	input      SPI_FLASH_CS,
 	output reg SPI_FLASH_MISO,
