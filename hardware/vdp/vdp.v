@@ -614,7 +614,7 @@ module vdp #(
 
     // --- VRAM bus arbiter ---
     
-    wire [13:0] vram_address_even_next;
+    wire [13:0] vram_address_even_nx;
     wire [13:0] vram_address_odd_nx;
     wire [1:0] vram_render_write_en_mask_nx;
     wire [31:0] vram_write_data_nx;
@@ -633,7 +633,7 @@ module vdp #(
         vram_render_write_en_mask_nx = 0;
 
         gen_toggle_nx = 0;
-        vram_address_even_next = 0;
+        vram_address_even_nx = 0;
         vram_address_odd_nx = 0;
 
         tile_address_gen_scroll_y_granular = 0;
@@ -652,7 +652,7 @@ module vdp #(
                 scroll_meta_load = LAYER_SCROLL2_OHE | LAYER_SCROLL3_OHE;
 
                 // next: s1 tile
-                vram_address_even_next = tile_address_gen_tile_address_out;
+                vram_address_even_nx = tile_address_gen_tile_address_out;
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s1 prepare tile address gen
@@ -667,7 +667,7 @@ module vdp #(
                 vram_sprite_read_data_valid = 1;
 
                 // next: s2 tile
-                vram_address_even_next = tile_address_gen_tile_address_out;
+                vram_address_even_nx = tile_address_gen_tile_address_out;
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s3 tile
@@ -679,7 +679,7 @@ module vdp #(
                 // now: nothing, because this was a CPU write
 
                 // next: s2 tile
-                vram_address_even_next = tile_address_gen_tile_address_out;
+                vram_address_even_nx = tile_address_gen_tile_address_out;
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s3 tile
@@ -694,7 +694,7 @@ module vdp #(
                 scroll_char_load = LAYER_SCROLL0_OHE;
 
                 // next: s3 tile
-                vram_address_even_next = tile_address_gen_tile_address_out;
+                vram_address_even_nx = tile_address_gen_tile_address_out;
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: none
@@ -706,7 +706,7 @@ module vdp #(
                 scroll_char_load = LAYER_SCROLL1_OHE;
 
                 // next: s0/s1 map address
-                vram_address_even_next = gen_even_next_map_address;
+                vram_address_even_nx = gen_even_next_map_address;
                 vram_address_odd_nx = gen_odd_next_map_address;
             end
             5: begin
@@ -714,12 +714,12 @@ module vdp #(
                 scroll_char_load = LAYER_SCROLL2_OHE;
 
                 // next: s1/s2 map address
-                vram_address_even_next = gen_even_next_map_address;
+                vram_address_even_nx = gen_even_next_map_address;
                 vram_address_odd_nx = gen_odd_next_map_address;
             end
             6: begin
                 // next: sprite row fetch (if any, this could be ignored in sprite_core)
-                vram_address_even_next = vram_sprite_address;
+                vram_address_even_nx = vram_sprite_address;
                 vram_address_odd_nx = vram_sprite_address;
 
                 // now: s3 tile, which is loaded simultaneously with the previously prefetched layers
@@ -730,7 +730,7 @@ module vdp #(
                 vram_sprite_reading = 1;
 
                 // host write - every 8 cycles
-                vram_address_even_next = vram_write_address_16b;
+                vram_address_even_nx = vram_write_address_16b;
                 vram_address_odd_nx = vram_write_address_16b;
                 vram_write_data_nx = {2{vram_write_data_16b}};
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
@@ -830,7 +830,7 @@ module vdp #(
     wire affine_needs_vram = affine_enabled && !affine_offscreen;
 
     always @(posedge clk) begin
-        vram_address_even <= affine_needs_vram ? affine_vram_address_even : vram_address_even_next;
+        vram_address_even <= affine_needs_vram ? affine_vram_address_even : vram_address_even_nx;
         vram_write_data_even <= vram_write_data_nx[15:0];
         vram_we_even <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[0];
 
