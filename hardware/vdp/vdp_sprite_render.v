@@ -369,7 +369,7 @@ module vdp_sprite_render(
 // some simple metrics to measure performance
 // cleanup for nicer toggleable logging
 
-`ifndef SYNTHESIS
+`ifdef LOG_SPRITES
 
     localparam FILTER_EMPTY_LINES = 1;
 

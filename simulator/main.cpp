@@ -93,7 +93,6 @@ int main(int argc, const char * argv[]) {
         tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 0;
         tb->eval();
 
-
         // render current VGA output pixel
         SDL_SetRenderDrawColor(renderer, tb->vga_r << 4, tb->vga_g << 4, tb->vga_b << 4, 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
