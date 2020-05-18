@@ -1,5 +1,4 @@
 #import "Vics32_tb.h"
-// !
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 #include <SDL.h>
