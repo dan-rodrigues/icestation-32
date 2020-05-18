@@ -354,9 +354,6 @@ module vdp #(
 
         .dest_color(palette_output),
 
-        .prioritized_masked_layer(prioritized_masked_layer),
-        .layer_enable_alpha_over(layer_enable_alpha_over),
-
         .output_color(blender_output_color)
     );
 

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "vdp.h"
 #include "font.h"
@@ -37,10 +38,18 @@ int main() {
     vdp_set_vram_increment(2);
 
     const char *const hello_string = "Hello world!";
+    const uint8_t palette_id = 0x0;
+    const uint8_t flip_x = false;
+    const uint8_t flip_y = false;
 
     const char *string = hello_string;
+
     while (*string) {
-        uint16_t map = *string;
+        uint16_t map = *string & 0xff;
+        map |= palette_id << SCROLL_MAP_PAL_SHIFT;
+        map |= flip_x << SCROLL_MAP_X_FLIP_SHIFT;
+        map |= flip_y << SCROLL_MAP_Y_FLIP_SHIFT;
+
         vdp_write_vram(map);
 
         string++;

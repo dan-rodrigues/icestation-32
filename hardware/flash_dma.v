@@ -18,7 +18,7 @@ module flash_dma(
     // CPU reads
     input [17:0] read_address,
     output [31:0] read_data,
-    input oe,
+    input read_en,
     // separate to the above; this is intended to stall the CPU
     output reg read_ready,
 
@@ -48,24 +48,23 @@ module flash_dma(
 
     // --- CPU random access of flash memory ---
 
-    reg oe_r, oe_d;
+    reg read_en_r, read_en_d;
 
-    reg read_ready_d;
     reg cpu_needs_read, cpu_needs_read_d;
 
     reg [21:0] cpu_read_address;
 
-    wire cpu_read_requested = (oe_r && !oe_d && !cpu_needs_read);
+    wire cpu_read_requested = (read_en_r && !read_en_d && !cpu_needs_read);
     wire cpu_requested_read_done = (cpu_needs_read && cpu_needs_read_d && flash_ready);
 
     always @(posedge clk) begin
         if (reset) begin
             read_ready <= 0;
             cpu_needs_read <= 0;
-            oe_r <= 0;
+            read_en_r <= 0;
         end else begin
             // register CPU control (bad timing otherwise)
-            oe_r <= oe;
+            read_en_r <= read_en;
 
             // stall cpu and start reading if a read was just requested
             if (cpu_read_requested) begin
@@ -80,8 +79,7 @@ module flash_dma(
     end
 
     always @(posedge clk) begin
-        oe_d <= oe_r;
-        read_ready_d <= read_ready;
+        read_en_d <= read_en_r;
         cpu_needs_read_d <= cpu_needs_read;
 
         if (cpu_read_requested) begin
@@ -134,8 +132,6 @@ module flash_dma(
     // then this doesn't need to be here and the SPRAM data / address selection can be removed
     // there is a tradeoff as extra LUTs are needed on the CPU rdata but it does provide extra scratchpad 
 
-    reg [1:0] flash_write_state;
-
     always @(posedge clk) begin
         if (reset) begin
             write_strobe <= 0;
@@ -147,8 +143,7 @@ module flash_dma(
             write_strobe <= 0;
             flash_write_ready_next <= 1;
 
-            // was there a write previously?
-            // also wstrb can just be 1 bit because always 32bit
+            // post-increment address after each write
             if (write_strobe[0]) begin
                 write_address <= write_address + 1;
             end

@@ -75,8 +75,6 @@ module vdp_vga_timing #(
         y_fsm <= y_fsm_nx;
     end
 
-    reg [9:0] x_count, y_count;
-
     wire [10:0] x_next_count, y_next_count;
 
     // target counts to advance state

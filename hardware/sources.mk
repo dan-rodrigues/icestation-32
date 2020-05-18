@@ -25,7 +25,6 @@ VDP_SOURCES := vdp/vdp.v \
 		sprite_raster_collision.v \
 	 	sprite_core.v \
 	 	sprite_render.v \
-	 	sprite_line_buffer.v \
 	 	affine_layer.v \
 	 	blender.v \
 	)

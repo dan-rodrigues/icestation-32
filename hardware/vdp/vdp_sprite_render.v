@@ -15,7 +15,7 @@ module vdp_sprite_render(
     // line buffer writing
     output reg [9:0] line_buffer_write_address,
     output reg [12:0] line_buffer_write_data,
-    output reg line_buffer_we,
+    output reg line_buffer_write_en,
 
     // prefetch reading
     input [13:0] vram_base_address,
@@ -136,7 +136,6 @@ module vdp_sprite_render(
     reg [1:0] priority_r;
 
     reg [1:0] x_block_load_counter;
-    reg x_block_is_loading;
     reg x_block_data_valid;
 
     reg x_block_ready;
@@ -339,7 +338,7 @@ module vdp_sprite_render(
     wire [31:0] blitter_next_shift = (vf_flip ? {4'b0000, blitter_output_source[31:4]} : {blitter_output_source[27:0], 4'b0000});
 
     wire blitter_drawing = blitter_input_valid || blitter_pixel_counter > 0;
-    wire line_buffer_we_nx =  pixel_is_opaque && blitter_drawing;
+    wire line_buffer_write_en_nx =  pixel_is_opaque && blitter_drawing;
     wire [9:0] line_buffer_write_address_nx = blitter_input_valid ? blitter_x_start : line_buffer_write_address + 1;
 
     wire [2:0] blitter_pixel_counter_nx;
@@ -355,7 +354,7 @@ module vdp_sprite_render(
     end
 
     always @(posedge clk) begin
-        line_buffer_we <= line_buffer_we_nx;
+        line_buffer_write_en <= line_buffer_write_en_nx;
         line_buffer_write_data <= {blitter_output_priority, blitter_output_palette, blitter_output_pixel};
         blitter_row_shifter <= blitter_next_shift;
         line_buffer_write_address <= line_buffer_write_address_nx;

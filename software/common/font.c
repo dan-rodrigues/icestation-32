@@ -26,7 +26,7 @@ void upload_font(uint16_t vram_base) {
 
             for (uint8_t pixel = 0; pixel < 8; pixel++) {
                 rendered_line <<= 4;
-                rendered_line |= (monochrome_line &0x01) ? 0x01 : 0x00;
+                rendered_line |= (monochrome_line & 0x01);
 
                 monochrome_line >>= 1;
             }

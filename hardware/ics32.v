@@ -249,6 +249,7 @@ module ics32 #(
 
     wire vdp_read_en = vdp_en && !vdp_write_en;
 
+    // FIXME: this isn't actually used???
     wire [15:0] vdp_read_data;
     wire vdp_ready;
 
@@ -369,6 +370,7 @@ module ics32 #(
         .cpu_ram_read_data(cpu_ram_data_out),
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
+        .vdp_read_data(vdp_read_data),
 
         .cpu_mem_ready(cpu_mem_ready),
         .cpu_read_data(cpu_read_data),
@@ -460,7 +462,7 @@ module ics32 #(
 
         .read_address(cpu_address[19:0]),
         .read_data(flash_read_data),
-        .oe(flash_read_en),
+        .read_en(flash_read_en),
         .read_ready(flash_read_ready),
 
         .write_address(dma_write_address),

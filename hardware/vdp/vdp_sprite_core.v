@@ -173,10 +173,10 @@ module vdp_sprite_core(
 
     wire [9:0] line_buffer_write_address;
     wire [12:0] line_buffer_data_in;
-    wire line_buffer_we;
+    wire line_buffer_write_en;
 
     wire [9:0] line_buffer_clear_write_address;
-    wire line_buffer_clear_we;
+    wire line_buffer_clear_en;
 
     // --- Line buffers ---
 
@@ -189,19 +189,21 @@ module vdp_sprite_core(
             wire select = line_buffer_select ^ i;
 
             wire [9:0] write_address = select ? line_buffer_write_address : line_buffer_clear_write_address;
-            wire [12:0] data_in = select ? line_buffer_data_in : line_buffer_clear_data_in;
-            wire write_en = select ? line_buffer_we : line_buffer_clear_we;
+            wire [12:0] write_data = select ? line_buffer_data_in : line_buffer_clear_data_in;
+            wire write_en = select ? line_buffer_write_en : line_buffer_clear_en;
 
-            vdp_sprite_line_buffer line_buffer(
-                .clk(clk),
+            reg [11:0] line_buffer [0:1023];
+            reg [11:0] read_data;
 
-                .read_address(line_buffer_display_read_address),
-                .read_data(line_buffer_data_out[i * 12 + 11 : i * 12]),
+            assign line_buffer_data_out[i * 12 + 11 : i * 12] = read_data;
 
-                .write_address(write_address),
-                .write_data(data_in),
-                .write_en(write_en)
-            );
+            always @(posedge clk) begin
+                if (write_en) begin
+                    line_buffer[write_address] <= write_data;
+                end
+
+                read_data <= line_buffer[line_buffer_display_read_address];
+            end
         end
     endgenerate
     
@@ -211,7 +213,7 @@ module vdp_sprite_core(
     assign line_buffer_clear_write_address = line_buffer_previous_read_address;
     wire [12:0] line_buffer_clear_data_in = 12'h000;
 
-    assign line_buffer_clear_we = 1;
+    assign line_buffer_clear_en = 1;
 
     always @(posedge clk) begin
         line_buffer_previous_read_address <= line_buffer_display_read_address;
@@ -305,7 +307,7 @@ module vdp_sprite_core(
 
         .line_buffer_write_address(line_buffer_write_address),
         .line_buffer_write_data(line_buffer_data_in),
-        .line_buffer_we(line_buffer_we),
+        .line_buffer_write_en(line_buffer_write_en),
         
         .hit_list_read_address(hit_list_blitter_read_address),
         .sprite_id(hit_list_render_read_data[7:0]),

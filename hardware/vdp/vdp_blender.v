@@ -14,9 +14,6 @@ module vdp_blender(
 
     input [15:0] dest_color,
 
-    input [4:0] prioritized_masked_layer,
-    input [4:0] layer_enable_alpha_over,
-
     output reg [15:0] output_color
 );
     reg [31:0] output_source;

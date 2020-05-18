@@ -21,8 +21,7 @@ module vdp_host_interface #(
     // must delay the CPU by atleast 1 cycle because this is all pipelined
 
     input read_en_in,
-    output reg ready,
-    output reg [15:0] read_data
+    output reg ready
 );
     reg write_en_in_r, write_en_in_d;
     reg read_en_in_r, read_en_in_d;

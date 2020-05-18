@@ -23,6 +23,15 @@ typedef enum {
 
 extern const VDPLayer VDP_ALL_LAYERS;
 
+// scrolling layer map attribute bits
+
+extern const uint16_t SCROLL_MAP_X_FLIP_SHIFT;
+extern const uint16_t SCROLL_MAP_Y_FLIP_SHIFT;
+
+extern const uint16_t SCROLL_MAP_X_FLIP;
+extern const uint16_t SCROLL_MAP_Y_FLIP;
+extern const uint16_t SCROLL_MAP_PAL_SHIFT;
+
 // sprite meta block attribute bits
 
 // y_block

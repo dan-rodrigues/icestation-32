@@ -18,9 +18,21 @@ static VDP_REG VDP_VSCROLL_BASE = VDP_BASE + 0x18;
 static VDP_REG VDP_SCROLL_MAP_ADDRESS_BASE = VDP_BASE + 0x1c;
 
 // exported constants
+
 const VDPLayer VDP_ALL_LAYERS = 0x1f;
 
 VDP_REG VDP_CURRENT_RASTER_BASE = VDP_BASE + 0x00;
+
+// scrolling layer map attributes
+
+const uint16_t SCROLL_MAP_X_FLIP_SHIFT = 9;
+const uint16_t SCROLL_MAP_Y_FLIP_SHIFT = 10;
+
+const uint16_t SCROLL_MAP_X_FLIP = 1 << SCROLL_MAP_X_FLIP_SHIFT;
+const uint16_t SCROLL_MAP_Y_FLIP = 1 << SCROLL_MAP_Y_FLIP_SHIFT;
+const uint16_t SCROLL_MAP_PAL_SHIFT = 12;
+
+// sprite meta attributes
 
 // x_block
 const uint16_t SPRITE_X_FLIP = 1 << 10;
@@ -61,8 +73,6 @@ const uint16_t SPRITE_PAL_SHIFT = 12;
 #define VDP_VRAM_ADDRESS (*((volatile uint16_t *) VDP_BASE + 4))
 #define VDP_VRAM_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 5))
 #define VDP_ADDRESS_INCREMENT (*((volatile uint16_t *) VDP_BASE + 6))
-
-volatile uint16_t *const VDP_SPRITE_CTRL_BASE = (VDP_REG)(0x010002);
 
 void vdp_set_layer_map_base(uint8_t layer, uint16_t address) {
     VDP_SCROLL_MAP_ADDRESS_BASE[layer] = address / 2;
