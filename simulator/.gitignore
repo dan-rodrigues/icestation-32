@@ -1,0 +1,8 @@
+# Xcode
+
+/*.entitlements
+/*.xcodeproj
+
+# Verilator
+
+/obj_dir
