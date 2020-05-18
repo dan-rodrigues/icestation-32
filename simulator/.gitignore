@@ -2,6 +2,7 @@
 
 /*.entitlements
 /*.xcodeproj
+/sim
 
 # Verilator
 
