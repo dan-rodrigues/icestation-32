@@ -11,6 +11,8 @@ Tiles::Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height) {
 }
 
 // 4bpp
+// FIXME this doesn't take into accoutn the 256px stride between tiles below
+// but this might be a requirement of the input instead
 std::vector<uint8_t> Tiles::ics_tiles() { 
     std::vector<uint8_t> tiles;
 

@@ -55,5 +55,5 @@ int main() {
         string++;
     }
 
-    while (1) {}
+    while (true) {}
 }
