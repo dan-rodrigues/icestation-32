@@ -8,6 +8,10 @@
 #include "lodepng.h"
 #include "lodepng_util.h"
 
+// PNG functions, relocate accordingly
+void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image);
+
+
 int main(int argc, const char * argv[]) {
     if (argc < 3) {
         std::cout << "usage: gfx-convert <filename> <output>" << std::endl;
@@ -61,21 +65,20 @@ int main(int argc, const char * argv[]) {
     size_t palette_size = state.info_png.color.palettesize;
     std::vector<uint32_t> argb_colors(palette, palette + palette_size);
 
-    // from the samples: ARGB32 hec?
-    std::ios_base::fmtflags flags = std::cout.flags();
-    std::cout << std::hex << std::setfill('0');
-    for (uint i = 0; i < state.info_png.color.palettesize; i++) {
-        unsigned char* p = &state.info_png.color.palette[i * 4];
-        std::cout << "#" << std::setw(2) << (int)p[0] << std::setw(2) << (int)p[1] << std::setw(2) << (int)p[2] << std::setw(2) << (int)p[3] << " ";
-    }
+    // TEST: try encoding and saving the PNG
+    save_png(output_filename, width, height, argb_colors, decoded);
 
+    return 0;
+}
+
+void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image) {
     // TEST: try encoding and saving the PNG
 
     //create encoder and set settings and info (optional)
     lodepng::State saved_state;
 
     //generate palette
-    for (auto it = begin(argb_colors); it != end(argb_colors); ++it) {
+    for (auto it = begin(palette); it != end(palette); ++it) {
         uint32_t color = *it;
         uint8_t a = color >> 24 & 0xff;
         uint8_t b = color >> 16 & 0xff;
@@ -96,12 +99,12 @@ int main(int argc, const char * argv[]) {
 
     //encode and save
     std::vector<uint8_t> save_buffer;
-    error = lodepng::encode(save_buffer, decoded.empty() ? 0 : &decoded[0], width, height, saved_state);
-    if(error) {
-      std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
-      return 0;
+    uint error = lodepng::encode(save_buffer, image.empty() ? 0 : &image[0], width, height, saved_state);
+    if (error) {
+        std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+        // error..
+        return;
     }
-    lodepng::save_file(save_buffer, output_filename);
 
-    return 0;
+    lodepng::save_file(save_buffer, path);
 }
