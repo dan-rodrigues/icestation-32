@@ -89,12 +89,11 @@ int main(int argc, const char * argv[]) {
     }
 
     //both the raw image and the encoded image must get colorType 3 (palette)
-    state.info_png.color.colortype = LCT_PALETTE; //if you comment this line, and create the above palette in info_raw instead, then you get the same image in a RGBA PNG.
-    // note the loaded PNG is 8bit so the raw data doesn't line up
-    state.info_png.color.bitdepth = 8; //4;
-    state.info_raw.colortype = LCT_PALETTE;
-    state.info_raw.bitdepth = 8; //4;
-    state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
+    saved_state.info_png.color.colortype = LCT_PALETTE; //if you comment this line, and create the above palette in info_raw instead, then you get the same image in a RGBA PNG.
+    saved_state.info_png.color.bitdepth = 4;
+    saved_state.info_raw.colortype = LCT_PALETTE;
+    saved_state.info_raw.bitdepth = 4;
+    saved_state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
 
     //encode and save
     std::vector<uint8_t> save_buffer;
