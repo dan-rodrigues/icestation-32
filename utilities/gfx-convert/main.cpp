@@ -9,12 +9,13 @@
 #include "lodepng_util.h"
 
 int main(int argc, const char * argv[]) {
-    if (argc < 2) {
-        std::cout << "usage: gfx-convert <filename>" << std::endl;
+    if (argc < 3) {
+        std::cout << "usage: gfx-convert <filename> <output>" << std::endl;
         return 1;
     }
 
     auto const filename = argv[1];
+    auto const output_filename = argv[2];
 
     // lodepng test:
 
@@ -56,7 +57,10 @@ int main(int argc, const char * argv[]) {
     }
 
     // TEST: try print the RGB of the palette itself
-    uint8_t *palette = state.info_png.color.palette;
+    uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
+    size_t palette_size = state.info_png.color.palettesize;
+
+    std::vector<uint32_t> argb_colors(palette, palette + palette_size);
 
     // from the samples: ARGB32 hec?
     std::ios_base::fmtflags flags = std::cout.flags();
@@ -64,23 +68,42 @@ int main(int argc, const char * argv[]) {
     for (uint i = 0; i < state.info_png.color.palettesize; i++) {
         unsigned char* p = &state.info_png.color.palette[i * 4];
         std::cout << "#" << std::setw(2) << (int)p[0] << std::setw(2) << (int)p[1] << std::setw(2) << (int)p[2] << std::setw(2) << (int)p[3] << " ";
-//        std::cout << palette[i];
     }
 
+    // TEST: try encoding and saving the PNG
 
-    unsigned char* image = 0;
-    unsigned char* png = 0;
-    size_t pngsize;
+    //create encoder and set settings and info (optional)
+    lodepng::State saved_state;
 
-    error = lodepng_load_file(&png, &pngsize, filename);
-    if(!error) error = lodepng_decode32(&image, &width, &height, png, pngsize);
-    if(error) printf("error %u: %s\n", error, lodepng_error_text(error));
+    //generate palette
+    for (auto it = begin (argb_colors); it != end (argb_colors); ++it) {
+        uint32_t color = *it;
+        uint8_t a = color >> 24 & 0xff;
+        uint8_t r = color >> 16 & 0xff;
+        uint8_t g = color >> 8 & 0xff;
+        uint8_t b = color & 0xff;
 
-    free(png);
+        // determine if one  of these can be removed, review why these are there in the first place
+        lodepng_palette_add(&saved_state.info_png.color, r, g, b, a);
+        lodepng_palette_add(&saved_state.info_raw, r, g, b, a);
+    }
 
-    /*use image here*/
+    //both the raw image and the encoded image must get colorType 3 (palette)
+    state.info_png.color.colortype = LCT_PALETTE; //if you comment this line, and create the above palette in info_raw instead, then you get the same image in a RGBA PNG.
+    // note the loaded PNG is 8bit so the raw data doesn't line up
+    state.info_png.color.bitdepth = 8; //4;
+    state.info_raw.colortype = LCT_PALETTE;
+    state.info_raw.bitdepth = 8; //4;
+    state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
 
-    free(image);
+    //encode and save
+    std::vector<uint8_t> save_buffer;
+    error = lodepng::encode(save_buffer, decoded.empty() ? 0 : &decoded[0], width, height, saved_state);
+    if(error) {
+      std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+      return 0;
+    }
+    lodepng::save_file(save_buffer, output_filename);
 
     return 0;
 }
