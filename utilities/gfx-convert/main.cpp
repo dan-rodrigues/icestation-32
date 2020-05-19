@@ -10,10 +10,11 @@
 #include "lodepng_util.h"
 
 #include "Palette.hpp"
+#include "Tiles.hpp"
 #include "File.hpp"
 
 // PNG functions, relocate accordingly
-void save_png(std::string path, uint width, uint height, Palette palette, std::vector<uint8_t> image);
+void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image);
 
 
 int main(int argc, const char * argv[]) {
@@ -26,7 +27,7 @@ int main(int argc, const char * argv[]) {
     auto const output_filename = argv[2];
 
     // lodepng test:
-
+    
     std::vector<uint8_t> buffer;
     auto error = lodepng::load_file(buffer, filename);
     if (error) {
@@ -54,43 +55,59 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
+    // then Tiles?
+
     // TEST: try print raw palette indexes
     for (uint y = 0; y < height; y++) {
-        for (uint x = 0; x < height; x++) {
+        for (uint x = 0; x < width; x++) {
             size_t index = y * height + x;
             uint value = lodepng::getPaletteValue(&decoded[0], index, state.info_raw.bitdepth);
 
-            std::cout << "index: " << value << std::endl;
+//            std::cout << "index: " << value << std::endl;
         }
     }
 
-    // TEST: try print the RGB of the palette itself
-//    uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
-//    size_t palette_size = state.info_png.color.palettesize;
-//    std::vector<uint32_t> argb_colors(palette, palette + palette_size);
     auto palette = Palette(state);
 
     // TEST: try encoding and saving the PNG
-    save_png(output_filename, width, height, palette, decoded);
-
-    // ics palette binary
+    save_png(output_filename, width, height, palette.colors, decoded);
 
     std::filesystem::path output_path(output_filename);
     auto output_directory = output_path.parent_path();
+
+    // ics tiles binary
+
+    // preprocess tiles to sane index format first, without lodepng
+    std::vector<uint8_t> indexed_image;
+
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            size_t pixel_index = y * height + x;
+            uint palette_index = lodepng::getPaletteValue(&decoded[0], pixel_index, state.info_raw.bitdepth);
+            indexed_image.push_back(palette_index);
+        }
+    }
+
+    auto tiles = Tiles(indexed_image, width, height);
+    auto output_tiles_path = output_directory.append("tiles.bin");
+    File::dump_array(tiles.ics_tiles(), output_tiles_path.string());
+
+    // ics palette binary
+
     auto output_palette_path = output_directory.append("palette.bin");
     File::dump_array(palette.ics_palette(), output_palette_path.string());
 
     return 0;
 }
 
-void save_png(std::string path, uint width, uint height, Palette palette, std::vector<uint8_t> image) {
+void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image) {
     // TEST: try encoding and saving the PNG
 
     //create encoder and set settings and info (optional)
     lodepng::State saved_state;
 
     //generate palette
-    for (auto it = begin(palette.colors); it != end(palette.colors); ++it) {
+    for (auto it = begin(palette); it != end(palette); ++it) {
         uint32_t color = *it;
         uint8_t a = color >> 24 & 0xff;
         uint8_t b = color >> 16 & 0xff;
@@ -114,7 +131,6 @@ void save_png(std::string path, uint width, uint height, Palette palette, std::v
     uint error = lodepng::encode(save_buffer, image.empty() ? 0 : &image[0], width, height, saved_state);
     if (error) {
         std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
-        // error..
         return;
     }
 
