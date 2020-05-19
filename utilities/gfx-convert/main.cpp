@@ -59,7 +59,6 @@ int main(int argc, const char * argv[]) {
     // TEST: try print the RGB of the palette itself
     uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
     size_t palette_size = state.info_png.color.palettesize;
-
     std::vector<uint32_t> argb_colors(palette, palette + palette_size);
 
     // from the samples: ARGB32 hec?
@@ -76,12 +75,12 @@ int main(int argc, const char * argv[]) {
     lodepng::State saved_state;
 
     //generate palette
-    for (auto it = begin (argb_colors); it != end (argb_colors); ++it) {
+    for (auto it = begin(argb_colors); it != end(argb_colors); ++it) {
         uint32_t color = *it;
         uint8_t a = color >> 24 & 0xff;
-        uint8_t r = color >> 16 & 0xff;
+        uint8_t b = color >> 16 & 0xff;
         uint8_t g = color >> 8 & 0xff;
-        uint8_t b = color & 0xff;
+        uint8_t r = color & 0xff;
 
         // determine if one  of these can be removed, review why these are there in the first place
         lodepng_palette_add(&saved_state.info_png.color, r, g, b, a);
