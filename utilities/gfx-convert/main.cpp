@@ -4,12 +4,16 @@
 
 #include <iostream>
 #include <iomanip>
+#include <filesystem>
 
 #include "lodepng.h"
 #include "lodepng_util.h"
 
+#include "Palette.hpp"
+#include "File.hpp"
+
 // PNG functions, relocate accordingly
-void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image);
+void save_png(std::string path, uint width, uint height, Palette palette, std::vector<uint8_t> image);
 
 
 int main(int argc, const char * argv[]) {
@@ -61,24 +65,32 @@ int main(int argc, const char * argv[]) {
     }
 
     // TEST: try print the RGB of the palette itself
-    uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
-    size_t palette_size = state.info_png.color.palettesize;
-    std::vector<uint32_t> argb_colors(palette, palette + palette_size);
+//    uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
+//    size_t palette_size = state.info_png.color.palettesize;
+//    std::vector<uint32_t> argb_colors(palette, palette + palette_size);
+    auto palette = Palette(state);
 
     // TEST: try encoding and saving the PNG
-    save_png(output_filename, width, height, argb_colors, decoded);
+    save_png(output_filename, width, height, palette, decoded);
+
+    // ics palette binary
+
+    std::filesystem::path output_path(output_filename);
+    auto output_directory = output_path.parent_path();
+    auto output_palette_path = output_directory.append("palette.bin");
+    File::dump_array(palette.ics_palette(), output_palette_path.string());
 
     return 0;
 }
 
-void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image) {
+void save_png(std::string path, uint width, uint height, Palette palette, std::vector<uint8_t> image) {
     // TEST: try encoding and saving the PNG
 
     //create encoder and set settings and info (optional)
     lodepng::State saved_state;
 
     //generate palette
-    for (auto it = begin(palette); it != end(palette); ++it) {
+    for (auto it = begin(palette.colors); it != end(palette.colors); ++it) {
         uint32_t color = *it;
         uint8_t a = color >> 24 & 0xff;
         uint8_t b = color >> 16 & 0xff;
