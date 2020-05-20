@@ -97,7 +97,7 @@ int main(int argc, const char * argv[]) {
     int current_y = 0;
     bool even_frame = true;
 
-    const bool should_trace = true;
+    const bool should_trace = false;
 
     if (should_trace) {
         tb->trace(trace, 99);

@@ -52,7 +52,7 @@ module vdp_sprite_raster_collision #(
 
     wire ready;
 
-    delay_ff #(.DELAY(2)) ready_dm (
+    delay_ff #(.DELAY(3)) ready_dm (
         .clk(clk),
         .reset(restart),
         .in(1),
