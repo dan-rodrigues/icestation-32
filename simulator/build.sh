@@ -7,7 +7,7 @@ RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"
 SDL_PATH="/usr/local/opt/sdl2/"
 
 CXX_SOURCES="main.cpp"
-CFLAGS="-std=c++14 -I${SDL_PATH}include/SDL2/"
+CFLAGS="-std=c++14 -Os -I${SDL_PATH}include/SDL2/"
 LDFLAGS="-L${SDL_PATH}/lib -lSDL2"
 
 ICE40_CELLS_SIM=$(yosys-config --datdir/ice40/cells_sim.v)
