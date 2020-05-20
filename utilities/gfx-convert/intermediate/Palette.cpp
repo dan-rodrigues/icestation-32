@@ -3,6 +3,8 @@
 #include "Palette.hpp"
 
 Palette::Palette(lodepng::State state) {
+    // maybe remove the lode specific stuff here
+    // extract rgba32 colors first
     uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
     size_t palette_size = state.info_png.color.palettesize;
     this->colors = std::vector<uint32_t>(palette, palette + palette_size);

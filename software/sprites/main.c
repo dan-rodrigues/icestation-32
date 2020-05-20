@@ -11,7 +11,7 @@
 int main() {
     vdp_enable_layers(SPRITES);
     // if alpha sprites are eventually used, need to reenable this one
-    vdp_set_alpha_over_layers(0);
+    vdp_set_alpha_over_layers(SPRITES);
 
     const uint16_t tile_base = 0x0000;
     vdp_set_sprite_tile_base(tile_base);
@@ -20,16 +20,19 @@ int main() {
 
     vdp_set_vram_increment(1);
     vdp_seek_vram(tile_base);
-    for (uint16_t i = 0; i < tiles_length / 2; i++) {
-        vdp_write_vram(tiles[i * 2] | tiles[i * 2 + 1] << 8);
+    for (uint16_t i = 0; i < _Users_dan_rodrigues_Documents_tiles_bin_len / 2; i++) {
+        vdp_write_vram(_Users_dan_rodrigues_Documents_tiles_bin[i * 2] | _Users_dan_rodrigues_Documents_tiles_bin[i * 2 + 1] << 8);
     }
 
     // palette
 
     vdp_seek_palette(0);
-    for (uint16_t i = 0; i < palette_length / 2; i++) {
-        vdp_write_palette_color(palette[i * 2] | palette[i * 2 + 1] << 8);
+    for (uint16_t i = 0; i < _Users_dan_rodrigues_Documents_palette_bin_len / 2; i++) {
+        vdp_write_palette_color(_Users_dan_rodrigues_Documents_palette_bin[i * 2] | _Users_dan_rodrigues_Documents_palette_bin[i * 2 + 1] << 8);
     }
+
+    // random color?
+//    vdp_set_single_palette_color(0, 0xf00f);
 
     // place a sprite
 

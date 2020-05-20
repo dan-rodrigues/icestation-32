@@ -25,24 +25,23 @@ std::vector<uint8_t> Tiles::ics_tiles() {
             // 8x8 conversion
             for (uint8_t pixel_y = 0; pixel_y < 8; pixel_y++) {
                 // write 2 adjacent pixels at a time
-                uint8_t pixel_pair = 0;
+                uint8_t high_pixel = 0;
 
                 for (uint8_t pixel_x = 0; pixel_x < 8; pixel_x++) {
-                    uint16_t x = tile_x * 8 + pixel_x;
+                    uint16_t x = tile_x * 8 + (~pixel_x & 7);
                     uint16_t y = tile_y * 8 + pixel_y;
                     uint16_t base_index = y * width + x;
 
                     uint8_t pixel = image[base_index];
                     if (pixel > 0x0f) {
-                        std::cerr << "pixel out of range for 4bpp conversion: " << pixel;
+                        std::cerr << "pixel out of range for 4bpp conversion: " << std::hex << pixel << std::endl;
                         pixel = 0;
                     }
 
                     if (pixel_x % 2) {
-                        tiles.push_back(pixel << 4 | pixel_pair);
-                        pixel_pair = 0;
+                        tiles.push_back(pixel | high_pixel << 4);
                     } else {
-                        pixel_pair = pixel;
+                        high_pixel = pixel;
                     }
                 }
             }

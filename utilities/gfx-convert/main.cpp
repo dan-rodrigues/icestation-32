@@ -55,21 +55,10 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
-    // then Tiles?
-
-    // TEST: try print raw palette indexes
-    for (uint y = 0; y < height; y++) {
-        for (uint x = 0; x < width; x++) {
-            size_t index = y * height + x;
-            uint value = lodepng::getPaletteValue(&decoded[0], index, state.info_raw.bitdepth);
-
-//            std::cout << "index: " << value << std::endl;
-        }
-    }
+    // output palette
 
     auto palette = Palette(state);
 
-    // TEST: try encoding and saving the PNG
     save_png(output_filename, width, height, palette.colors, decoded);
 
     std::filesystem::path output_path(output_filename);
@@ -82,19 +71,21 @@ int main(int argc, const char * argv[]) {
 
     for (uint y = 0; y < height; y++) {
         for (uint x = 0; x < width; x++) {
-            size_t pixel_index = y * height + x;
+            size_t pixel_index = y * width + x;
             uint palette_index = lodepng::getPaletteValue(&decoded[0], pixel_index, state.info_raw.bitdepth);
             indexed_image.push_back(palette_index);
         }
     }
 
     auto tiles = Tiles(indexed_image, width, height);
-    auto output_tiles_path = output_directory.append("tiles.bin");
+    auto output_tiles_path = output_directory;
+    output_tiles_path.append("tiles.bin");
     File::dump_array(tiles.ics_tiles(), output_tiles_path.string());
 
     // ics palette binary
 
-    auto output_palette_path = output_directory.append("palette.bin");
+    auto output_palette_path = output_directory;
+    output_palette_path.append("palette.bin");
     File::dump_array(palette.ics_palette(), output_palette_path.string());
 
     return 0;
@@ -121,10 +112,12 @@ void save_png(std::string path, uint width, uint height, std::vector<uint32_t> p
 
     //both the raw image and the encoded image must get colorType 3 (palette)
     saved_state.info_png.color.colortype = LCT_PALETTE; //if you comment this line, and create the above palette in info_raw instead, then you get the same image in a RGBA PNG.
+
+    // FIXME: GIMP put this back up to 8bpp, mind the colors in index table
     saved_state.info_png.color.bitdepth = 4;
     saved_state.info_raw.colortype = LCT_PALETTE;
     saved_state.info_raw.bitdepth = 4;
-    saved_state.encoder.auto_convert = 0; //we specify ourselves exactly what output PNG color mode we want
+    saved_state.encoder.auto_convert = 4; //we specify ourselves exactly what output PNG color mode we want
 
     //encode and save
     std::vector<uint8_t> save_buffer;

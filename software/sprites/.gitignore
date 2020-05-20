@@ -1,0 +1,12 @@
+# GCC
+
+*.elf
+*.bin
+*.hex
+
+/sections_p.lds
+
+# Optional disassembly
+
+/dasm
+
