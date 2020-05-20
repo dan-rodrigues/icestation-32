@@ -72,7 +72,7 @@ int main() {
         // TODO: some pattern arrangement
         const uint8_t circle_sprites = 16;
         const uint16_t angle_step = 1024 / circle_sprites;
-        const int16_t circle_radius = 128;
+        const int16_t circle_radius = 192;
 
         const int16_t sprite_x_offset = -16;
         const int16_t sprite_y_offset = -16;
@@ -142,11 +142,11 @@ int16_t sin(uint16_t angle) {
         return -sin_max;
     }
 
-    uint16_t index = angle & 0xff;
-    // an actual inversion of the index
-    index ^= (angle & 0x100 ? 0xff : 0);
-    index += (angle & 0x100 ? 1 : 0);
+    uint16_t index = angle;
+    index = (angle & 0x100 ? -index : index);
+    index &= 0xff;
 
+    // TODO: generate an actual table of 16bit ints, add something to utils for this instead of using xxd
     int16_t sin =  ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[index];
 
     return (angle & 0x200 ? -sin : sin);
