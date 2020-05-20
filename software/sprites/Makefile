@@ -1,3 +1,5 @@
+# TODO: share common rules in a shared Makefile instead of repeating them here
+
 CROSS = riscv-none-embed-
 CFLAGS = -Wall -Os -flto -march=rv32i -I../lib/ -I../common/
 DFLAGS = --line-numbers

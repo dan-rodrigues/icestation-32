@@ -192,3 +192,9 @@ void vdp_set_affine_pretranslate(int16_t x, int16_t y) {
     VDP_AFFINE_PRETRANSLATE_X = x;
     VDP_AFFINE_PRETRANSLATE_Y = y;
 }
+
+void vdp_wait_frame_ended() {
+    const uint16_t final_line = 480;
+
+    while (VDP_CURRENT_RASTER_Y != final_line) {}
+}

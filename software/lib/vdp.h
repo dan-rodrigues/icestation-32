@@ -51,7 +51,9 @@ extern const uint16_t SPRITE_X_FLIP;
 extern VDP_REG VDP_CURRENT_RASTER_BASE;
 
 #define VDP_CURRENT_RASTER_X (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 0))
-#define VDP_CURRENT_RASTER_Y (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 1))
+#define VDP_CURRENT_RASTER_Y (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 2))
+
+void vdp_wait_frame_ended();
 
 // MARK: VDP write functions
 

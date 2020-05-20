@@ -260,7 +260,7 @@ module vdp #(
     always @(posedge clk) begin
         case (register_address[1:0])
             0: host_read_data <= raster_x;
-            1: host_read_data <= raster_y;
+            2: host_read_data <= raster_y;
         endcase
     end
 

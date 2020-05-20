@@ -8,6 +8,8 @@
 #include "tiles.h"
 #include "palette.h"
 
+void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x, uint16_t y);
+
 int main() {
     vdp_enable_layers(SPRITES);
     vdp_set_alpha_over_layers(SPRITES);
@@ -35,19 +37,38 @@ int main() {
 
     // place a sprite
 
-    vdp_clear_all_sprites();
-
-    vdp_seek_sprite(0);
-
     const int16_t base_x = 50;
     const int16_t base_y = 50;
 
-    vdp_write_sprite_meta(base_x, base_y | SPRITE_16_TALL | SPRITE_16_WIDE, 0);
-    vdp_write_sprite_meta(base_x + 16, base_y | SPRITE_16_TALL | SPRITE_16_WIDE, 2);
-    vdp_write_sprite_meta(base_x, (base_y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, 0x20);
-    // FIXME: sprite here causes x=0 sprite using ID 0?
-    // confirm existing demos have no issues
-    vdp_write_sprite_meta(base_x + 16, (base_y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, 0x22);
+    const uint8_t crystal_total_frames = 8;
+    const uint8_t crystal_frame_width = 32;
 
-    while(true) {}
+    uint16_t frame_counter = 0;
+
+    while(true) {
+        vdp_clear_all_sprites();
+
+        uint8_t base_sprite_id = 0;
+
+        uint8_t crystal_frame = frame_counter / 4;
+        crystal_frame &= (crystal_total_frames - 1);
+        uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
+        crystal_tile_base += (crystal_frame & 4) ? 0x40 : 0;
+
+        draw_crystal_sprite(&base_sprite_id, crystal_tile_base, base_x, base_y);
+
+        vdp_wait_frame_ended();
+
+        frame_counter++;
+    }
+}
+
+void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x, uint16_t y) {
+    vdp_seek_sprite(*base_sprite_id);
+    vdp_write_sprite_meta(x, y | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile);
+    vdp_write_sprite_meta(x + 16, y | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 2);
+    vdp_write_sprite_meta(x, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x20);
+    vdp_write_sprite_meta(x + 16, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x22);
+
+    *base_sprite_id += 4 * 2;
 }
