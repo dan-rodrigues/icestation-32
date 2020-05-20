@@ -71,7 +71,7 @@ int main() {
 
         // TODO: some pattern arrangement
         const uint8_t circle_sprites = 16;
-        const uint16_t angle_step = 256 / circle_sprites;
+        const uint16_t angle_step = 1024 / circle_sprites;
         const int16_t circle_radius = 128;
 
         const int16_t sprite_x_offset = -16;
@@ -90,9 +90,6 @@ int main() {
 
             draw_crystal_sprite(&base_sprite_id, crystal_tile_base, sprite_x, sprite_y);
         }
-
-//        draw_crystal_sprite(&base_sprite_id, crystal_tile_base, base_x, base_y);
-//        draw_crystal_sprite(&base_sprite_id, crystal_tile_base, base_x + 48, base_y);
 
         vdp_wait_frame_ended();
 
@@ -128,11 +125,31 @@ volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
 #define SYS_MUL_RESULT (*((volatile int32_t *)SYS_MUL_BASE + 0))
 
 int16_t cos(uint16_t angle) {
-    return sin((angle + 0x40) & 0xff);
+    return sin(angle + 0x100);
 }
 
 int16_t sin(uint16_t angle) {
-    return ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[angle & 0xff];
+    angle &= 0x3ff;
+
+    const int16_t sin_max = 0x4000;
+
+    // special cases to avoid "flat spots" in the sin wave
+    if (angle == 0x100) {
+        return sin_max;
+    } else if (angle == 0x200) {
+        return 0;
+    } else if (angle == 0x300) {
+        return -sin_max;
+    }
+
+    uint16_t index = angle & 0xff;
+    // an actual inversion of the index
+    index ^= (angle & 0x100 ? 0xff : 0);
+    index += (angle & 0x100 ? 1 : 0);
+
+    int16_t sin =  ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[index];
+
+    return (angle & 0x200 ? -sin : sin);
 }
 
 // dsp mult
