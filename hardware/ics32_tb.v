@@ -27,7 +27,8 @@ module ics32_tb(
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
-        .RESET_DURATION(4)
+        .RESET_DURATION(4),
+        .ENABLE_IPL(0)
     ) ics32 (
         .clk_12m(clk_12m),
 

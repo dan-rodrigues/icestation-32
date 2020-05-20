@@ -9,7 +9,8 @@
 module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
     parameter FORCE_FAST_CPU = 0,
-    parameter integer RESET_DURATION = 1 << 10
+    parameter integer RESET_DURATION = 1 << 10,
+    parameter ENABLE_IPL = 1
 ) (
     input clk_12m,
 
@@ -456,7 +457,9 @@ module ics32 #(
     wire flash_read_ready;
     wire [31:0] flash_read_data;
 
-    flash_dma dma(
+    flash_dma #(
+        .ENABLE_IPL(ENABLE_IPL)
+    ) dma (
         .clk(vdp_clk),
         .reset(vdp_reset),
 

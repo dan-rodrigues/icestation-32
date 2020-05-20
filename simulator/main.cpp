@@ -46,6 +46,13 @@ int main(int argc, const char * argv[]) {
 
     Vics32_tb *tb = new Vics32_tb;
 
+    auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
+    auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
+    for (uint16_t i = 0; i < cpu_program.size() / 4; i++) {
+        cpu_ram0[i * 2] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
+        cpu_ram1[i * 2 + 1] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
+    }
+
     auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
     std::copy(cpu_program.begin(), cpu_program.end(), &flash[flash_user_base]);
 

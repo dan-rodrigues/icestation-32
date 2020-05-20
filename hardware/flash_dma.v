@@ -11,7 +11,9 @@
 // this is being minimised when the BRAM-based software IPL is added
 // that would make this hardware IPL redundant
 
-module flash_dma(
+module flash_dma #(
+    parameter ENABLE_IPL = 1
+) (
     input clk,
     input reset,
 
@@ -134,11 +136,16 @@ module flash_dma(
 
     always @(posedge clk) begin
         if (reset) begin
-            write_strobe <= 0;
-            flash_write_ready_next <= 1'b1;
-            write_address <= FLASH_WRITE_BASE[15:2];
+            if (ENABLE_IPL) begin
+                write_strobe <= 0;
+                flash_write_ready_next <= 1'b1;
+                write_address <= FLASH_WRITE_BASE[15:2];
 
-            dma_busy <= 1;
+                dma_busy <= 1;
+            end else begin
+                // it's assumed that the simulator will handle IPL
+                dma_busy <= 0;
+            end
         end else begin
             write_strobe <= 0;
             flash_write_ready_next <= 1;
