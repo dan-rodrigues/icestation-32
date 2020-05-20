@@ -16,6 +16,13 @@
     - As more functionality is added, extract various function blocks to separate files
  */
 
+// Current simulation time (64-bit unsigned)
+vluint64_t main_time = 0;
+// Called by $time in Verilog
+double sc_time_stamp() {
+    return main_time;  // Note does conversion to real, to match SystemC
+}
+
 int main(int argc, const char * argv[]) {
     Verilated::traceEverOn(true);
     Verilated::commandArgs(argc, argv);
@@ -45,6 +52,7 @@ int main(int argc, const char * argv[]) {
     const auto flash_user_base = 0x100000;
 
     Vics32_tb *tb = new Vics32_tb;
+    VerilatedVcdC *trace = new VerilatedVcdC;
 
     auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
     auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
@@ -89,12 +97,24 @@ int main(int argc, const char * argv[]) {
     int current_y = 0;
     bool even_frame = true;
 
+    const bool should_trace = true;
+
+    if (should_trace) {
+        tb->trace(trace, 99);
+        trace->open("/Users/dan.rodrigues/Documents/ics.vcd");
+    }
+
     while (!Verilated::gotFinish()) {
         // clock tick
         tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 1;
         tb->eval();
+        trace->dump(main_time);
+        main_time++;
+
         tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 0;
         tb->eval();
+        trace->dump(main_time);
+        main_time++;
 
         // render current VGA output pixel
         SDL_SetRenderDrawColor(renderer, tb->vga_r << 4, tb->vga_g << 4, tb->vga_b << 4, 255);
@@ -127,6 +147,7 @@ int main(int argc, const char * argv[]) {
     };
 
     tb->final();
+    trace->close();
 
     SDL_DestroyWindow(window);
     SDL_Quit();

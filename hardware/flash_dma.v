@@ -108,12 +108,18 @@ module flash_dma #(
     // then signals availability to the RAM writer below
     always @(posedge clk) begin
         if (reset) begin
-            flash_read_index <= FLASH_LOAD_BASE;
-            flash_read_length <= FLASH_LOAD_LENGTH / 4;
+            if (ENABLE_IPL) begin
+                flash_read_index <= FLASH_LOAD_BASE;
+                flash_read_length <= FLASH_LOAD_LENGTH / 4;
 
-            flash_read_counter <= 0;
-            flash_loading <= 1;
-            flash_write_data_ready <= 0;
+                flash_read_counter <= 0;
+                flash_loading <= 1;
+                flash_write_data_ready <= 0;
+            end else begin
+                flash_read_index <= 0;
+                flash_read_length <= 0;
+                flash_loading <= 0;
+            end
         end else begin
             flash_write_data_ready <= 0;
 
