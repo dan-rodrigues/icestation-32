@@ -13,6 +13,7 @@ Palette::Palette(lodepng::State state) {
 std::vector<uint16_t> Palette::ics_palette() {
     std::vector<uint16_t> ics_palette;
 
+    // TODO: rounding up of colors if needed
     for (auto it = begin(colors); it != end(colors); ++it) {
         uint32_t color = *it;
         uint8_t a = (color >> 24 & 0xff) >> 4;

@@ -33,31 +33,40 @@ int main() {
     }
 
     // random color?
-    vdp_set_single_palette_color(0, 0xf007);
+    vdp_set_single_palette_color(0, 0xf088);
 
     // place a sprite
 
     const int16_t base_x = 50;
     const int16_t base_y = 50;
 
+    // first row of 32x32 animation frames
+    const uint8_t crystal_frames_bank_0 = 0x000;
+    // second row of 32x32 animation frames
+    const uint8_t crystal_frames_bank_1 = 0x040;
+
     const uint8_t crystal_total_frames = 8;
     const uint8_t crystal_frame_width = 32;
 
     uint16_t frame_counter = 0;
 
+    uint8_t base_sprite_id = 0;
+
     while(true) {
         vdp_clear_all_sprites();
-
-        uint8_t base_sprite_id = 0;
 
         uint8_t crystal_frame = frame_counter / 4;
         crystal_frame &= (crystal_total_frames - 1);
         uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
-        crystal_tile_base += (crystal_frame & 4) ? 0x40 : 0;
+        crystal_tile_base += (crystal_frame & 4) ? crystal_frames_bank_1 : crystal_frames_bank_0;
 
+        // TODO: some pattern arrangement
         draw_crystal_sprite(&base_sprite_id, crystal_tile_base, base_x, base_y);
+        draw_crystal_sprite(&base_sprite_id, crystal_tile_base, base_x + 48, base_y);
 
         vdp_wait_frame_ended();
+
+        base_sprite_id = 0;
 
         frame_counter++;
     }
@@ -70,5 +79,5 @@ void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x
     vdp_write_sprite_meta(x, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x20);
     vdp_write_sprite_meta(x + 16, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x22);
 
-    *base_sprite_id += 4 * 2;
+    *base_sprite_id += 4;
 }

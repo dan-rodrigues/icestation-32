@@ -30,7 +30,7 @@ SECTIONS {
     .text : AT (0)
     {
         . = ALIGN(4);
-        vectors*(.text)
+        *(.text.reset)
         *(.text)           /* .text sections (code) */
         *(.text*)          /* .text* sections (code) */
         *(.rodata)         /* .rodata sections (constants, strings, etc.) */

@@ -1,6 +1,6 @@
 #define STACK 0x00010000
 
-    .section .text
+    .section .text.reset
     .global irq
 
 reset_vec:
