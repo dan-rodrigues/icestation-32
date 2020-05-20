@@ -10,7 +10,6 @@
 
 int main() {
     vdp_enable_layers(SPRITES);
-    // if alpha sprites are eventually used, need to reenable this one
     vdp_set_alpha_over_layers(SPRITES);
 
     const uint16_t tile_base = 0x0000;
@@ -32,13 +31,23 @@ int main() {
     }
 
     // random color?
-//    vdp_set_single_palette_color(0, 0xf00f);
+    vdp_set_single_palette_color(0, 0xf007);
 
     // place a sprite
 
     vdp_clear_all_sprites();
 
-    vdp_write_single_sprite_meta(0, 16, 16 | SPRITE_16_TALL | SPRITE_16_WIDE, 0);
+    vdp_seek_sprite(0);
+
+    const int16_t base_x = 50;
+    const int16_t base_y = 50;
+
+    vdp_write_sprite_meta(base_x, base_y | SPRITE_16_TALL | SPRITE_16_WIDE, 0);
+    vdp_write_sprite_meta(base_x + 16, base_y | SPRITE_16_TALL | SPRITE_16_WIDE, 2);
+    vdp_write_sprite_meta(base_x, (base_y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, 0x20);
+    // FIXME: sprite here causes x=0 sprite using ID 0?
+    // confirm existing demos have no issues
+    vdp_write_sprite_meta(base_x + 16, (base_y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, 0x22);
 
     while(true) {}
 }

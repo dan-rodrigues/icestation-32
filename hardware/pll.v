@@ -51,6 +51,7 @@ module pll #(
 
     assign clk_1x = clk_1x_r;
     assign clk_2x = clk_2x_r;
+    assign locked = 1;
 
     always @(posedge clk_2x_r) begin
         clk_1x_r = !clk_1x_r;

@@ -12,7 +12,7 @@
  This is currently a minimal simulator for showing the video output.
 
  TODO:
-    - Restore VCD dumping with appropraite trigger conditions
+    - Restore VCD dumping with appropriate trigger conditions
     - As more functionality is added, extract various function blocks to separate files
  */
 
@@ -78,10 +78,6 @@ int main(int argc, const char * argv[]) {
     auto renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_RenderSetScale(renderer, 1, 1);
 
-    // assume locked pll to immediate run the reset generator
-    tb->ics32_tb__DOT__ics32__DOT__pll_locked = 1;
-    tb->eval();
-
     int current_x = 0;
     int current_y = 0;
     bool even_frame = true;
@@ -97,6 +93,9 @@ int main(int argc, const char * argv[]) {
         SDL_SetRenderDrawColor(renderer, tb->vga_r << 4, tb->vga_g << 4, tb->vga_b << 4, 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
+
+        // note the sync signals here are NOT the VGA ones (those are vga_hsync / vga_vsync)
+        // these are single-cycle strobes that are asserted only at the very end of a line (or frame)
 
         if (tb->hsync) {
             current_x = 0;
@@ -115,7 +114,7 @@ int main(int argc, const char * argv[]) {
         SDL_Event e;
         SDL_PollEvent(&e);
 
-        if (e.type == SDL_QUIT){
+        if (e.type == SDL_QUIT) {
             break;
         }
     };
