@@ -1,6 +1,5 @@
-// TODO: header
-
 #include "vdp.h"
+#include "math_util.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -9,12 +8,6 @@
 #include "palette.h"
 
 void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x, uint16_t y);
-
-// TODO relocate
-int16_t cos(uint16_t angle);
-int16_t sin(uint16_t angle);
-
-int32_t sys_multiply(int16_t a, int16_t b);
 
 int main() {
     vdp_enable_layers(SPRITES);
@@ -69,7 +62,6 @@ int main() {
         uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
         crystal_tile_base += (crystal_frame & 4) ? crystal_frames_bank_1 : crystal_frames_bank_0;
 
-        // TODO: some pattern arrangement
         const uint8_t circle_sprites = 16;
         const uint16_t angle_step = 1024 / circle_sprites;
         const int16_t circle_radius = 192;
@@ -106,61 +98,4 @@ void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x
     vdp_write_sprite_meta(x + 16, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x22);
 
     *base_sprite_id += 4;
-}
-
-// TODO: relocate to common section
-
-#include "sin_table.h"
-
-// dsp mmio
-
-volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
-
-// mind the sign on these when unsigned is added later
-
-#define SYS_MUL_A (*((volatile int16_t *)SYS_MUL_BASE + 0))
-#define SYS_MUL_B (*((volatile int16_t *)SYS_MUL_BASE + 2))
-
-#define SYS_MUL_RESULT (*((volatile int32_t *)SYS_MUL_BASE + 0))
-
-static const uint16_t SIN_PERIOD = 0x400;
-static const uint16_t SIN_HALF_PERIOD = SIN_PERIOD / 2;
-static const uint16_t SIN_QUARTER_PERIOD = SIN_PERIOD / 4;
-
-static const int16_t SIN_MAX = 0x4000;
-
-int16_t cos(uint16_t angle) {
-    return sin(angle + SIN_QUARTER_PERIOD);
-}
-
-int16_t sin(uint16_t angle) {
-    angle &= (SIN_PERIOD - 1);
-
-    // special cases to avoid "flat spots" in the sin wave
-    if (angle == SIN_QUARTER_PERIOD) {
-        return SIN_MAX;
-    } else if (angle == SIN_HALF_PERIOD) {
-        return 0;
-    } else if (angle == (3 * SIN_QUARTER_PERIOD)) {
-        return -SIN_MAX;
-    }
-
-    uint16_t index = angle;
-    index = (angle & SIN_QUARTER_PERIOD ? -index : index);
-    index &= (SIN_QUARTER_PERIOD - 1);
-
-    // TODO: generate an actual table of 16bit ints, add something to utils for this instead of using xxd
-    int16_t sin = sin_table[index];
-
-    return (angle & SIN_HALF_PERIOD ? -sin : sin);
-}
-
-// dsp mult
-
-int32_t sys_multiply(int16_t a, int16_t b) {
-    SYS_MUL_A = a;
-    SYS_MUL_B = b;
-
-    // DSP disabeld temporarily
-    return SYS_MUL_RESULT;
 }

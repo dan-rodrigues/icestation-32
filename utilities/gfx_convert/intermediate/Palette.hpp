@@ -1,5 +1,3 @@
-// TODO: header
-
 #ifndef Palette_hpp
 #define Palette_hpp
 

@@ -1,5 +1,3 @@
-// TODO: header
-
 #include "Palette.hpp"
 
 Palette::Palette(lodepng::State state) {

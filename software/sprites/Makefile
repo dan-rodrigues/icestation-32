@@ -12,6 +12,7 @@ SOURCES = \
 	../common/vectors.S \
 	../common/start.S \
 	../lib/vdp.c \
+	../lib/math_util.c \
 	../common/font.c \
 
 HEADERS = \

@@ -1,5 +1,3 @@
-// TODO: headers
-
 #include "Tiles.hpp"
 
 #include <iostream>

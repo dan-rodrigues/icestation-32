@@ -31,7 +31,7 @@ int main(int argc, const char * argv[]) {
     std::vector<uint8_t> buffer;
     auto error = lodepng::load_file(buffer, filename);
     if (error) {
-        std::cerr << "failed to load file: " << lodepng_error_text(error) << std::endl;
+        std::cerr << "Failed to load file: " << lodepng_error_text(error) << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -43,7 +43,7 @@ int main(int argc, const char * argv[]) {
 
     error = lodepng::decode(decoded, width, height, state, buffer);
     if (error) {
-        std::cerr << "failed to decode png: " << lodepng_error_text(error) << std::endl;
+        std::cerr << "Failed to decode png: " << lodepng_error_text(error) << std::endl;
         return EXIT_FAILURE;
     }
 

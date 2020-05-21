@@ -1,11 +1,3 @@
-//
-//  Tiles.hpp
-//  ics32-utilities
-//
-//  Created by Dan Rodrigues on 19/5/20.
-//  Copyright © 2020 drr. All rights reserved.
-//
-
 #ifndef Tiles_hpp
 #define Tiles_hpp
 
