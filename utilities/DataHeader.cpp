@@ -10,13 +10,13 @@ void DataHeader::generate_header(std::vector<uint16_t> data, std::ostream& strea
     const auto indentation = "    ";
     const auto characters = 4;
 
-    stream << "const " << type << " " << name << "[] = {" << std::endl;
+    stream << "const " << type << " " << name << "[] = {" << "\n";
 
     std::string separator;
     for (auto it = begin(data); it != end(data); ++it) {
         auto separator = (it + 1 == end(data)) ? "" : ",";
-        stream << indentation << "0x" << std::setfill('0') << std::setw(characters) << std::hex << *it << separator << std::endl;
+        stream << indentation << "0x" << std::setfill('0') << std::setw(characters) << std::hex << *it << separator << "\n";
     }
 
-    stream << "}" << std::endl;
+    stream << "}" << "\n";
 }

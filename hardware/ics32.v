@@ -8,7 +8,7 @@
 
 module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
-    parameter FORCE_FAST_CPU = 0,
+    parameter FORCE_FAST_CPU = 1,
     parameter integer RESET_DURATION = 1 << 10,
     parameter ENABLE_IPL = 1
 ) (

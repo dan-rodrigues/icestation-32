@@ -44,9 +44,10 @@ module vdp_vga_timing #(
     wire frame_ended_nx = y_fsm_nx == STATE_ACTIVE && y_fsm == STATE_BP && line_ended_nx;
     wire active_frame_ended_nx = line_ended_nx && y_fsm == STATE_ACTIVE && y_fsm_nx == STATE_FP;
 
-    wire hsync_n = x_fsm == STATE_SYNC;
-    wire vsync_n = y_fsm == STATE_SYNC;
-    wire active_display_n = x_fsm == STATE_ACTIVE && y_fsm == STATE_ACTIVE;
+    wire hsync_b_nx = x_fsm == STATE_SYNC;
+    wire vsync_b_nx = y_fsm == STATE_SYNC;
+
+    wire active_display_nx = y_fsm == STATE_ACTIVE && x_fsm_nx == STATE_ACTIVE;
 
     wire last_active_display_pixel_nx = line_ended_nx && active_frame_ended_nx;
     wire active_line_started_nx = x_fsm == STATE_FP && x_fsm_nx == STATE_ACTIVE;
@@ -82,8 +83,8 @@ module vdp_vga_timing #(
     always @* begin
         (* full_case, parallel_case *)
         case (x_fsm)
-            STATE_FP: x_next_count = H_FRONTPORCH - 2;
-            STATE_SYNC: x_next_count = H_FRONTPORCH + H_SYNC - 2;
+            STATE_FP: x_next_count = H_FRONTPORCH - 1;
+            STATE_SYNC: x_next_count = H_FRONTPORCH + H_SYNC - 1;
             STATE_BP: x_next_count = H_SYNC + H_FRONTPORCH + H_BACKPORCH - 1;
             STATE_ACTIVE: x_next_count = H_SIZE - 1;
         endcase
@@ -123,9 +124,9 @@ module vdp_vga_timing #(
     end
 
     always @(posedge clk) begin
-        hsync <= !hsync_n;
-        vsync <= !vsync_n;
-        active_display <= active_display_n;
+        hsync <= !hsync_b_nx;
+        vsync <= !vsync_b_nx;
+        active_display <= active_display_nx;
         line_ended <= line_ended_nx;
         frame_ended <= frame_ended_nx;
         last_active_display_pixel <= last_active_display_pixel_nx;

@@ -45,7 +45,7 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
-    cpu_program = std::vector<unsigned char>(std::istreambuf_iterator<char>(cpu_program_stream), {});
+    cpu_program = std::vector<uint8_t>(std::istreambuf_iterator<char>(cpu_program_stream), {});
 
     // ...into the flash where it will be loaded during IPL
 
@@ -54,11 +54,12 @@ int main(int argc, const char * argv[]) {
     Vics32_tb *tb = new Vics32_tb;
     VerilatedVcdC *trace = new VerilatedVcdC;
 
+    // FIXME:
     auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
     auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
     for (uint16_t i = 0; i < cpu_program.size() / 4; i++) {
-        cpu_ram0[i * 2] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
-        cpu_ram1[i * 2 + 1] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
+        cpu_ram0[i] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
+        cpu_ram1[i] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
     }
 
     auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
@@ -123,7 +124,6 @@ int main(int argc, const char * argv[]) {
 
         // note the sync signals here are NOT the VGA ones (those are vga_hsync / vga_vsync)
         // these are single-cycle strobes that are asserted only at the very end of a line (or frame)
-
         if (tb->hsync) {
             current_x = 0;
             current_y++;

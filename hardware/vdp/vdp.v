@@ -107,6 +107,10 @@ module vdp #(
     wire [10:0] raster_y;
 
     wire line_ended;
+    wire frame_ended;
+
+    assign hsync = line_ended;
+    assign vsync = frame_ended;
 
     vdp_vga_timing #(
         .H_ACTIVE_WIDTH(H_ACTIVE_WIDTH),
@@ -128,8 +132,8 @@ module vdp #(
         .active_display(active_display),
         .active_frame_ended(active_frame_ended),
 
-        .line_ended(hsync),
-        .frame_ended(vsync)
+        .line_ended(line_ended),
+        .frame_ended(frame_ended)
     );
 
     // --- Host interface ---
@@ -367,8 +371,6 @@ module vdp #(
 
     // --- Raster offset for scrolling layers ---
 
-    // TODO: replace comparators here with an FSM assuming that saves LCs
-
     localparam SCROLL_START_LEAD_TIME = 32;
     localparam SCROLL_OFFSCREEN_ADVANCE = -8;
 
@@ -376,19 +378,18 @@ module vdp #(
 
     localparam HEIGHT_DIFF = HEIGHT_TOTAL - 512;
 
-    wire raster_x_offset_start = raster_x > (OFFSCREEN_X_TOTAL - SCROLL_START_LEAD_TIME);
+    wire scroll_base_x_start = raster_x == (OFFSCREEN_X_TOTAL - SCROLL_START_LEAD_TIME + 0);
+
+    // the +1 is to preserve alignment between raster_x[2:0] (used to sequence VRAM access)
+    localparam SCROLL_BASE_X_INITIAL = SCROLL_OFFSCREEN_ADVANCE + 1;
 
     always @(posedge clk) begin
-        // the +1 is to preserve alignment between raster_x[2:0] (used to sequence VRAM access)
-        // misalignment causes issues with fine horizontal scroll
-        raster_x_offset <= raster_x_offset_start ? raster_x_offset + 1 : SCROLL_OFFSCREEN_ADVANCE + 1;
+        raster_x_offset <= scroll_base_x_start ? SCROLL_BASE_X_INITIAL : raster_x_offset + 1;
     end
 
     // --- Raster offset for sprites ---
 
     localparam SPRITE_START_LEAD_TIME = 10;
-
-    wire raster_x_offset_start_sprites = raster_x > (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME);
 
     reg [9:0] sprites_x;
     reg [8:0] sprites_y;
@@ -410,12 +411,24 @@ module vdp #(
         end 
     end
 
-    always @(posedge clk) begin
-        // sprites line buffer read address for display
-        sprites_x <= raster_x_offset_start_sprites ? sprites_x + 1 : -1;
-        // sprites y position used for raster collision test
-        sprites_y <= sprites_y_nx;
+    wire sprites_x_start = (raster_x == (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME - 1));
+    wire sprites_x_reset = line_ended;
+    reg sprites_x_counting = 0;
 
+    localparam sprites_x_initial = -1;
+
+    always @(posedge clk) begin
+        // used for line buffer read address for display
+        if (sprites_x_reset) begin
+            sprites_x_counting <= 0;
+        end else if (sprites_x_start) begin
+            sprites_x_counting <= 1;
+        end
+
+        sprites_x <= (sprites_x_counting ? sprites_x + 1 : sprites_x_initial);
+
+        // used for raster collision test
+        sprites_y <= sprites_y_nx;
     end
 
     // --- Layer attribute selection ---
@@ -755,7 +768,7 @@ module vdp #(
     wire vram_sprite_read_data_valid;
     wire vram_sprite_reading;
 
-    wire sprite_core_reset = raster_x == 1;
+    wire sprite_core_reset = line_ended;
 
     vdp_sprite_core sprites(
         .clk(clk),
@@ -785,15 +798,26 @@ module vdp #(
 
     wire [7:0] affine_output_pixel;
 
-    reg affine_offscreen;
-
     reg [9:0] affine_x;
     wire [8:0] affine_y = raster_y;
 
+    wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 7);
+
+    // NOTE: this may effect sprite fillrate so this should probably be wound back a bit with pipeline delay etc.
+    wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+
+    reg affine_offscreen;
+    localparam affine_x_initial = -2;
+
     always @(posedge clk) begin
-        // FIXME: relocate to common raster offset section, optimise etc.
-        affine_offscreen <= raster_x < (OFFSCREEN_X_TOTAL - 8);
-        affine_x <= raster_x - (OFFSCREEN_X_TOTAL - 10);
+        affine_x <= affine_x + 1;
+
+        if (affine_x_start) begin
+            affine_x <= affine_x_initial;
+            affine_offscreen <= 0;
+        end else if (affine_x_end) begin
+            affine_offscreen <= 1;
+        end
     end
 
     vdp_affine_layer affine(

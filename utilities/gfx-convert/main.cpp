@@ -23,15 +23,15 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
-    auto const filename = argv[1];
-    auto const output_filename = argv[2];
+    const auto filename = argv[1];
+    const auto output_filename = argv[2];
 
     // lodepng test:
     
     std::vector<uint8_t> buffer;
     auto error = lodepng::load_file(buffer, filename);
     if (error) {
-        std::cout << "failed to load file: " << lodepng_error_text(error) << std::endl;
+        std::cerr << "failed to load file: " << lodepng_error_text(error) << std::endl;
         return 1;
     }
 
@@ -43,7 +43,7 @@ int main(int argc, const char * argv[]) {
 
     error = lodepng::decode(decoded, width, height, state, buffer);
     if (error) {
-        std::cout << "failed to decode png: " << lodepng_error_text(error) << std::endl;
+        std::cerr << "failed to decode png: " << lodepng_error_text(error) << std::endl;
         return 1;
     }
 
@@ -51,7 +51,7 @@ int main(int argc, const char * argv[]) {
         std::cout << "found paletted image" << std::endl;
         std::cout << "palette size: " << state.info_raw.palettesize << std::endl;
     } else {
-        std::cout << "non-color-indexed PNG files not supported for now" << std::endl;
+        std::cerr << "non-color-indexed PNG files not supported for now" << std::endl;
         return 1;
     }
 
@@ -123,7 +123,7 @@ void save_png(std::string path, uint width, uint height, std::vector<uint32_t> p
     std::vector<uint8_t> save_buffer;
     uint error = lodepng::encode(save_buffer, image.empty() ? 0 : &image[0], width, height, saved_state);
     if (error) {
-        std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+        std::cerr << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
         return;
     }
 

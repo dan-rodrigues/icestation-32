@@ -43,9 +43,6 @@ int main() {
 
     // place a sprite
 
-    const int16_t base_x = 50;
-    const int16_t base_y = 50;
-
     const int16_t screen_center_x = 848 / 2;
     const int16_t screen_center_y = 480 / 2;
 
@@ -94,7 +91,6 @@ int main() {
         vdp_wait_frame_ended();
 
         base_sprite_id = 0;
-
         frame_counter++;
     }
 }
@@ -124,32 +120,36 @@ volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
 
 #define SYS_MUL_RESULT (*((volatile int32_t *)SYS_MUL_BASE + 0))
 
+static const uint16_t SIN_PERIOD = 0x400;
+static const uint16_t SIN_HALF_PERIOD = SIN_PERIOD / 2;
+static const uint16_t SIN_QUARTER_PERIOD = SIN_PERIOD / 4;
+
+static const int16_t SIN_MAX = 0x4000;
+
 int16_t cos(uint16_t angle) {
-    return sin(angle + 0x100);
+    return sin(angle + SIN_QUARTER_PERIOD);
 }
 
 int16_t sin(uint16_t angle) {
-    angle &= 0x3ff;
-
-    const int16_t sin_max = 0x4000;
+    angle &= (SIN_PERIOD - 1);
 
     // special cases to avoid "flat spots" in the sin wave
-    if (angle == 0x100) {
-        return sin_max;
-    } else if (angle == 0x200) {
+    if (angle == SIN_QUARTER_PERIOD) {
+        return SIN_MAX;
+    } else if (angle == SIN_HALF_PERIOD) {
         return 0;
-    } else if (angle == 0x300) {
-        return -sin_max;
+    } else if (angle == (3 * SIN_QUARTER_PERIOD)) {
+        return -SIN_MAX;
     }
 
     uint16_t index = angle;
-    index = (angle & 0x100 ? -index : index);
-    index &= 0xff;
+    index = (angle & SIN_QUARTER_PERIOD ? -index : index);
+    index &= (SIN_QUARTER_PERIOD - 1);
 
     // TODO: generate an actual table of 16bit ints, add something to utils for this instead of using xxd
-    int16_t sin =  ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[index];
+    int16_t sin = ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[index];
 
-    return (angle & 0x200 ? -sin : sin);
+    return (angle & SIN_HALF_PERIOD ? -sin : sin);
 }
 
 // dsp mult
