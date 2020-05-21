@@ -1,43 +1,34 @@
-
 #include <iostream>
-
-#include <math.h>
 #include <sstream>
+#include <fstream>
+#include <math.h>
 
-#include "File.hpp"
 #include "DataHeader.hpp"
 
 int main(int argc, const char * argv[]) {
     if (argc < 2) {
-        std::cout << "usage: <output-file>" << std::endl;
-        return 1;
+        std::cout << "Usage: <output-file>" << std::endl;
+        return EXIT_FAILURE;
     }
+
+    const auto output_path = argv[1];
 
     const auto count = 256;
-    const bool generate_full_table = false;
+    const auto sin_max = 0x4000;
 
-    if (generate_full_table) {
-        int16_t table[256];
-        for (int i = 0; i < count; i++) {
-            auto theta = M_PI * 2 / count * i;
-            // leave one integer bit hence the /2
-            table[i] = sin(theta) * 0x8000 / 2;
-        }
-        File::dump_array((char *)table, 512, argv[1]);
-    } else {
-        int16_t table[256];
-        for (int i = 0; i < count; i++) {
-            auto theta = M_PI * 2 / count * i;
-            // leave one integer bit hence the /2
-            table[i] = sin(theta / 4) * 0x8000 / 2;
-        }
-//        File::dump_array((char *)table, 512, argv[1]);
+    int16_t table[256];
 
-        std::ofstream ostream;
-        ostream.open(argv[1]);
-        DataHeader::generate_header(std::vector<uint16_t>(table, table + 256), ostream);
+    for (int i = 0; i < count; i++) {
+        auto theta = M_PI * 2 / count * i;
+        table[i] = sin(theta / 4) * sin_max;
     }
 
+    std::ofstream stream;
+    stream.open(output_path);
 
-    return 0;
+    DataHeader::generate_header(std::vector<int16_t>(table, table + count), "int16_t", "sin_table", stream);
+
+    stream.close();
+
+    return EXIT_SUCCESS;
 }

@@ -8,68 +8,65 @@
 #include <vector>
 #include <iostream>
 
-/*
- This is currently a minimal simulator for showing the video output.
-
- TODO:
-    - Restore VCD dumping with appropriate trigger conditions
-    - As more functionality is added, extract various function blocks to separate files
- */
-
 // Current simulation time (64-bit unsigned)
 vluint64_t main_time = 0;
 // Called by $time in Verilog
 double sc_time_stamp() {
-    return main_time;  // Note does conversion to real, to match SystemC
+    return main_time;
 }
 
 int main(int argc, const char * argv[]) {
     Verilated::traceEverOn(true);
     Verilated::commandArgs(argc, argv);
 
-    std::vector<unsigned char> cpu_program;
+    std::vector<uint8_t> cpu_program;
 
     // expecting the test program as first argument for now
 
     if (argc < 2) {
         std::cout << "Usage: ics32-sim <test-program>" << std::endl;
-        return 1;
+        return EXIT_SUCCESS;
     }
 
     // 1. load test program...
 
     auto cpu_program_path = argv[1];
+
     std::ifstream cpu_program_stream(cpu_program_path, std::ios::binary);
     if (cpu_program_stream.ios_base::fail()) {
-        std::cout << "Failed to open file: " << cpu_program_path << std::endl;
-        return 1;
+        std::cerr << "Failed to open file: " << cpu_program_path << std::endl;
+        return EXIT_FAILURE;
     }
 
     cpu_program = std::vector<uint8_t>(std::istreambuf_iterator<char>(cpu_program_stream), {});
 
-    // ...into the flash where it will be loaded during IPL
-
-    const auto flash_user_base = 0x100000;
+    if (cpu_program.size() % 4) {
+        std::cerr << "Binary has irregular size: " << cpu_program.size() << std::endl;
+        return EXIT_FAILURE;
+    }
 
     Vics32_tb *tb = new Vics32_tb;
-    VerilatedVcdC *trace = new VerilatedVcdC;
 
-    // FIXME:
+    // ...into both flash (for software use) and CPU RAM (so that IPL can be skipped)
+
     auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
     auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
+
     for (uint16_t i = 0; i < cpu_program.size() / 4; i++) {
         cpu_ram0[i] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
         cpu_ram1[i] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
     }
 
+    const auto flash_user_base = 0x100000;
     auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
+
     std::copy(cpu_program.begin(), cpu_program.end(), &flash[flash_user_base]);
 
-    // 2. present an SDL window to simulate VGA output
+    // 2. present an SDL window to simulate video output
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cout << "SDL_Init() failed: " << SDL_GetError() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // 848x480 is assumed (smaller video modes will still appear correctly)
@@ -100,8 +97,11 @@ int main(int argc, const char * argv[]) {
 
     const bool should_trace = false;
 
+    VerilatedVcdC *trace = new VerilatedVcdC;
+
     if (should_trace) {
         tb->trace(trace, 99);
+        // parameterize this, getopt()
         trace->open("/Users/dan.rodrigues/Documents/ics.vcd");
     }
 
@@ -152,5 +152,5 @@ int main(int argc, const char * argv[]) {
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

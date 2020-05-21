@@ -107,7 +107,7 @@ void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x
 
 // TODO: relocate to common section
 
-#include "sin.h"
+#include "sin_table.h"
 
 // dsp mmio
 
@@ -147,7 +147,7 @@ int16_t sin(uint16_t angle) {
     index &= (SIN_QUARTER_PERIOD - 1);
 
     // TODO: generate an actual table of 16bit ints, add something to utils for this instead of using xxd
-    int16_t sin = ((int16_t *)_Users_dan_rodrigues_Documents_sin_bin)[index];
+    int16_t sin = sin_table[index];
 
     return (angle & SIN_HALF_PERIOD ? -sin : sin);
 }
