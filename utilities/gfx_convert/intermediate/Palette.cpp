@@ -1,7 +1,7 @@
 #include "Palette.hpp"
 
 Palette::Palette(lodepng::State state) {
-    // maybe remove the lode specific stuff here
+    // remove the lode specific stuff here
     // extract rgba32 colors first
     uint32_t *palette = reinterpret_cast<uint32_t *>(state.info_png.color.palette);
     size_t palette_size = state.info_png.color.palettesize;
@@ -11,7 +11,7 @@ Palette::Palette(lodepng::State state) {
 std::vector<uint16_t> Palette::ics_palette() {
     std::vector<uint16_t> ics_palette;
 
-    // TODO: rounding up of colors if needed
+    // TODO: rounding up of colors if needed + clipping
     for (auto it = begin(colors); it != end(colors); ++it) {
         uint32_t color = *it;
         uint8_t a = (color >> 24 & 0xff) >> 4;

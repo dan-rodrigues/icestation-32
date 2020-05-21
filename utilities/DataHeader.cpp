@@ -1,4 +1,3 @@
-
 #include "DataHeader.hpp"
 
 #include <sstream>

@@ -88,7 +88,6 @@ int main(int argc, const char * argv[]) {
 
     auto output_palette_path = output_directory;
     output_palette_path.append("palette.h");
-//    File::dump_array(palette.ics_palette(), output_palette_path.string());
     std::ofstream output_palette_stream(output_palette_path, std::ios::out);
     DataHeader::generate_header(palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
 
@@ -98,10 +97,8 @@ int main(int argc, const char * argv[]) {
 void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image) {
     // TEST: try encoding and saving the PNG
 
-    //create encoder and set settings and info (optional)
     lodepng::State saved_state;
 
-    //generate palette
     for (auto it = begin(palette); it != end(palette); ++it) {
         uint32_t color = *it;
         uint8_t a = color >> 24 & 0xff;
@@ -117,13 +114,12 @@ void save_png(std::string path, uint width, uint height, std::vector<uint32_t> p
     //both the raw image and the encoded image must get colorType 3 (palette)
     saved_state.info_png.color.colortype = LCT_PALETTE; //if you comment this line, and create the above palette in info_raw instead, then you get the same image in a RGBA PNG.
 
-    // FIXME: GIMP put this back up to 8bpp, mind the colors in index table
+    // GIMP put this back up to 8bpp, mind the colors in index table
     saved_state.info_png.color.bitdepth = 4;
     saved_state.info_raw.colortype = LCT_PALETTE;
     saved_state.info_raw.bitdepth = 4;
     saved_state.encoder.auto_convert = 4; //we specify ourselves exactly what output PNG color mode we want
 
-    //encode and save
     std::vector<uint8_t> save_buffer;
     uint error = lodepng::encode(save_buffer, image.empty() ? 0 : &image[0], width, height, saved_state);
     if (error) {
