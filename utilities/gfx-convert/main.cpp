@@ -1,17 +1,17 @@
-// TODO: proper header
-
 #include <stdint.h>
 
 #include <iostream>
 #include <iomanip>
 #include <filesystem>
+#include <fstream>
 
 #include "lodepng.h"
 #include "lodepng_util.h"
 
 #include "Palette.hpp"
 #include "Tiles.hpp"
-#include "File.hpp"
+
+#include "DataHeader.hpp"
 
 // PNG functions, relocate accordingly
 void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image);
@@ -19,8 +19,8 @@ void save_png(std::string path, uint width, uint height, std::vector<uint32_t> p
 
 int main(int argc, const char * argv[]) {
     if (argc < 3) {
-        std::cout << "usage: gfx-convert <filename> <output>" << std::endl;
-        return 1;
+        std::cout << "Usage: gfx-convert <filename> <output>" << std::endl;
+        return EXIT_SUCCESS;
     }
 
     const auto filename = argv[1];
@@ -32,7 +32,7 @@ int main(int argc, const char * argv[]) {
     auto error = lodepng::load_file(buffer, filename);
     if (error) {
         std::cerr << "failed to load file: " << lodepng_error_text(error) << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     uint width, height;
@@ -44,7 +44,7 @@ int main(int argc, const char * argv[]) {
     error = lodepng::decode(decoded, width, height, state, buffer);
     if (error) {
         std::cerr << "failed to decode png: " << lodepng_error_text(error) << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     if (state.info_png.color.colortype == LCT_PALETTE) {
@@ -52,7 +52,7 @@ int main(int argc, const char * argv[]) {
         std::cout << "palette size: " << state.info_raw.palettesize << std::endl;
     } else {
         std::cerr << "non-color-indexed PNG files not supported for now" << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     // output palette
@@ -79,16 +79,20 @@ int main(int argc, const char * argv[]) {
 
     auto tiles = Tiles(indexed_image, width, height);
     auto output_tiles_path = output_directory;
-    output_tiles_path.append("tiles.bin");
-    File::dump_array(tiles.ics_tiles(), output_tiles_path.string());
+    output_tiles_path.append("tiles.h");
+
+    std::ofstream output_tiles_stream(output_tiles_path, std::ios::out);
+    DataHeader::generate_header(tiles.ics_tiles(), "uint32_t", "tiles", output_tiles_stream);
 
     // ics palette binary
 
     auto output_palette_path = output_directory;
-    output_palette_path.append("palette.bin");
-    File::dump_array(palette.ics_palette(), output_palette_path.string());
+    output_palette_path.append("palette.h");
+//    File::dump_array(palette.ics_palette(), output_palette_path.string());
+    std::ofstream output_palette_stream(output_palette_path, std::ios::out);
+    DataHeader::generate_header(palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void save_png(std::string path, uint width, uint height, std::vector<uint32_t> palette, std::vector<uint8_t> image) {

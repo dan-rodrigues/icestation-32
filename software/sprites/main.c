@@ -27,18 +27,21 @@ int main() {
 
     vdp_set_vram_increment(1);
     vdp_seek_vram(tile_base);
-    for (uint16_t i = 0; i < _Users_dan_rodrigues_Documents_tiles_bin_len / 2; i++) {
-        vdp_write_vram(_Users_dan_rodrigues_Documents_tiles_bin[i * 2] | _Users_dan_rodrigues_Documents_tiles_bin[i * 2 + 1] << 8);
+
+    for (uint16_t i = 0; i < tiles_length; i++) {
+        vdp_write_vram(tiles[i] & 0xffff);
+        vdp_write_vram(tiles[i] >> 16);
     }
 
     // palette
 
     vdp_seek_palette(0);
-    for (uint16_t i = 0; i < _Users_dan_rodrigues_Documents_palette_bin_len / 2; i++) {
-        vdp_write_palette_color(_Users_dan_rodrigues_Documents_palette_bin[i * 2] | _Users_dan_rodrigues_Documents_palette_bin[i * 2 + 1] << 8);
+    for (uint16_t i = 0; i < palette_length; i++) {
+        vdp_write_palette_color(palette[i]);
     }
 
-    // random color?
+    // background color
+
     vdp_set_single_palette_color(0, 0xf088);
 
     // place a sprite
