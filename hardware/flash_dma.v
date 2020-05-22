@@ -29,7 +29,7 @@ module flash_dma #(
     output [31:0] write_data,
 
     // mimic picorv32 wstrb
-    output reg [3:0] write_strobe,
+    output reg [3:0] wstrb,
 
     // only used for IPL on startup to take control of bus
     output reg dma_busy,
@@ -143,7 +143,7 @@ module flash_dma #(
     always @(posedge clk) begin
         if (reset) begin
             if (ENABLE_IPL) begin
-                write_strobe <= 0;
+                wstrb <= 0;
                 flash_write_ready_next <= 1'b1;
                 write_address <= FLASH_WRITE_BASE[15:2];
 
@@ -153,17 +153,17 @@ module flash_dma #(
                 dma_busy <= 0;
             end
         end else begin
-            write_strobe <= 0;
+            wstrb <= 0;
             flash_write_ready_next <= 1;
 
             // post-increment address after each write
-            if (write_strobe[0]) begin
+            if (wstrb[0]) begin
                 write_address <= write_address + 1;
             end
 
             if (flash_write_data_ready) begin
                 flash_write_ready_next <= 0;
-                write_strobe <= 4'b1111;
+                wstrb <= 4'b1111;
             end
 
             if (!flash_loading) begin

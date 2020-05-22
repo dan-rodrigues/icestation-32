@@ -21,7 +21,6 @@ module vdp_sprite_render(
     input [13:0] vram_base_address,
     output reg [13:0] vram_read_address,
     input [31:0] vram_read_data,
-    input vram_reading,
     input vram_data_valid,
 
     // shared between g_block / x_block attributes
@@ -43,7 +42,9 @@ module vdp_sprite_render(
     input width_select,
     input hit_list_ended
 );
+    // verilator lint_off UNUSED
     reg finished;
+    // verilator lint_on UNUSED
 
     wire hit_list_end_reached = x_block_finished;
 

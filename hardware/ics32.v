@@ -8,7 +8,7 @@
 
 module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
-    parameter FORCE_FAST_CPU = 1,
+    parameter FORCE_FAST_CPU = 0,
     parameter integer RESET_DURATION = 1 << 10,
     parameter ENABLE_IPL = 1
 ) (
@@ -126,7 +126,7 @@ module ics32 #(
     // --- Address deccoder ---
 
     wire vdp_en, vdp_write_en;
-    wire cpu_ram_en, cpu_ram_write_en;
+    wire cpu_ram_en;
     wire status_en, status_write_en;
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
@@ -148,7 +148,6 @@ module ics32 #(
         .status_write_en(status_write_en),
 
         .cpu_ram_en(cpu_ram_en),
-        .cpu_ram_write_en(cpu_ram_write_en),
 
         .dsp_en(dsp_en),
         .dsp_write_en(dsp_write_en),
@@ -338,7 +337,6 @@ module ics32 #(
     wire [14:0] cpu_ram_address;
     wire [3:0] cpu_ram_wstrb;
     wire cpu_ram_cs;
-    wire cpu_ram_wren;
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU)
@@ -352,12 +350,11 @@ module ics32 #(
         .cpu_wstrb(cpu_wstrb),
 
         .dma_busy(dma_busy),
-        .dma_wstrb(dma_wstrb),
         .dma_write_data(dma_write_data),
         .dma_address(dma_write_address),
+        .dma_wstrb(dma_wstrb),
 
         .cpu_ram_en(cpu_ram_en),
-        .cpu_ram_write_en(cpu_ram_write_en),
         .vdp_en(vdp_en),
         .flash_read_en(flash_read_en),
         .dsp_en(dsp_en),
@@ -379,8 +376,7 @@ module ics32 #(
         .cpu_ram_write_data(cpu_ram_data_in),
         .cpu_ram_address(cpu_ram_address),
         .cpu_ram_wstrb(cpu_ram_wstrb),
-        .cpu_ram_cs(cpu_ram_cs),
-        .cpu_ram_wren(cpu_ram_wren)
+        .cpu_ram_cs(cpu_ram_cs)
     );
 
     // --- CPU ---
@@ -455,8 +451,8 @@ module ics32 #(
     // --- Flash interface ---
 
     wire [31:0] dma_write_data;
-    wire [31:0] dma_write_address;
     wire [3:0] dma_wstrb;
+    wire [31:0] dma_write_address;
     wire dma_busy;
 
     wire flash_read_ready;
@@ -475,8 +471,8 @@ module ics32 #(
 
         .write_address(dma_write_address),
         .write_data(dma_write_data),
-        .write_strobe(dma_wstrb),
         .dma_busy(dma_busy),
+        .wstrb(dma_wstrb),
 
         .flash_sck(flash_sck),
         .flash_csn(flash_csn),

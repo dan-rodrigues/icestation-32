@@ -27,7 +27,7 @@ module vdp_host_interface #(
     reg read_en_in_r, read_en_in_d;
 
     // only used in 8bit mode
-    reg [15:0] data_in_r;
+    reg [7:0] data_in_r;
     reg [6:0] address_in_r;
     
     always @(posedge clk) begin

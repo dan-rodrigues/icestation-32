@@ -19,11 +19,10 @@ module bus_arbiter #(
     // DMA inputs
     input [15:0] dma_address,
     input [31:0] dma_write_data,
-    input [3:0] dma_wstrb,
     input dma_busy,
+    input [3:0] dma_wstrb,
 
     // address decoder inputs
-    input cpu_ram_write_en,
     input vdp_en,
     input flash_read_en,
     input cpu_ram_en,
@@ -48,17 +47,15 @@ module bus_arbiter #(
     output [31:0] cpu_ram_write_data,
     output [15:0] cpu_ram_address,
     output [3:0] cpu_ram_wstrb,
-    output cpu_ram_cs,
-    output cpu_ram_wren
+    output cpu_ram_cs
 );
-    assign cpu_ram_wstrb = dma_busy ? 4'hf : {
+    assign cpu_ram_wstrb = dma_busy ? dma_wstrb : {
         cpu_wstrb[3],
         cpu_wstrb[2],
         cpu_wstrb[1],
         cpu_wstrb[0]
     };
 
-    assign cpu_ram_wren = dma_busy ? |dma_wstrb : cpu_ram_write_en;
     assign cpu_ram_cs = dma_busy ? 1'b1 : cpu_ram_en;
 
     assign cpu_ram_write_data = dma_busy ? dma_write_data : cpu_write_data;

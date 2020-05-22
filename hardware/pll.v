@@ -9,7 +9,9 @@
 module pll #(
     parameter ENABLE_FAST_CLK = 1
 ) (
+    // verilator lint_off UNUSED
     input clk_12m,
+    // verilator lint_on UNUSED
 
     output locked,
     output clk_1x /* verilator clocker */,

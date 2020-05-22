@@ -21,7 +21,6 @@ module vdp_sprite_core(
     input [13:0] vram_base_address,
     output [13:0] vram_read_address,
     input [31:0] vram_read_data,
-    input vram_reading,
     input vram_data_valid,
 
     output [7:0] pixel,
@@ -293,7 +292,6 @@ module vdp_sprite_core(
         .vram_base_address(vram_base_address),
         .vram_read_address(vram_read_address),
         .vram_read_data(vram_read_data),
-        .vram_reading(vram_reading),
         .vram_data_valid(vram_data_valid),
 
         .sprite_meta_address(blitter_sprite_meta_read_address),

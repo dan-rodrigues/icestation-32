@@ -26,7 +26,7 @@ module vdp_vga_timing #(
     output reg line_ended,
     output reg frame_ended,
 
-    // output reg active_line_started,
+    output reg active_line_started,
     output reg active_frame_ended,
 
     output reg hsync,
@@ -105,7 +105,6 @@ module vdp_vga_timing #(
 
     wire [10:0] raster_x_nx;
     wire [10:0] raster_y_nx;
-    wire last_line = raster_y == (V_SIZE - 1);
 
     always @* begin
         raster_x_nx = raster_x + 1;
@@ -132,7 +131,7 @@ module vdp_vga_timing #(
         active_display <= active_display_nx;
         line_ended <= line_ended_nx;
         frame_ended <= frame_ended_nx;
-        // active_line_started <= active_line_started_nx;
+        active_line_started <= active_line_started_nx;
         active_frame_ended <= active_frame_ended_nx;
     end
 

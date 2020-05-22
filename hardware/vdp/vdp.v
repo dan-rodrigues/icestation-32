@@ -104,6 +104,8 @@ module vdp #(
     wire [11:0] raster_x;
     wire [10:0] raster_y;
 
+    // verilator lint_off PINMISSING
+
     vdp_vga_timing #(
         .H_ACTIVE_WIDTH(H_ACTIVE_WIDTH),
         .V_ACTIVE_HEIGHT(V_ACTIVE_HEIGHT),
@@ -127,6 +129,8 @@ module vdp #(
         .line_ended(line_ended),
         .frame_ended(frame_ended)
     );
+
+    // verilator lint_on PINMISSING
 
     // --- Host interface ---
 
@@ -589,9 +593,12 @@ module vdp #(
     // --- Priority control --- 
 
     wire [7:0] prioritized_pixel;
-    // wire [4:0] prioritized_layer;
     wire [4:0] prioritized_masked_layer;
     wire [7:0] prioritized_masked_pixel;
+
+    // verilator lint_off UNUSED
+    wire [4:0] prioritized_layer;
+    // verilator lint_on UNUSED
 
     wire [4:0] layer_mask;
 
@@ -612,7 +619,7 @@ module vdp #(
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),
-        // .prioritized_layer(prioritized_layer),
+        .prioritized_layer(prioritized_layer),
         .prioritized_masked_layer(prioritized_masked_layer),
         .prioritized_masked_pixel(prioritized_masked_pixel)
     );
@@ -646,13 +653,10 @@ module vdp #(
         tile_address_gen_base_address = 0;
 
         vram_sprite_read_data_valid = 0;
-        vram_sprite_reading = 0;
 
         // TODO: define and document the -1 offset in one place
         case ((raster_x[2:0] - 1) &3'b111)
             0: begin
-                vram_sprite_reading = 1;
-
                 // now: s2/s3 map data
                 scroll_meta_load = LAYER_SCROLL2_OHE | LAYER_SCROLL3_OHE;
 
@@ -666,8 +670,6 @@ module vdp #(
                 tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[1]);
             end
             1: begin
-                vram_sprite_reading = 1;
-
                 // now: sprite row data available
                 vram_sprite_read_data_valid = 1;
 
@@ -732,8 +734,6 @@ module vdp #(
                 load_all_scroll_row_data = 1;
             end
             7: begin
-                vram_sprite_reading = 1;
-
                 // host write - every 8 cycles
                 vram_address_even_nx = vram_write_address_16b;
                 vram_address_odd_nx = vram_write_address_16b;
@@ -758,7 +758,6 @@ module vdp #(
 
     wire [13:0] vram_sprite_address;
     wire vram_sprite_read_data_valid;
-    wire vram_sprite_reading;
 
     wire sprite_core_reset = line_ended;
 
@@ -777,7 +776,6 @@ module vdp #(
         .vram_base_address(tile_base_coarse_to_address(sprite_tile_base)),
         .vram_read_address(vram_sprite_address),
         .vram_read_data(vram_read_data_r),
-        .vram_reading(vram_sprite_reading),
         .vram_data_valid(vram_sprite_read_data_valid),
 
         .pixel(sprite_pixel),
