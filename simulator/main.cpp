@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]) {
     // 2. present an SDL window to simulate video output
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cout << "SDL_Init() failed: " << SDL_GetError() << std::endl;
+        std::cerr << "SDL_Init() failed: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -105,7 +105,7 @@ int main(int argc, const char * argv[]) {
     bool even_frame = true;
 
 #if VM_TRACE
-    const auto trace_path = "trace/ics.vcd";
+    const auto trace_path = "ics.vcd";
 
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
 
