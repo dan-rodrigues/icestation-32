@@ -9,6 +9,20 @@
 
 void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y);
 
+typedef struct {
+    uint8_t sprite_count;
+    uint16_t angle_delta;
+    int16_t radius;
+    uint8_t palette;
+} CircleArrangement;
+
+/*
+ static const int16_t circle_counts_table[] = {32, 16, 8, 1};
+ static const int16_t circle_angle_delta_table[] = {SIN_MAX / 32, SIN_MAX / 16, SIN_MAX / 8, SIN_MAX / 1};
+ static const int16_t circle_radius_table[] = {192, 128, 64, 0};
+ static const uint8_t circle_palette_ids[] = {yellow_palette, green_palette, red_palette, magenta_palette};
+ */
+
 int main() {
     vdp_enable_layers(SPRITES);
     vdp_set_alpha_over_layers(SPRITES);
@@ -82,27 +96,29 @@ int main() {
         uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
         crystal_tile_base += (crystal_frame & 4) ? crystal_frames_bank_1 : crystal_frames_bank_0;
 
-        const uint8_t circle_sprites = 16;
-
         const int16_t sprite_x_offset = -16;
         const int16_t sprite_y_offset = -16;
 
-        const uint8_t circle_count = 4;
+        static const CircleArrangement circle_arrangements[] = {
+            {.sprite_count = 32, .angle_delta = SIN_MAX / 32, .radius = 192, .palette = yellow_palette},
+            {.sprite_count = 16, .angle_delta = SIN_MAX / 16, .radius = 128, .palette = green_palette},
+            {.sprite_count = 8, .angle_delta = SIN_MAX / 8, .radius = 64, .palette = red_palette},
+            {.sprite_count = 1, .angle_delta = SIN_MAX / 1, .radius = 0, .palette = magenta_palette},
+        };
 
-        static const int16_t circle_counts_table[] = {32, 16, 8, 1};
-        static const int16_t circle_angle_delta_table[] = {SIN_MAX / 32, SIN_MAX / 16, SIN_MAX / 8, SIN_MAX / 1};
-        static const int16_t circle_radius_table[] = {192, 128, 64, 0};
-        static const uint8_t circle_palette_ids[] = {yellow_palette, green_palette, red_palette, magenta_palette};
+        const size_t circle_count = sizeof(circle_arrangements) / sizeof(CircleArrangement);
 
         for (uint8_t circle = 0; circle < circle_count; circle++) {
-            int16_t radius = circle_radius_table[circle];
-            uint8_t palette = circle_palette_ids[circle];
-            uint8_t sprite_count = circle_counts_table[circle];
-            uint16_t angle_delta = circle_angle_delta_table[circle];
+            CircleArrangement arrangement = circle_arrangements[circle];
+
+            int16_t radius = arrangement.radius;
+            uint8_t palette = arrangement.palette;
+            uint8_t sprite_count = arrangement.sprite_count;
+            uint16_t angle_delta = arrangement.angle_delta;
 
             uint16_t angle = frame_counter;
+
             for (uint8_t i = 0; i < sprite_count; i++) {
-//                uint16_t angle = i * angle_step + frame_counter;
                 int16_t sin_t = sin(angle);
                 int16_t cos_t = cos(angle);
 
