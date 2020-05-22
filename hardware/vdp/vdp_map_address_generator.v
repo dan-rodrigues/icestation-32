@@ -1,3 +1,9 @@
+// vdp_map_address_generator.v
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 `default_nettype none
 
 module vdp_map_address_generator(
