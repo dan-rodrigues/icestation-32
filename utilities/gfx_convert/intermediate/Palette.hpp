@@ -1,16 +1,15 @@
 #ifndef Palette_hpp
 #define Palette_hpp
 
+#include <stdint.h>
 #include <vector>
-
-#include "lodepng.h"
 
 class Palette {
 
 public:
-    Palette(lodepng::State state);
+    Palette(std::vector<uint32_t> rgba32_palette);
 
-    std::vector<uint32_t> colors;
+    std::vector<uint32_t> rgba32_palette;
 
     std::vector<uint16_t> ics_palette();
 };

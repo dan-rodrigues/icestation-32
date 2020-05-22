@@ -24,9 +24,7 @@ int main(int argc, const char * argv[]) {
     }
 
     std::ofstream stream(output_path);
-
     DataHeader::generate_header(std::vector<int16_t>(table, table + count), "int16_t", "sin_table", stream);
-
     stream.close();
 
     return EXIT_SUCCESS;
