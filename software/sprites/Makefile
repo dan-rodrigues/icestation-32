@@ -9,6 +9,8 @@ SOURCES = \
 HEADERS = \
 	../common/font.h \
 	../common/font8x8_basic.h \
+	../lib/vdp.h \
+	../lib/math_util.h \
 	tiles.h \
 	palette.h
 

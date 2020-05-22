@@ -61,7 +61,8 @@ int main(int argc, const char * argv[]) {
     auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
     auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
 
-    for (uint16_t i = 0; i < cpu_program.size() / 4; i++) {
+    size_t ipl_load_length = std::min((size_t)0x10000, cpu_program.size());
+    for (uint16_t i = 0; i < ipl_load_length / 4; i++) {
         cpu_ram0[i] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
         cpu_ram1[i] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
     }

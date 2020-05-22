@@ -7,6 +7,7 @@ SOURCES = \
 
 HEADERS = \
 	../common/font.h \
+	../lib/vdp.h \
 	../common/font8x8_basic.h
 
 include ../common/common.mk
