@@ -1,4 +1,4 @@
-// vdp.v
+// vdp_vga_timing.v
 //
 // Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
