@@ -135,14 +135,12 @@ int main(int argc, const char * argv[]) {
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
-        // note the sync signals here are NOT the VGA ones (those are vga_hsync / vga_vsync)
-        // these are single-cycle strobes that are asserted only at the very end of a line (or frame)
-        if (tb->hsync) {
+        if (tb->line_ended) {
             current_x = 0;
             current_y++;
         }
 
-        if (tb->vsync) {
+        if (tb->frame_ended) {
             current_y = 0;
             even_frame = !even_frame;
 

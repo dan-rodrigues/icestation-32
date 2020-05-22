@@ -39,11 +39,9 @@ module vdp #(
 
     output active_display,
 
-    // single cycle strobes, NOT suitable for VGA
+    // single-cycle strobes, NOT suitable for VGA
 
-    output hsync,
-    output vsync,
-
+    output line_ended,
     output frame_ended,
     output active_frame_ended,
 
@@ -105,12 +103,6 @@ module vdp #(
 
     wire [11:0] raster_x;
     wire [10:0] raster_y;
-
-    wire line_ended;
-    wire frame_ended;
-
-    assign hsync = line_ended;
-    assign vsync = frame_ended;
 
     vdp_vga_timing #(
         .H_ACTIVE_WIDTH(H_ACTIVE_WIDTH),

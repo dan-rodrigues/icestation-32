@@ -1,5 +1,8 @@
-// 848x480@60hz
-// 640x480@60hz
+// vdp.v
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
 
 module vdp_vga_timing #(
     parameter H_ACTIVE_WIDTH = 848,

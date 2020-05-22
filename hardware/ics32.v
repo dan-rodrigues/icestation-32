@@ -24,8 +24,8 @@ module ics32 #(
     output vga_clk,
     output vga_de,
 
-    output hsync,
-    output vsync,
+    output line_ended,
+    output frame_ended,
 
     output led_r,
     output led_b,
@@ -285,11 +285,11 @@ module ics32 #(
         .b(vga_b),
 
         .active_display(active_display),
-        .active_frame_ended(vdp_active_frame_ended),
         .target_raster_hit(vdp_target_raster_hit),
 
-        .hsync(hsync),
-        .vsync(vsync),
+        .line_ended(line_ended),
+        .frame_ended(frame_ended),
+        .active_frame_ended(vdp_active_frame_ended),
         
         .vram_address_even(vram_address_even),
         .vram_we_even(vram_we_even),
