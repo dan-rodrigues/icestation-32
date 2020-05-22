@@ -1,5 +1,7 @@
+COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
+
 CROSS = riscv-none-embed-
-CFLAGS = -Wall -Os -flto -march=rv32i -I$(dir $(lastword $(MAKEFILE_LIST))) -I$(dir $(lastword $(MAKEFILE_LIST)))../lib/ -I./ -ffreestanding -nostdlib
+CFLAGS = -Wall -Os -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
 LDS = ../common/sections.lds
