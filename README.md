@@ -41,7 +41,7 @@ make prog
 
 ### Programming software on iCEBreaker
 
-Demo software is included under `/software` and can be programmed separately. An example to program the `sprites` demo:
+Demo software is included under `/software` and can be programmed separately. For example, to build and program the `sprites` demo:
 
 ```
 cd software/sprites/
@@ -51,7 +51,7 @@ iceprog -o 1M prog.bin
 
 ### Running simulator (Verilator + SDL2)
 
-A simulator using SDL2 and its documentation is included in (simulator)[simulator/README.md].
+A simulator using SDL2 and its documentation is included in the [/simulator](simulator/) directory.
 
 ## TODO
 

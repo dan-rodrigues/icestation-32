@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 const int16_t sin_table[] = {
     0x0000,
     0x0064,
