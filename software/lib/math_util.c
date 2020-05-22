@@ -26,7 +26,6 @@ int32_t sys_multiply(int16_t a, int16_t b) {
 
 // sin and cos
 
-static const uint16_t SIN_PERIOD = 0x400;
 static const uint16_t SIN_HALF_PERIOD = SIN_PERIOD / 2;
 static const uint16_t SIN_QUARTER_PERIOD = SIN_PERIOD / 4;
 

@@ -11,7 +11,8 @@
 
 int32_t sys_multiply(int16_t a, int16_t b);
 
-#define SIN_MAX 0x400
+static const uint16_t SIN_PERIOD = 0x400;
+static const int16_t SIN_MAX = 0x4000;
 
 int16_t cos(uint16_t angle);
 int16_t sin(uint16_t angle);

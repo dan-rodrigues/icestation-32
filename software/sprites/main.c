@@ -100,10 +100,10 @@ int main() {
         const int16_t sprite_y_offset = -16;
 
         static const CircleArrangement circle_arrangements[] = {
-            {.sprite_count = 32, .angle_delta = SIN_MAX / 32, .radius = 192, .palette = yellow_palette},
-            {.sprite_count = 16, .angle_delta = SIN_MAX / 16, .radius = 128, .palette = green_palette},
-            {.sprite_count = 8, .angle_delta = SIN_MAX / 8, .radius = 64, .palette = red_palette},
-            {.sprite_count = 1, .angle_delta = SIN_MAX / 1, .radius = 0, .palette = magenta_palette},
+            {.sprite_count = 32, .angle_delta = SIN_PERIOD / 32, .radius = 192, .palette = yellow_palette},
+            {.sprite_count = 16, .angle_delta = SIN_PERIOD / 16, .radius = 128, .palette = green_palette},
+            {.sprite_count = 8, .angle_delta = SIN_PERIOD / 8, .radius = 64, .palette = red_palette},
+            {.sprite_count = 1, .angle_delta = SIN_PERIOD / 1, .radius = 0, .palette = magenta_palette},
         };
 
         const size_t circle_count = sizeof(circle_arrangements) / sizeof(CircleArrangement);
