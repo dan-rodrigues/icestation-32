@@ -83,23 +83,26 @@ int main() {
         crystal_tile_base += (crystal_frame & 4) ? crystal_frames_bank_1 : crystal_frames_bank_0;
 
         const uint8_t circle_sprites = 16;
-        const uint16_t angle_step = 1024 / circle_sprites;
-        const int16_t circle_radius = 192;
 
         const int16_t sprite_x_offset = -16;
         const int16_t sprite_y_offset = -16;
 
         const uint8_t circle_count = 4;
 
-        static const int16_t circle_radius_table[] = {192, 96, 48, 0};
+        static const int16_t circle_counts_table[] = {32, 16, 8, 1};
+        static const int16_t circle_angle_delta_table[] = {SIN_MAX / 32, SIN_MAX / 16, SIN_MAX / 8, SIN_MAX / 1};
+        static const int16_t circle_radius_table[] = {192, 128, 64, 0};
         static const uint8_t circle_palette_ids[] = {yellow_palette, green_palette, red_palette, magenta_palette};
 
         for (uint8_t circle = 0; circle < circle_count; circle++) {
             int16_t radius = circle_radius_table[circle];
             uint8_t palette = circle_palette_ids[circle];
+            uint8_t sprite_count = circle_counts_table[circle];
+            uint16_t angle_delta = circle_angle_delta_table[circle];
 
-            for (uint8_t i = 0; i < circle_sprites; i++) {
-                uint16_t angle = i * angle_step + frame_counter;
+            uint16_t angle = frame_counter;
+            for (uint8_t i = 0; i < sprite_count; i++) {
+//                uint16_t angle = i * angle_step + frame_counter;
                 int16_t sin_t = sin(angle);
                 int16_t cos_t = cos(angle);
 
@@ -110,6 +113,8 @@ int main() {
                 sprite_y += screen_center_y + sprite_y_offset;
 
                 draw_crystal_sprite(&base_sprite_id, crystal_tile_base, palette, sprite_x, sprite_y);
+
+                angle += angle_delta;
             }
         }
 

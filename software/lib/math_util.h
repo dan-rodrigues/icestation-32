@@ -11,6 +11,8 @@
 
 int32_t sys_multiply(int16_t a, int16_t b);
 
+#define SIN_MAX 0x400
+
 int16_t cos(uint16_t angle);
 int16_t sin(uint16_t angle);
 
