@@ -32,23 +32,26 @@ This repo is still in its early stages and its and contents (including this READ
 * icetools
 * GNU RISC-V toolchain
 
+### Programming bitstream on iCEBreaker
 
-### Creating bitstream
-
-```
-cd hardware
-make
-```
-
-### Running on iCEBreaker
 ```
 cd hardware
 make prog
 ```
 
-### Running VGA simulation using Verilator
+### Programming software on iCEBreaker
 
-To be completed when the simulator files are published.
+Demo software is included under `/software` and can be programmed separately. An example to program the `sprites` demo:
+
+```
+cd software/sprites/
+make
+iceprog -o 1M prog.bin
+```
+
+### Running simulator (Verilator + SDL2)
+
+A simulator using SDL2 and its documentation is included in (simulator)[simulator/README.md].
 
 ## TODO
 

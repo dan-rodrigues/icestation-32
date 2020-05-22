@@ -6,17 +6,19 @@ A few demo applications are included so far:
 
 * GNU RISC-V toolchain
 
-## `hello_world/`
-
-Minimal example using a single scrolling layer to display monochrome text.
-
-![hello_world demo](screenshots/hello_world.png)
+The `CROSS` variable in `common/common.mk` must be set according to the name of your RISC-V installation.
 
 ## `sprites/`
 
 Animated sprites demo. A palette-based PNG file is converted to the ics-32 format and compiled into the demo. This demo also shows alpha blending of sprites onto a variable backgroud color.
 
 ![sprites demo](screenshots/sprites.png)
+
+## `hello_world/`
+
+Minimal example using a single scrolling layer to display monochrome text.
+
+![hello_world demo](screenshots/hello_world.png)
 
 ## Other demos
 
