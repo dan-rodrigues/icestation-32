@@ -6,6 +6,11 @@
 
 /sections_p.lds
 
+# Build artefacts
+
+/tiles.h
+/palette.h
+
 # Optional disassembly
 
 /dasm
