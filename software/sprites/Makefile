@@ -1,12 +1,3 @@
-# TODO: share common rules in a shared Makefile instead of repeating them here
-
-CROSS = riscv-none-embed-
-CFLAGS = -Wall -Os -flto -march=rv32i -I../lib/ -I../common/ -ffreestanding -nostdlib
-DFLAGS = --line-numbers
-
-LDS = ../common/sections.lds
-LDS_P = sections_p.lds
-
 SOURCES = \
 	main.c \
 	../common/vectors.S \
@@ -22,8 +13,7 @@ HEADERS = \
 	palette.h \
 	sin_table.h
 
-prog.bin: prog.elf
-	$(CROSS)objcopy -O binary prog.elf prog.bin
+include ../common/common.mk
 
 PNG = crystal-32-ia.png
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
@@ -43,15 +33,3 @@ tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
 
 sin_table.h: $(SIN_TABLE_GEN)
 	$(SIN_TABLE_GEN) sin_table.h
-
-dasm: prog.elf
-	$(CROSS)objdump -d $(DFLAGS) prog.elf > dasm
-
-$(LDS_P): $(LDS)
-	$(CROSS)cpp -P -o $@ $^
-
-prog.elf: $(LDS_P) $(HEADERS) $(SOURCES)
-	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -o prog.elf $(SOURCES)
-
-clean:
-	rm -f prog.elf prog.hex prog.bin
