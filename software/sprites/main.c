@@ -69,7 +69,10 @@ int main() {
 
     // background color
 
+    // teal
     vdp_set_single_palette_color(0, 0xf088);
+
+    vdp_set_single_palette_color(0, 0xf800);
 
     // sprite pattern arrangement
     
@@ -96,9 +99,6 @@ int main() {
         uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
         crystal_tile_base += (crystal_frame & 4) ? crystal_frames_bank_1 : crystal_frames_bank_0;
 
-        const int16_t sprite_x_offset = -16;
-        const int16_t sprite_y_offset = -16;
-
         static const CircleArrangement circle_arrangements[] = {
             {.sprite_count = 32, .angle_delta = SIN_PERIOD / 32, .radius = 192, .palette = yellow_palette},
             {.sprite_count = 16, .angle_delta = SIN_PERIOD / 16, .radius = 128, .palette = green_palette},
@@ -107,6 +107,11 @@ int main() {
         };
 
         const size_t circle_count = sizeof(circle_arrangements) / sizeof(CircleArrangement);
+
+        static const uint16_t back_color_table[] = {0xf088, 0xf800, 0xf888, 0xf000};
+//        uint8_t back_color_index = frame_counter / 0x80 & 3;
+        uint8_t back_color_index = frame_counter & 3;
+        vdp_set_single_palette_color(0, back_color_table[back_color_index]);
 
         for (uint8_t circle = 0; circle < circle_count; circle++) {
             CircleArrangement arrangement = circle_arrangements[circle];
@@ -125,8 +130,8 @@ int main() {
                 int16_t sprite_x = sys_multiply(cos_t, -radius) / 0x4000;
                 int16_t sprite_y = sys_multiply(sin_t, -radius) / 0x4000;
 
-                sprite_x += screen_center_x + sprite_x_offset;
-                sprite_y += screen_center_y + sprite_y_offset;
+                sprite_x += screen_center_x;
+                sprite_y += screen_center_y;
 
                 draw_crystal_sprite(&base_sprite_id, crystal_tile_base, palette, sprite_x, sprite_y);
 
@@ -142,15 +147,18 @@ int main() {
 }
 
 void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y) {
+    const int16_t sprite_x_offset = -16;
+    const int16_t sprite_y_offset = -16;
+
     vdp_seek_sprite(*base_sprite_id);
 
     for (uint8_t i = 0; i < 4; i++) {
         bool right_column = (i & 1);
         bool bottom_row = (i & 2);
 
-        uint16_t x_block = x + (right_column ? 0x10 : 0);
+        uint16_t x_block = x + sprite_x_offset + (right_column ? 0x10 : 0);
 
-        uint16_t y_block = y + (bottom_row ? 0x10 : 0);
+        uint16_t y_block = y + sprite_y_offset + (bottom_row ? 0x10 : 0);
         y_block |= SPRITE_16_TALL | SPRITE_16_WIDE;
 
         uint16_t g_block = base_tile;
