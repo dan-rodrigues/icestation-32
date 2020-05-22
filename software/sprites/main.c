@@ -45,7 +45,7 @@ static const uint8_t CRYSTAL_FRAME_WIDTH = 32;
 
 // options to toggle
 
-// layers must be opted into alpha compositing
+// layers must be opted into alpha compositing (normally just 1 layer due to blender limits)
 // without it enabled, the "alpha" channel is treated as an intensity from black to the original color
 // with it enabled, the alpha channel is used to blend with the topmost opaque layer beneath it
 static const bool ENABLE_SPRITE_ALPHA = true;
@@ -113,6 +113,8 @@ int main() {
 
         vdp_set_single_palette_color(0, CYCLED_BACKGROUND_COLORS[back_color_index]);
 
+        vdp_seek_sprite(0);
+
         for (uint8_t circle = 0; circle < CIRCLE_ARRANGEMENT_COUNT; circle++) {
             CircleArrangement arrangement = CIRCLE_ARRANGEMENTS[circle];
 
@@ -152,8 +154,6 @@ int main() {
 void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y) {
     const int16_t sprite_x_offset = -16;
     const int16_t sprite_y_offset = -16;
-
-    vdp_seek_sprite(*base_sprite_id);
 
     for (uint8_t i = 0; i < 4; i++) {
         bool right_column = (i & 1);
