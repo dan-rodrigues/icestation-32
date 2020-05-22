@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+`default_nettype none
+
 module vdp_vga_timing #(
     parameter H_ACTIVE_WIDTH = 848,
     parameter V_ACTIVE_HEIGHT = 480,
