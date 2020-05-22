@@ -25,9 +25,8 @@ module vdp_vga_timing #(
 
     output reg line_ended,
     output reg frame_ended,
-    output reg last_active_display_pixel,
 
-    output reg active_line_started,
+    // output reg active_line_started,
     output reg active_frame_ended,
 
     output reg hsync,
@@ -54,7 +53,6 @@ module vdp_vga_timing #(
 
     wire active_display_nx = y_fsm == STATE_ACTIVE && x_fsm_nx == STATE_ACTIVE;
 
-    wire last_active_display_pixel_nx = line_ended_nx && active_frame_ended_nx;
     wire active_line_started_nx = x_fsm == STATE_FP && x_fsm_nx == STATE_ACTIVE;
 
     wire [1:0] x_fsm_nx;
@@ -134,8 +132,7 @@ module vdp_vga_timing #(
         active_display <= active_display_nx;
         line_ended <= line_ended_nx;
         frame_ended <= frame_ended_nx;
-        last_active_display_pixel <= last_active_display_pixel_nx;
-        active_line_started <= active_line_started_nx;
+        // active_line_started <= active_line_started_nx;
         active_frame_ended <= active_frame_ended_nx;
     end
 

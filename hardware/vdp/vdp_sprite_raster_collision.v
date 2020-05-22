@@ -30,13 +30,11 @@ module vdp_sprite_raster_collision #(
     output reg [7:0] sprite_test_id,
 
     // hit list outputs
-    output reg has_collision,
     output reg [8:0] hit_list_index,
     output reg [7:0] sprite_id,
     output reg [3:0] sprite_y_intersect,
     output reg width_select_out,
 
-    output output_valid,
     output reg hit_list_write_en,
 
     output reg finished
@@ -85,9 +83,10 @@ module vdp_sprite_raster_collision #(
     );
 
     reg finished_t;
+    reg output_valid;
 
     reg [8:0] sprite_y_intersect_t;
-    reg has_collision_t;
+    reg has_collision, has_collision_t;
 
     wire [8:0] sprite_y_intersect_nx = raster_y_r - sprite_y_r;
     wire has_collision_nx = sprite_y_intersect_nx < sprite_height_r;

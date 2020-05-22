@@ -41,10 +41,10 @@ module vdp_sprite_render(
     input [7:0] sprite_id,
     input [3:0] line_offset,
     input width_select,
-    input hit_list_ended,
-
-    output reg finished
+    input hit_list_ended
 );
+    reg finished;
+
     wire hit_list_end_reached = x_block_finished;
 
     always @(posedge clk) begin
@@ -222,7 +222,9 @@ module vdp_sprite_render(
     wire [13:0] char_offset = xb_line_offset[2:0] + xb_line_offset[3] * ROW_OFFSET;
     wire [13:0] sprite_row_vram_address = vram_base_address + character_r * 8 + char_offset;
 
+    // verilator lint_off UNUSED
     reg sprite_finished;
+    // verilator lint_on UNUSED
 
     reg vram_fetcher_ready;
 

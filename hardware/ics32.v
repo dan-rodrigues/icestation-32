@@ -451,7 +451,7 @@ module ics32 #(
     );
     
     // verilator lint_restore
-    
+
     // --- Flash interface ---
 
     wire [31:0] dma_write_data;

@@ -7,7 +7,7 @@
 `default_nettype none
 
 // verilator lint_save
-// verilator lint_off PINMISSING
+// verilator lint_off DECLFILENAME
 
 module delay_ff #(
     parameter DELAY = 1,

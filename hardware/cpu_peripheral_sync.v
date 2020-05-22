@@ -70,7 +70,7 @@ module cpu_peripheral_sync(
     reg [31:0] cpu_irq_r;
     reg cpu_mem_ready_r, cpu_mem_ready_d;
 
-    reg cpu_mem_ready_rose, cpu_mem_ready_rose_d;
+    reg cpu_mem_ready_rose;
 
     always @(negedge clk_2x) begin
         cpu_read_data_r <= cpu_read_data;

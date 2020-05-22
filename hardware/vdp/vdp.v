@@ -589,7 +589,7 @@ module vdp #(
     // --- Priority control --- 
 
     wire [7:0] prioritized_pixel;
-    wire [4:0] prioritized_layer;
+    // wire [4:0] prioritized_layer;
     wire [4:0] prioritized_masked_layer;
     wire [7:0] prioritized_masked_pixel;
 
@@ -612,7 +612,7 @@ module vdp #(
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),
-        .prioritized_layer(prioritized_layer),
+        // .prioritized_layer(prioritized_layer),
         .prioritized_masked_layer(prioritized_masked_layer),
         .prioritized_masked_pixel(prioritized_masked_pixel)
     );
