@@ -6,16 +6,42 @@
 
 `default_nettype none
 
-module delay_ff #(
-        parameter DELAY = 1,
-        parameter WIDTH = 1
-    ) (
-        input clk,
-        input reset,
+// verilator lint_save
+// verilator lint_off PINMISSING
 
-        input [WIDTH-1:0] in,
-        output [WIDTH-1:0] out
+module delay_ff #(
+    parameter DELAY = 1,
+    parameter WIDTH = 1
+) (
+    input clk,
+
+    input [WIDTH-1:0] in,
+    output [WIDTH-1:0] out
+);
+    delay_ffr #(
+        .DELAY(DELAY),
+        .WIDTH(WIDTH)
+    ) ffr (
+        .clk(clk),
+        .reset(0),
+
+        .in(in),
+        .out(out)
     );
+
+endmodule
+
+
+module delay_ffr #(
+    parameter DELAY = 1,
+    parameter WIDTH = 1
+) (
+    input clk,
+    input reset,
+
+    input [WIDTH-1:0] in,
+    output [WIDTH-1:0] out
+);
 
     reg [WIDTH-1:0] r [0:DELAY];
 
@@ -40,3 +66,5 @@ module delay_ff #(
     end
 
 endmodule
+
+// verilator lint_restore

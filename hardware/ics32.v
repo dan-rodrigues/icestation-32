@@ -395,6 +395,9 @@ module ics32 #(
     wire [31:0] cpu_read_data_1x;
     wire cpu_mem_ready_1x;
 
+    // verilator lint_save
+    // verilator lint_off PINMISSING
+
     picorv32 #(
         .ENABLE_TRACE(0),
         // register file gets inferred as BRAMs so using rv32e has little practical gain
@@ -446,6 +449,8 @@ module ics32 #(
         .irq(cpu_irq_1x),
         .eoi(cpu_eoi_1x)
     );
+    
+    // verilator lint_restore
     
     // --- Flash interface ---
 

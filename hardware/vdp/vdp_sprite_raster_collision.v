@@ -52,14 +52,14 @@ module vdp_sprite_raster_collision #(
 
     wire ready;
 
-    delay_ff #(.DELAY(3)) ready_dm (
+    delay_ffr #(.DELAY(3)) ready_dm (
         .clk(clk),
         .reset(restart),
         .in(1),
         .out(ready)
     );
 
-    delay_ff #(.DELAY(1)) output_valid_dm (
+    delay_ffr #(.DELAY(1)) output_valid_dm (
         .clk(clk),
         .reset(restart),
         .in(ready),
@@ -68,7 +68,7 @@ module vdp_sprite_raster_collision #(
 
     wire flip_y_d, width_select_d;
 
-    delay_ff #(.DELAY(2), .WIDTH(2)) attributes_dm (
+    delay_ffr #(.DELAY(2), .WIDTH(2)) attributes_dm (
         .clk(clk),
         .reset(restart),
         .in({flip_y, width_select_in}),
@@ -77,7 +77,7 @@ module vdp_sprite_raster_collision #(
 
     wire [4:0] sprite_height_d;
 
-    delay_ff #(.DELAY(2), .WIDTH(5)) sprite_height_dm (
+    delay_ffr #(.DELAY(2), .WIDTH(5)) sprite_height_dm (
         .clk(clk),
         .reset(restart),
         .in(sprite_height),
