@@ -19,18 +19,30 @@ HEADERS = \
 	../common/font.h \
 	../common/font8x8_basic.h \
 	tiles.h \
-	palette.h
+	palette.h \
+	sin_table.h
 
 prog.bin: prog.elf
 	$(CROSS)objcopy -O binary prog.elf prog.bin
 
-PNG_CONVERTER = ../../utilities/gfx_convert/ics-png-convert
+PNG = crystal-32-ia.png
+PNG_CONVERTER_DIR = ../../utilities/png_convert/
+PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
+
+SIN_TABLE_GEN_DIR = ../../utilities/sin_gen/
+SIN_TABLE_GEN = $(SIN_TABLE_GEN_DIR)ics-sin-gen
 
 $(PNG_CONVERTER):
-	$(MAKE) -C ../../utilities/gfx_convert
+	$(MAKE) -C $(PNG_CONVERTER_DIR)
 
-tiles.h palette.h: crystal-32-ia.png $(PNG_CONVERTER)
-	$(PNG_CONVERTER) crystal-32-ia.png
+$(SIN_TABLE_GEN):
+	$(MAKE) -C $(SIN_TABLE_GEN_DIR)
+
+tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
+	$(PNG_CONVERTER) $(PNG)
+
+sin_table.h: $(SIN_TABLE_GEN)
+	$(SIN_TABLE_GEN) sin_table.h
 
 dasm: prog.elf
 	$(CROSS)objdump -d $(DFLAGS) prog.elf > dasm

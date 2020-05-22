@@ -6,10 +6,11 @@
 
 /sections_p.lds
 
-# Build artefacts
+# Generated sources
 
 /tiles.h
 /palette.h
+/sin_table.h
 
 # Optional disassembly
 
