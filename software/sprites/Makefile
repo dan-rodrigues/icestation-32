@@ -1,7 +1,7 @@
 # TODO: share common rules in a shared Makefile instead of repeating them here
 
 CROSS = riscv-none-embed-
-CFLAGS = -Wall -Os -flto -march=rv32i -I../lib/ -I../common/
+CFLAGS = -Wall -Os -flto -march=rv32i -I../lib/ -I../common/ -ffreestanding -nostdlib
 DFLAGS = --line-numbers
 
 LDS = ../common/sections.lds
@@ -29,7 +29,7 @@ $(LDS_P): $(LDS)
 	$(CROSS)cpp -P -o $@ $^
 
 prog.elf: $(LDS_P) $(HEADERS) $(SOURCES)
-	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -ffreestanding -nostdlib -o prog.elf $(SOURCES)
+	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -o prog.elf $(SOURCES)
 
 clean:
 	rm -f prog.elf prog.hex prog.bin

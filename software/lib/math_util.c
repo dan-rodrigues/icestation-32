@@ -8,7 +8,7 @@
 
 #include "sin_table.h"
 
-// MMIO for multiplier (DSP)
+// Multiplier (memory-mapped multiplier on the FPGA)
 
 static volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
 
@@ -17,6 +17,8 @@ static volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
 
 #define SYS_MUL_RESULT (*((volatile int32_t *)SYS_MUL_BASE + 0))
 
+// Only signed 16x16=32 multipleis are supported for now
+
 int32_t sys_multiply(int16_t a, int16_t b) {
     SYS_MUL_A = a;
     SYS_MUL_B = b;
@@ -24,7 +26,7 @@ int32_t sys_multiply(int16_t a, int16_t b) {
     return SYS_MUL_RESULT;
 }
 
-// sin and cos
+// sin() / cos()
 
 static const uint16_t SIN_HALF_PERIOD = SIN_PERIOD / 2;
 static const uint16_t SIN_QUARTER_PERIOD = SIN_PERIOD / 4;
