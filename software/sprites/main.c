@@ -30,8 +30,8 @@ int main() {
 
     const uint8_t yellow_palette = 0;
     const uint8_t red_palette = 1;
-    const uint8_t green_palette = 0;
-    const uint8_t magenta_palette = 0;
+    const uint8_t green_palette = 2;
+    const uint8_t magenta_palette = 3;
 
     vdp_seek_palette(0);
 
@@ -74,9 +74,9 @@ int main() {
 
     uint8_t base_sprite_id = 0;
 
-    while(true) {
-        vdp_clear_all_sprites();
+    vdp_clear_all_sprites();
 
+    while(true) {
         uint8_t crystal_frame = frame_counter / 4;
         crystal_frame &= (crystal_total_frames - 1);
         uint16_t crystal_tile_base = (crystal_frame & 3) * crystal_frame_width / 8;
@@ -89,18 +89,28 @@ int main() {
         const int16_t sprite_x_offset = -16;
         const int16_t sprite_y_offset = -16;
 
-        for (uint8_t i = 0; i < circle_sprites; i++) {
-            uint16_t angle = i * angle_step + frame_counter;
-            int16_t sin_t = sin(angle);
-            int16_t cos_t = cos(angle);
+        const uint8_t circle_count = 4;
 
-            int16_t sprite_x = sys_multiply(cos_t, -circle_radius) / 0x4000;
-            int16_t sprite_y = sys_multiply(sin_t, -circle_radius) / 0x4000;
+        static const int16_t circle_radius_table[] = {192, 96, 48, 0};
+        static const uint8_t circle_palette_ids[] = {yellow_palette, green_palette, red_palette, magenta_palette};
 
-            sprite_x += screen_center_x + sprite_x_offset;
-            sprite_y += screen_center_y + sprite_y_offset;
+        for (uint8_t circle = 0; circle < circle_count; circle++) {
+            int16_t radius = circle_radius_table[circle];
+            uint8_t palette = circle_palette_ids[circle];
 
-            draw_crystal_sprite(&base_sprite_id, crystal_tile_base, yellow_palette, sprite_x, sprite_y);
+            for (uint8_t i = 0; i < circle_sprites; i++) {
+                uint16_t angle = i * angle_step + frame_counter;
+                int16_t sin_t = sin(angle);
+                int16_t cos_t = cos(angle);
+
+                int16_t sprite_x = sys_multiply(cos_t, -radius) / 0x4000;
+                int16_t sprite_y = sys_multiply(sin_t, -radius) / 0x4000;
+
+                sprite_x += screen_center_x + sprite_x_offset;
+                sprite_y += screen_center_y + sprite_y_offset;
+
+                draw_crystal_sprite(&base_sprite_id, crystal_tile_base, palette, sprite_x, sprite_y);
+            }
         }
 
         vdp_wait_frame_ended();
