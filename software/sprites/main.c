@@ -7,7 +7,7 @@
 #include "tiles.h"
 #include "palette.h"
 
-void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x, uint16_t y);
+void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y);
 
 int main() {
     vdp_enable_layers(SPRITES);
@@ -28,9 +28,29 @@ int main() {
 
     // palette
 
+    const uint8_t yellow_palette = 0;
+    const uint8_t red_palette = 1;
+    const uint8_t green_palette = 0;
+    const uint8_t magenta_palette = 0;
+
     vdp_seek_palette(0);
+
+    // yellow
     for (uint16_t i = 0; i < palette_length; i++) {
         vdp_write_palette_color(palette[i]);
+    }
+    // red
+    for (uint16_t i = 0; i < palette_length; i++) {
+        vdp_write_palette_color(palette[i] & 0xff00);
+    }
+    // green
+    for (uint16_t i = 0; i < palette_length; i++) {
+        vdp_write_palette_color(palette[i] & 0xf0f0);
+    }
+    // magenta
+    for (uint16_t i = 0; i < palette_length; i++) {
+        uint16_t color = palette[i];
+        vdp_write_palette_color((color & 0xff00) | (color & 0x00f0) >> 4);
     }
 
     // background color
@@ -80,7 +100,7 @@ int main() {
             sprite_x += screen_center_x + sprite_x_offset;
             sprite_y += screen_center_y + sprite_y_offset;
 
-            draw_crystal_sprite(&base_sprite_id, crystal_tile_base, sprite_x, sprite_y);
+            draw_crystal_sprite(&base_sprite_id, crystal_tile_base, yellow_palette, sprite_x, sprite_y);
         }
 
         vdp_wait_frame_ended();
@@ -90,12 +110,24 @@ int main() {
     }
 }
 
-void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint16_t x, uint16_t y) {
+void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y) {
     vdp_seek_sprite(*base_sprite_id);
-    vdp_write_sprite_meta(x, y | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile);
-    vdp_write_sprite_meta(x + 16, y | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 2);
-    vdp_write_sprite_meta(x, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x20);
-    vdp_write_sprite_meta(x + 16, (y + 16) | SPRITE_16_TALL | SPRITE_16_WIDE, base_tile + 0x22);
 
-    *base_sprite_id += 4;
+    for (uint8_t i = 0; i < 4; i++) {
+        bool right_column = (i & 1);
+        bool bottom_row = (i & 2);
+
+        uint16_t x_block = x + (right_column ? 0x10 : 0);
+
+        uint16_t y_block = y + (bottom_row ? 0x10 : 0);
+        y_block |= SPRITE_16_TALL | SPRITE_16_WIDE;
+
+        uint16_t g_block = base_tile;
+        g_block += (right_column ? 0x02 : 0);
+        g_block += (bottom_row ? 0x20 : 0);
+        g_block |= palette << SPRITE_PAL_SHIFT;
+
+        vdp_write_sprite_meta(x_block, y_block, g_block);
+        *base_sprite_id += 1;
+    }
 }
