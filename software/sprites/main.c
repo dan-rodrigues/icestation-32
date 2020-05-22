@@ -37,8 +37,8 @@ int main() {
 
     vdp_set_single_palette_color(0, 0xf088);
 
-    // place a sprite
-
+    // sprite pattern arrangement
+    
     const int16_t screen_center_x = 848 / 2;
     const int16_t screen_center_y = 480 / 2;
 

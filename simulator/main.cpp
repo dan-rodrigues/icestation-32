@@ -102,7 +102,7 @@ int main(int argc, const char * argv[]) {
     if (should_trace) {
         tb->trace(trace, 99);
         // parameterize this, getopt()
-        trace->open("/Users/dan.rodrigues/Documents/ics.vcd");
+        trace->open("ics.vcd");
     }
 
     while (!Verilated::gotFinish()) {

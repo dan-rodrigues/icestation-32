@@ -52,7 +52,6 @@ int16_t sin(uint16_t angle) {
     index = (angle & SIN_QUARTER_PERIOD ? -index : index);
     index &= (SIN_QUARTER_PERIOD - 1);
 
-    // TODO: generate an actual table of 16bit ints, add something to utils for this instead of using xxd
     int16_t sin = sin_table[index];
 
     return (angle & SIN_HALF_PERIOD ? -sin : sin);

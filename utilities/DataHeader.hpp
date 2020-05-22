@@ -22,9 +22,10 @@ void DataHeader::generate_header(std::vector<T> data, std::string header_type, s
     const auto indentation = "    ";
     const auto characters = sizeof(T) * 2;
 
-    // stddef.h (size_t)
+    // headers for size_t and stdint
 
-    stream << "#include <stddef.h>" << "\n\n";
+    stream << "#include <stddef.h>" << "\n";
+    stream << "#include <stdint.h>" << "\n\n";
 
     // data
 
