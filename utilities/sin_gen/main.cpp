@@ -16,15 +16,14 @@ int main(int argc, const char * argv[]) {
     const auto count = 256;
     const auto sin_max = 0x4000;
 
-    int16_t table[256];
+    int16_t table[count];
 
     for (int i = 0; i < count; i++) {
         auto theta = M_PI * 2 / count * i;
         table[i] = sin(theta / 4) * sin_max;
     }
 
-    std::ofstream stream;
-    stream.open(output_path);
+    std::ofstream stream(output_path);
 
     DataHeader::generate_header(std::vector<int16_t>(table, table + count), "int16_t", "sin_table", stream);
 
