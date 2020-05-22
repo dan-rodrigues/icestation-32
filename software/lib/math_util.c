@@ -42,8 +42,6 @@ int16_t sin(uint16_t angle) {
     // special cases to avoid "flat spots" in the sin wave
     if (angle == SIN_QUARTER_PERIOD) {
         return SIN_MAX;
-    } else if (angle == SIN_HALF_PERIOD) {
-        return 0;
     } else if (angle == (3 * SIN_QUARTER_PERIOD)) {
         return -SIN_MAX;
     }

@@ -1,12 +1,18 @@
-#import "Vics32_tb.h"
-#include "verilated.h"
-#include "verilated_vcd_c.h"
+#include <verilated.h>
+
+#if VM_TRACE
+#include <verilated_vcd_c.h>
+#endif
+
 #include <SDL.h>
 
 #include <fstream>
 #include <iterator>
 #include <vector>
 #include <iostream>
+#include <memory>
+
+#import "Vics32_tb.h"
 
 // Current simulation time (64-bit unsigned)
 vluint64_t main_time = 0;
@@ -16,8 +22,11 @@ double sc_time_stamp() {
 }
 
 int main(int argc, const char * argv[]) {
-    Verilated::traceEverOn(true);
     Verilated::commandArgs(argc, argv);
+
+#if VM_TRACE
+    Verilated::traceEverOn(true);
+#endif
 
     std::vector<uint8_t> cpu_program;
 
@@ -45,7 +54,7 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    Vics32_tb *tb = new Vics32_tb;
+    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
 
     // ...into both flash (for software use) and CPU RAM (so that IPL can be skipped)
 
@@ -95,26 +104,30 @@ int main(int argc, const char * argv[]) {
     int current_y = 0;
     bool even_frame = true;
 
-    const bool should_trace = false;
+#if VM_TRACE
+    const auto trace_path = "trace/ics.vcd";
 
-    VerilatedVcdC *trace = new VerilatedVcdC;
+    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
 
-    if (should_trace) {
-        tb->trace(trace, 99);
-        // parameterize this, getopt()
-        trace->open("ics.vcd");
-    }
+    tb->trace(tfp.get(), 99);
+    tfp->open(trace_path);
+#endif
 
     while (!Verilated::gotFinish()) {
-        // clock tick
+        // clock posedge
         tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 1;
         tb->eval();
-        trace->dump(main_time);
+#if VM_TRACE
+        tfp->dump(main_time);
+#endif
         main_time++;
 
+        // clock negedge
         tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 0;
         tb->eval();
-        trace->dump(main_time);
+#if VM_TRACE
+        tfp->dump(main_time);
+#endif
         main_time++;
 
         // render current VGA output pixel
@@ -147,7 +160,10 @@ int main(int argc, const char * argv[]) {
     };
 
     tb->final();
-    trace->close();
+
+#if VM_TRACE
+    tfp->close();
+#endif
 
     SDL_DestroyWindow(window);
     SDL_Quit();

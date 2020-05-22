@@ -12,8 +12,8 @@ module pll #(
     input clk_12m,
 
     output locked,
-    output clk_1x,
-    output clk_2x
+    output clk_1x /* verilator clocker */,
+    output clk_2x /* verilator clocker */
 );
     localparam PLL_DIVR_25M = 4'b0000;
     localparam PLL_DIVF_25M = 7'b1000010;
@@ -45,7 +45,7 @@ module pll #(
         .PLLOUTGLOBALB(clk_2x)
     );
 `else
-    // sim friendly regs
+    // these are directly assigned to in the verilator testbench
     reg clk_1x_r = 0;
     reg clk_2x_r = 0;
 
