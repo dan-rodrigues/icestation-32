@@ -271,7 +271,7 @@ module vdp #(
     reg [15:0] sprite_metadata_write_data;
     reg sprite_metadata_write_en;
 
-    wire [2:0] sprite_metadata_block_select_nx;
+    reg [2:0] sprite_metadata_block_select_nx;
     wire sprite_meta_address_needs_increment = sprite_metadata_block_select == 3'b100;
 
     always @* begin
@@ -390,7 +390,7 @@ module vdp #(
     reg [9:0] sprites_x;
     reg [8:0] sprites_y;
 
-    wire [8:0] sprites_y_nx;
+    reg [8:0] sprites_y_nx;
 
     always @* begin
         sprites_y_nx = raster_y;
@@ -429,15 +429,15 @@ module vdp #(
 
     // --- Layer attribute selection ---
 
-    wire [9:0] gen_even_hscroll;
-    wire [9:0] gen_even_scroll_y;
-    wire [13:0] gen_even_map_base;
-    wire gen_even_use_wide_map;
+    reg [9:0] gen_even_hscroll;
+    reg [9:0] gen_even_scroll_y;
+    reg [13:0] gen_even_map_base;
+    reg gen_even_use_wide_map;
 
-    wire [9:0] gen_odd_hscroll;
-    wire [9:0] gen_odd_scroll_y;
-    wire [13:0] gen_odd_map_base;
-    wire gen_odd_use_wide_map;
+    reg [9:0] gen_odd_hscroll;
+    reg [9:0] gen_odd_scroll_y;
+    reg [13:0] gen_odd_map_base;
+    reg gen_odd_use_wide_map;
         
     wire [3:0] gen_even_palette = vram_read_data_even_r[15:12];
     wire gen_even_hflip = vram_read_data_even_r[9];
@@ -445,10 +445,10 @@ module vdp #(
     wire [3:0] gen_odd_palette = vram_read_data_odd_r[15:12];
     wire gen_odd_hflip = vram_read_data_odd_r[9];
 
-    wire [13:0] gen_even_next_map_address;
-    wire [13:0] gen_odd_next_map_address;
+    reg [13:0] gen_even_next_map_address;
+    reg [13:0] gen_odd_next_map_address;
 
-    wire gen_toggle_nx;
+    reg gen_toggle_nx;
     reg gen_toggle;
 
     always @(posedge clk) begin
@@ -483,12 +483,12 @@ module vdp #(
 
     // --- Tile address generator ---
 
-    wire [2:0] tile_address_gen_scroll_y_granular;
+    reg [2:0] tile_address_gen_scroll_y_granular;
     wire [2:0] tile_address_gen_raster_y_granular = raster_y[2:0];
-    wire [15:0] tile_address_gen_map_data_in;
-    wire [13:0] tile_address_gen_base_address;
+    reg [15:0] tile_address_gen_map_data_in;
+    reg [13:0] tile_address_gen_base_address;
 
-    wire [13:0] tile_address_gen_tile_address_out;
+    reg [13:0] tile_address_gen_tile_address_out;
 
     vdp_tile_address_generator tile_address_generator(
         .clk(clk),
@@ -626,15 +626,15 @@ module vdp #(
 
     // --- VRAM bus arbiter ---
     
-    wire [13:0] vram_address_even_nx;
-    wire [13:0] vram_address_odd_nx;
-    wire [1:0] vram_render_write_en_mask_nx;
-    wire [31:0] vram_write_data_nx;
+    reg [13:0] vram_address_even_nx;
+    reg [13:0] vram_address_odd_nx;
+    reg [1:0] vram_render_write_en_mask_nx;
+    reg [31:0] vram_write_data_nx;
 
-    wire [3:0] scroll_meta_load;
-    wire [3:0] scroll_char_load;
+    reg [3:0] scroll_meta_load;
+    reg [3:0] scroll_char_load;
 
-    wire load_all_scroll_row_data;
+    reg load_all_scroll_row_data;
 
     always @* begin
         scroll_meta_load = 0;
@@ -757,7 +757,7 @@ module vdp #(
     wire [1:0] sprite_pixel_priority;
 
     wire [13:0] vram_sprite_address;
-    wire vram_sprite_read_data_valid;
+    reg vram_sprite_read_data_valid;
 
     wire sprite_core_reset = line_ended;
 

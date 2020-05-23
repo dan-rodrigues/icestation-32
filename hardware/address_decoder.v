@@ -19,18 +19,18 @@ module address_decoder #(
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
 
-    output vdp_en,
-    output vdp_write_en,
+    output reg vdp_en,
+    output reg vdp_write_en,
 
-    output cpu_ram_en,
+    output reg cpu_ram_en,
 
-    output status_en,
-    output status_write_en,
+    output reg status_en,
+    output reg status_write_en,
 
-    output flash_read_en,
+    output reg flash_read_en,
 
-    output dsp_en,
-    output dsp_write_en
+    output reg dsp_en,
+    output reg dsp_write_en
 );
     wire [18:0] cpu_address_s;
     wire cpu_mem_valid_s;

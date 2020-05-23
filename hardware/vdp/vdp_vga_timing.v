@@ -55,13 +55,13 @@ module vdp_vga_timing #(
 
     wire active_line_started_nx = x_fsm == STATE_FP && x_fsm_nx == STATE_ACTIVE;
 
-    wire [1:0] x_fsm_nx;
+    reg [1:0] x_fsm_nx;
 
     always @* begin
         x_fsm_nx = (raster_x == x_next_count ? x_fsm + 1 : x_fsm);
     end
 
-    wire [1:0] y_fsm_nx;
+    reg [1:0] y_fsm_nx;
 
     always @* begin
         y_fsm_nx = y_fsm;
@@ -79,7 +79,7 @@ module vdp_vga_timing #(
         y_fsm <= y_fsm_nx;
     end
 
-    wire [10:0] x_next_count, y_next_count;
+    reg [10:0] x_next_count, y_next_count;
 
     // target counts to advance state
 
@@ -103,8 +103,8 @@ module vdp_vga_timing #(
         endcase
     end
 
-    wire [10:0] raster_x_nx;
-    wire [10:0] raster_y_nx;
+    reg [10:0] raster_x_nx;
+    reg [10:0] raster_y_nx;
 
     always @* begin
         raster_x_nx = raster_x + 1;
