@@ -53,3 +53,31 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
 // TODO: 256 color (for affine layer)
 
+// packed 4bpp conversion
+
+std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
+    std::vector<uint8_t> tiles;
+    uint8_t pixel_pair = 0;
+
+    for (size_t i = 0; i < this->image.size(); i++) {
+        uint8_t pixel = this->image[i];
+
+        if (i % 2) {
+            tiles.push_back(pixel << 4 | pixel_pair);
+        } else {
+            pixel_pair = pixel;
+        }
+    }
+
+    return tiles;
+}
+
+/*
+ int getPaletteValue(const unsigned char* data, size_t i, int bits) {
+   if(bits == 8) return data[i];
+   else if(bits == 4) return (data[i / 2] >> ((i % 2) * 4)) & 15;
+   else if(bits == 2) return (data[i / 4] >> ((i % 4) * 2)) & 3;
+   else if(bits == 1) return (data[i / 8] >> (i % 8)) & 1;
+   else return 0;
+ }
+ */

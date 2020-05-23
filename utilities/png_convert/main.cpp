@@ -13,6 +13,8 @@
 
 #include "DataHeader.hpp"
 
+void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t height, uint8_t bpp);
+
 // input: 16 color paletted PNGs
 // output: ics-32 format C headers for tiles and palette
 
@@ -96,5 +98,41 @@ int main(int argc, const char * argv[]) {
     DataHeader::generate_header(palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
     output_palette_stream.close();
 
+    save_transcoded_png(tiles, palette, width, height, 4);
+
     return EXIT_SUCCESS;
+}
+
+void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t height, uint8_t bpp) {
+    // 4bpp tiles only for now
+    auto packed_4bpp_tiles = tiles.packed_4bpp_tiles();
+
+    lodepng::State save_state;
+
+    save_state.info_png.color.colortype = LCT_PALETTE;
+    save_state.info_png.color.bitdepth = bpp;
+    save_state.info_raw.colortype = LCT_PALETTE;
+    save_state.info_raw.bitdepth = bpp;
+
+    save_state.encoder.auto_convert = 0;
+
+    for(int i = 0; i < 16; i++) {
+        uint32_t color = palette.rgba32_palette[i];
+        uint8_t r = color & 0xff;
+        uint8_t g = color >> 8 & 0xff;
+        uint8_t b =  color >> 16 & 0xff;
+        uint8_t a = color >> 24 & 0xff;
+
+        lodepng_palette_add(&save_state.info_png.color, r, g, b, a);
+        lodepng_palette_add(&save_state.info_raw, r, g, b, a);
+    }
+
+    std::vector<unsigned char> buffer;
+    auto error = lodepng::encode(buffer, &packed_4bpp_tiles[0], width, height, save_state);
+    if (error) {
+      std::cerr << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+      return;
+    }
+
+    lodepng::save_file(buffer, "test.png");
 }
