@@ -23,9 +23,6 @@ PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
 $(PNG_CONVERTER):
 	$(MAKE) -C $(PNG_CONVERTER_DIR)
 
-$(SIN_TABLE_GEN):
-	$(MAKE) -C $(SIN_TABLE_GEN_DIR)
-
 tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) $(PNG)
 
