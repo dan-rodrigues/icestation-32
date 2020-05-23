@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
+#include <getopt.h>
 
 #include "lodepng.h"
 #include "lodepng_util.h"
@@ -18,13 +19,26 @@ void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t 
 // input: 16 color paletted PNGs
 // output: ics-32 format C headers for tiles and palette
 
-int main(int argc, const char * argv[]) {
+int main(int argc, char **argv)  {
+    // TODO: optionally input a SNES format file
+
+    bool input_is_png = false;
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, "f:", NULL, NULL)) != -1) {
+        switch (opt) {
+            case 'f':
+                input_is_png = std::string(optarg) == "png";
+                break;
+        }
+    }
+
     if (argc < 2) {
-        std::cout << "Usage: gfx-convert <filename> <output>" << std::endl;
+        std::cout << "Usage: (TODO: being modified)" << std::endl;
         return EXIT_SUCCESS;
     }
 
-    const auto png_path = argv[1];
+    const auto png_path = argv[optind];
 
     // load and decode input PNG
     
