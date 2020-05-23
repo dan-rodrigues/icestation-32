@@ -16,7 +16,7 @@ module vdp_map_address_generator(
     input [13:0] map_base_address,
     input [7:0] stride,
 
-    output [13:0] map_address
+    output reg [13:0] map_address
 );
 
     wire [6:0] column = scroll_x_coarse + raster_x_coarse;

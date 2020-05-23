@@ -5,7 +5,7 @@ CXX_SOURCES="main.cpp"
 SDL_PATH="/usr/local/opt/sdl2"
 
 EXTRA_VLT_FLAGS=$1
-VLT_FLAGS="-cc --timescale 1ns -v config.vlt -O3 --compiler clang --assert -Wall -Wno-fatal -Wno-WIDTH"
+VLT_FLAGS="-cc --language 1364-2005 --timescale 1ns -v config.vlt -O3 --compiler clang --assert -Wall -Wno-fatal -Wno-WIDTH"
 
 TOP_MODULE=ics32_tb
 RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"

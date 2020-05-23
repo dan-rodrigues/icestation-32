@@ -89,7 +89,7 @@ module bus_arbiter #(
         flash_read_en_r <= flash_read_en;
     end
 
-    wire [31:0] cpu_ram_read_data_ps, cpu_read_data_s;
+    reg [31:0] cpu_ram_read_data_ps, cpu_read_data_s;
     assign cpu_read_data = cpu_read_data_s;
 
     always @* begin
@@ -112,13 +112,18 @@ module bus_arbiter #(
     generate
         if (SUPPORT_2X_CLK) begin
             reg [31:0] cpu_read_data_r;
-            assign cpu_read_data_s = cpu_read_data_r;
+
+            always @* begin
+                cpu_read_data_s = cpu_read_data_r;
+            end
 
             always @(posedge clk) begin
                 cpu_read_data_r <= cpu_ram_read_data_ps;
             end
         end else begin
-            assign cpu_read_data_s = cpu_ram_read_data_ps;
+            always @* begin
+                cpu_read_data_s = cpu_ram_read_data_ps;
+            end
         end
     endgenerate
 

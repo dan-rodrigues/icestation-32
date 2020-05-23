@@ -175,9 +175,9 @@ module flash_dma #(
 
     // --- Flash memory (16Mbyte - 1Mbyte) ---
 
-    wire [23:0] flash_address;
-    wire flash_valid;
-    wire flash_continue;
+    reg [23:0] flash_address;
+    reg flash_valid;
+    reg flash_continue;
 
     wire flash_source_dma = dma_busy;
 

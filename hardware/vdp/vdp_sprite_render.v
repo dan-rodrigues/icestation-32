@@ -344,7 +344,7 @@ module vdp_sprite_render(
     wire line_buffer_write_en_nx =  pixel_is_opaque && blitter_drawing;
     wire [9:0] line_buffer_write_address_nx = blitter_input_valid ? blitter_x_start : line_buffer_write_address + 1;
 
-    wire [2:0] blitter_pixel_counter_nx;
+    reg [2:0] blitter_pixel_counter_nx;
 
     always @* begin
         blitter_pixel_counter_nx = 0;
