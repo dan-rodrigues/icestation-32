@@ -4,6 +4,8 @@ This is a compact open-source FPGA game console targetting the Lattice iCE40 Ult
 
 This repo is still in its early stages and its and contents (including this README) are changing rapidly.
 
+![Demo photo](photos/main.jpg)
+
 ## Features
 
 * PicoRV32 main CPU (compact implementation of RISC-V)
