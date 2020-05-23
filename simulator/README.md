@@ -10,8 +10,6 @@ This is the WIP simulator used to simulate the system with VGA output.
 
 ## Usage
 
-`SDL_PATH` in `build.sh` must be set to your SDL2 install directory
-
 ```
 ./build.sh
 cd /obj_dir
