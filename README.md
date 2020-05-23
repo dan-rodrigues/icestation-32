@@ -55,6 +55,8 @@ iceprog -o 1M prog.bin
 
 A simulator using SDL2 and its documentation is included in the [/simulator](simulator/) directory.
 
+Demo software and simulator screenshots are included in the [/software](software/) directory.
+
 ## TODO
 
 * A better README file!
