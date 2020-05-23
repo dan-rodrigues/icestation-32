@@ -100,6 +100,8 @@ int main(int argc, const char * argv[]) {
 
     auto renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_RenderSetScale(renderer, 1, 1);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
 
     int current_x = 0;
     int current_y = 0;
@@ -113,6 +115,9 @@ int main(int argc, const char * argv[]) {
     tb->trace(tfp.get(), 99);
     tfp->open(trace_path);
 #endif
+
+    bool vga_hsync_previous = false;
+    bool vga_vsync_previous = false;
 
     while (!Verilated::gotFinish()) {
         // clock posedge
@@ -136,19 +141,23 @@ int main(int argc, const char * argv[]) {
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
-        if (tb->line_ended) {
+        if (tb->vga_hsync && !vga_hsync_previous) {
             current_x = 0;
             current_y++;
         }
 
-        if (tb->frame_ended) {
+        vga_hsync_previous = tb->vga_hsync;
+
+        if (tb->vga_vsync && !vga_vsync_previous) {
             current_y = 0;
             even_frame = !even_frame;
 
             SDL_RenderPresent(renderer);
-            SDL_SetRenderDrawColor(renderer, even_frame ? 127 : 0, 0, 0, 255);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
         }
+
+        vga_vsync_previous = tb->vga_vsync;
         
         SDL_Event e;
         SDL_PollEvent(&e);

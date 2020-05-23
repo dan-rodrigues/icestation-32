@@ -19,9 +19,6 @@ module ics32_tb(
     output vga_clk,
     output vga_de,
 
-    output line_ended,
-    output frame_ended,
-
     output led_r,
     output led_b
 );
@@ -42,9 +39,6 @@ module ics32_tb(
 
         .vga_clk(vga_clk),
         .vga_de(vga_de),
-
-        .line_ended(line_ended),
-        .frame_ended(frame_ended),
 
         .led_r(led_r),
         .led_b(led_b),
