@@ -2,10 +2,6 @@
 
 This is the WIP simulator used to simulate the system with VGA output.
 
-Note that versions of Verilator 4.008 and newer don't seem to work with the current sources, although it does synthesize and run on the FPGA with the current Yosys toolchains. Newer verilator versions are much tougher in terms of enforcing the IEEE spec.
-
-The sources are currently being upgraded to work with the newest versions of Verilator.
-
 ## Prerequisites
 
 * Verilator
