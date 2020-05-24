@@ -12,7 +12,7 @@
 #include <iostream>
 #include <memory>
 
-#import "Vics32_tb.h"
+#include "Vics32_tb.h"
 
 // Current simulation time (64-bit unsigned)
 vluint64_t main_time = 0;
@@ -42,7 +42,7 @@ int main(int argc, const char * argv[]) {
     auto cpu_program_path = argv[1];
 
     std::ifstream cpu_program_stream(cpu_program_path, std::ios::binary);
-    if (cpu_program_stream.ios_base::fail()) {
+    if (cpu_program_stream.fail()) {
         std::cerr << "Failed to open file: " << cpu_program_path << std::endl;
         return EXIT_FAILURE;
     }
