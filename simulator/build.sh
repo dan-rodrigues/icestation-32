@@ -4,7 +4,7 @@ SIM_NAME=ics32-sim
 CXX_SOURCES="main.cpp"
 
 EXTRA_VLT_FLAGS=$1
-VLT_FLAGS="-cc --language 1364-2005 --timescale 1ns -v config.vlt -O3 --assert -Wall -Wno-fatal -Wno-WIDTH"
+VLT_FLAGS="-cc --language 1364-2005 -v config.vlt -O3 --assert -Wall -Wno-fatal -Wno-WIDTH -Wno-TIMESCALEMOD"
 
 TOP_MODULE=ics32_tb
 RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"
