@@ -31,7 +31,7 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
                     uint8_t pixel = image[base_index];
                     if (pixel > 0x0f) {
-                        std::cerr << "pixel out of range for 4bpp conversion: " << std::hex << pixel << std::endl;
+                        std::cerr << "Pixel out of range for 4bpp conversion: " << std::hex << pixel << std::endl;
                         pixel = 0;
                     }
 
@@ -50,8 +50,6 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
     return tiles;
 }
-
-// TODO: 256 color (for affine layer)
 
 // packed 4bpp conversion
 
@@ -72,12 +70,88 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
     return tiles;
 }
 
+// SNES format -> ics conversion
+
+Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
+    std::vector<uint8_t> tiles;
+
+    const auto snes_tile_size = 32;
+
+    auto size = tiles.size();
+    if (size % snes_tile_size) {
+        std::cerr << "Warning: expected size of SNES tiles to be a multiple of 32" << std::endl;
+        size &= ~(snes_tile_size - 1);
+    }
+
+    const auto tile_count = size / snes_tile_size;
+
+    for (auto tile = size / snes_tile_size; tile < tile_count; tile++) {
+        for (auto row = 0; row < 8; row++) {
+            auto index = tile * snes_tile_size + row * 2;
+
+            auto bp0 = snes_tiles[index];
+            auto bp1 = snes_tiles[index + 1];
+            auto bp2 = snes_tiles[index + 16];
+            auto bp3 = snes_tiles[index + 17];
+
+            uint32_t converted_row = 0;
+            for (auto pixel = 0; pixel < 8; pixel++) {
+                converted_row <<= 4;
+                uint8_t converted_pixel = 0;
+
+                converted_pixel |= (bp3 & 0x80) >> 4;
+                converted_pixel |= (bp2 & 0x80) >> 5;
+                converted_pixel |= (bp1 & 0x80) >> 6;
+                converted_pixel |= (bp0 & 0x80) >> 7;
+
+                bp3 <<= 1;
+                bp2 <<= 1;
+                bp1 <<= 1;
+                bp0 <<= 1;
+
+                converted_row |= converted_pixel;
+            }
+        }
+    }
+
+    this->image = tiles;
+}
+
+// TODO: 256 color (for affine layer)
+
 /*
- int getPaletteValue(const unsigned char* data, size_t i, int bits) {
-   if(bits == 8) return data[i];
-   else if(bits == 4) return (data[i / 2] >> ((i % 2) * 4)) & 15;
-   else if(bits == 2) return (data[i / 4] >> ((i % 4) * 2)) & 3;
-   else if(bits == 1) return (data[i / 8] >> (i % 8)) & 1;
-   else return 0;
+ std::vector<uint16_t> SNES::convertedTiles(uint16_t tileBase, uint16_t charCount) {
+     auto convertedTiles = std::vector<uint16_t>();
+
+     for(int i = 0; i < charCount; i++) {
+         // read whole row of snes graphics
+         for(int y = 0; y < 8; y++) {
+             uint32_t convertedrow = 0;
+             uint8_t p0 = vram[tileBase + i * 32 + y * 2];
+             uint8_t p1 = vram[tileBase + i * 32 + y * 2 + 1];
+             uint8_t p2 = vram[tileBase + i * 32 + y * 2 + 16];
+             uint8_t p3 = vram[tileBase + i * 32 + y * 2 + 17];
+             for(int pixel = 0; pixel < 8; pixel++) {
+                 // no harm done if this is done at the start
+                 convertedrow <<= 4; // make room for next pixel
+                 // 4bit chunky pixel
+                 uint8_t chunky = (p3 &0x80) >> 4;
+                 chunky |= (p2&0x80) >> 5;
+                 chunky |= (p1&0x80) >> 6;
+                 chunky |= (p0&0x80) >> 7;
+                 p3 <<= 1;
+                 p2 <<= 1;
+                 p1 <<= 1;
+                 p0 <<= 1;
+
+                 convertedrow |= chunky;
+             }
+
+             convertedTiles.push_back(convertedrow &0xffff);
+             convertedTiles.push_back(convertedrow >> 16);
+         }
+     }
+
+     return convertedTiles;
  }
  */

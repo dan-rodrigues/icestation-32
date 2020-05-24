@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include <iostream>
+#include <algorithm>
 #include <iomanip>
 #include <filesystem>
 #include <fstream>
@@ -19,16 +20,25 @@ void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t 
 // input: 16 color paletted PNGs
 // output: ics-32 format C headers for tiles and palette
 
-int main(int argc, char **argv)  {
-    // TODO: optionally input a SNES format file
+// TODO: optionally input a SNES format file
+enum InputFormat { PNG, SNES };
 
-    bool input_is_png = false;
+int main(int argc, char **argv)  {
+    InputFormat input_format = PNG;
 
     int opt;
     while ((opt = getopt_long(argc, argv, "f:", NULL, NULL)) != -1) {
         switch (opt) {
             case 'f':
-                input_is_png = std::string(optarg) == "png";
+                auto input_format_arg = std::string(optarg);
+                std::transform(input_format_arg.begin(), input_format_arg.end(), input_format_arg.begin(), ::tolower);
+
+                if (input_format_arg == "png") {
+                    input_format = PNG;
+                } else if (input_format_arg == "snes") {
+                    input_format = SNES;
+                }
+
                 break;
         }
     }
@@ -38,6 +48,7 @@ int main(int argc, char **argv)  {
         return EXIT_SUCCESS;
     }
 
+    // FIXME: accept whatever input format
     const auto png_path = argv[optind];
 
     // load and decode input PNG
@@ -83,20 +94,32 @@ int main(int argc, char **argv)  {
     // originally a 4bit indexed PNG will have 2 4bit indexes per byte
 
     std::vector<uint8_t> indexed_image;
-    for (uint y = 0; y < height; y++) {
-        for (uint x = 0; x < width; x++) {
-            size_t pixel_index = y * width + x;
-            uint palette_index = lodepng::getPaletteValue(&png_decoded[0], pixel_index, lode_state.info_raw.bitdepth);
-            indexed_image.push_back(palette_index);
-        }
+
+    // FIXME: there should be a cleaner way of doing this
+    Tiles *tiles;
+
+    switch (input_format) {
+        case PNG:
+            for (uint y = 0; y < height; y++) {
+                for (uint x = 0; x < width; x++) {
+                    size_t pixel_index = y * width + x;
+                    uint palette_index = lodepng::getPaletteValue(&png_decoded[0], pixel_index, lode_state.info_raw.bitdepth);
+                    indexed_image.push_back(palette_index);
+                }
+            }
+            tiles = new Tiles(indexed_image, width, height);
+
+            break;
+        case SNES:
+            tiles = new Tiles(png_data);
+            break;
     }
 
-    auto tiles = Tiles(indexed_image, width, height);
     auto output_tiles_path = output_directory;
     output_tiles_path.append("tiles.h");
 
     std::ofstream output_tiles_stream(output_tiles_path, std::ios::out);
-    DataHeader::generate_header(tiles.ics_tiles(), "uint32_t", "tiles", output_tiles_stream);
+    DataHeader::generate_header(tiles->ics_tiles(), "uint32_t", "tiles", output_tiles_stream);
     output_tiles_stream.close();
 
     // --- ics palette output ---
@@ -112,7 +135,7 @@ int main(int argc, char **argv)  {
     DataHeader::generate_header(palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
     output_palette_stream.close();
 
-    save_transcoded_png(tiles, palette, width, height, 4);
+    save_transcoded_png(*tiles, palette, width, height, 4);
 
     return EXIT_SUCCESS;
 }
