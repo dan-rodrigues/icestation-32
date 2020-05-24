@@ -7,6 +7,7 @@
 class Palette {
 
 public:
+    Palette();
     Palette(std::vector<uint32_t> rgba32_palette);
 
     std::vector<uint32_t> rgba32_palette;

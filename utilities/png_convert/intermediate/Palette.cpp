@@ -25,3 +25,6 @@ Palette::Palette(std::vector<uint32_t> rgba32_palette) {
     this->rgba32_palette = rgba32_palette;
 }
 
+Palette::Palette() {}
+
+

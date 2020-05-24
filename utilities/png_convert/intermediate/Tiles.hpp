@@ -9,6 +9,7 @@
 class Tiles {
 
 public:
+    Tiles();
     Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height);
     Tiles(std::vector<uint8_t> snes_tiles);
 
@@ -16,8 +17,6 @@ public:
     std::vector<uint8_t> packed_4bpp_tiles();
 
     std::vector<uint8_t> image;
-    uint16_t width;
-    uint16_t height;
 };
 
 #endif /* Tiles_hpp */

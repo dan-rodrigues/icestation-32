@@ -2,15 +2,19 @@
 
 #include <iostream>
 
+Tiles::Tiles() {}
+
 Tiles::Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height) {
     this->image = image;
-    this->width = width;
-    this->height = height;
 }
 
 // 4bpp conversion
 std::vector<uint32_t> Tiles::ics_tiles() {
     std::vector<uint32_t> tiles;
+
+    // assumed metrics, could generalise though
+    const auto width = 128;
+    const auto height = this->image.size() / width;
 
     const uint8_t tiles_x_total = width / 8;
     const uint8_t tiles_y_total = height / 8;
@@ -118,48 +122,7 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
     }
 
     this->image = tiles;
-
-    // DIMENSIONS: can just assume 128xwhatever for now
-    // can handle this in main rather than here, where it's also needed
-    this->width = 128;
-    this->height = tile_count / 16 * 8;
 }
 
+
 // TODO: 256 color (for affine layer)
-
-/*
- std::vector<uint16_t> SNES::convertedTiles(uint16_t tileBase, uint16_t charCount) {
-     auto convertedTiles = std::vector<uint16_t>();
-
-     for(int i = 0; i < charCount; i++) {
-         // read whole row of snes graphics
-         for(int y = 0; y < 8; y++) {
-             uint32_t convertedrow = 0;
-             uint8_t p0 = vram[tileBase + i * 32 + y * 2];
-             uint8_t p1 = vram[tileBase + i * 32 + y * 2 + 1];
-             uint8_t p2 = vram[tileBase + i * 32 + y * 2 + 16];
-             uint8_t p3 = vram[tileBase + i * 32 + y * 2 + 17];
-             for(int pixel = 0; pixel < 8; pixel++) {
-                 // no harm done if this is done at the start
-                 convertedrow <<= 4; // make room for next pixel
-                 // 4bit chunky pixel
-                 uint8_t chunky = (p3 &0x80) >> 4;
-                 chunky |= (p2&0x80) >> 5;
-                 chunky |= (p1&0x80) >> 6;
-                 chunky |= (p0&0x80) >> 7;
-                 p3 <<= 1;
-                 p2 <<= 1;
-                 p1 <<= 1;
-                 p0 <<= 1;
-
-                 convertedrow |= chunky;
-             }
-
-             convertedTiles.push_back(convertedrow &0xffff);
-             convertedTiles.push_back(convertedrow >> 16);
-         }
-     }
-
-     return convertedTiles;
- }
- */
