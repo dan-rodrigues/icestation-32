@@ -27,5 +27,5 @@ $(PNG_CONVERTER):
 #	$(PNG_CONVERTER) -f png $(PNG)
 
 tiles.h palette.h: GFX32.bin $(PNG_CONVERTER)
-	$(PNG_CONVERTER) -f snes GFX32.bin
+	$(PNG_CONVERTER) -f snes -p sample.pal -i 8 GFX32.bin
 

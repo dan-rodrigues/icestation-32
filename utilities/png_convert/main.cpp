@@ -110,27 +110,31 @@ int main(int argc, char **argv)  {
     // convert from packed index format to a separate byte for each pixel index
     // originally a 4bit indexed PNG will have 2 4bit indexes per byte
 
-    std::vector<uint8_t> indexed_image;
+    auto load_tiles = [=] () {
+        std::vector<uint8_t> indexed_image;
 
-    // FIXME: there should be a cleaner way of doing this
-    // some C++ equivalent of the swift "let tiles: Tiles ... tiles = Tiles()"
-    Tiles *tiles;
-
-    switch (input_format) {
-        case PNG:
-            for (uint y = 0; y < height; y++) {
-                for (uint x = 0; x < width; x++) {
-                    size_t pixel_index = y * width + (x ^ 0x01);
-                    uint palette_index = lodepng::getPaletteValue(&png_decoded[0], pixel_index, lode_state.info_raw.bitdepth);
-                    indexed_image.push_back(palette_index);
+        switch (input_format) {
+            case PNG:
+                for (uint y = 0; y < height; y++) {
+                    for (uint x = 0; x < width; x++) {
+                        size_t pixel_index = y * width + (x ^ 0x01);
+                        uint palette_index = lodepng::getPaletteValue(&png_decoded[0], pixel_index, lode_state.info_raw.bitdepth);
+                        indexed_image.push_back(palette_index);
+                    }
                 }
-            }
-            tiles = new Tiles(indexed_image, width, height);
+                return std::unique_ptr<Tiles>(new Tiles(indexed_image, width, height));
+            case SNES:
+                return std::unique_ptr<Tiles>(new Tiles(input_data));
+        }
 
-            break;
-        case SNES:
-            tiles = new Tiles(input_data);
-            break;
+        std::cerr << "Error: input format was not handled: " << input_format << std::endl;
+        return std::unique_ptr<Tiles>();
+    };
+
+    auto tiles = load_tiles();
+    if (!tiles) {
+        std::cerr << "Error: tile conversion returned no data" << std::endl;
+        return EXIT_FAILURE;
     }
 
     auto output_tiles_path = output_directory;
@@ -208,7 +212,6 @@ int main(int argc, char **argv)  {
 
     save_transcoded_png(*tiles, *palette, width, height, 4);
 
-    delete tiles;
     delete palette;
 
     return EXIT_SUCCESS;
