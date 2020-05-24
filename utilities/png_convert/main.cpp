@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <optional>
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
@@ -21,7 +22,6 @@ void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t 
 // input: 16 color paletted PNGs
 // output: ics-32 format C headers for tiles and palette
 
-// TODO: optionally input a SNES format file
 enum InputFormat { PNG, SNES };
 
 int main(int argc, char **argv)  {
@@ -73,6 +73,8 @@ int main(int argc, char **argv)  {
     }
 
     uint width, height;
+    // this shouldn't be here
+    // could have a thing that returns a Tiles + Palette object
     std::vector<uint8_t> png_decoded;
     lodepng::State lode_state;
 
@@ -110,7 +112,7 @@ int main(int argc, char **argv)  {
     // convert from packed index format to a separate byte for each pixel index
     // originally a 4bit indexed PNG will have 2 4bit indexes per byte
 
-    auto load_tiles = [=] () {
+    auto load_tiles = [=] () -> std::optional<Tiles> {
         std::vector<uint8_t> indexed_image;
 
         switch (input_format) {
@@ -122,13 +124,13 @@ int main(int argc, char **argv)  {
                         indexed_image.push_back(palette_index);
                     }
                 }
-                return std::unique_ptr<Tiles>(new Tiles(indexed_image, width, height));
+                return Tiles(indexed_image, width, height);
             case SNES:
-                return std::unique_ptr<Tiles>(new Tiles(input_data));
+                return Tiles(input_data);
         }
 
         std::cerr << "Error: input format was not handled: " << input_format << std::endl;
-        return std::unique_ptr<Tiles>();
+        return std::nullopt;
     };
 
     auto tiles = load_tiles();
@@ -146,63 +148,71 @@ int main(int argc, char **argv)  {
 
     // --- ics palette output ---
 
-    Palette *palette;
+    auto load_palette = [=] () -> std::optional<Palette> {
+        switch (input_format) {
+            case PNG: {
+                uint32_t *png_palette = reinterpret_cast<uint32_t *>(lode_state.info_png.color.palette);
+                size_t palette_size = lode_state.info_png.color.palettesize;
+                std::vector<uint32_t> rgba32_palette(png_palette, png_palette + palette_size);
+                return Palette(rgba32_palette);
+            } break;
+            case SNES: {
+                // TODO: need to either import a palette somehow or generate one automatically for reference
+                std::vector<uint32_t> rgba32_palette;
 
-    switch (input_format) {
-        case PNG: {
-            uint32_t *png_palette = reinterpret_cast<uint32_t *>(lode_state.info_png.color.palette);
-            size_t palette_size = lode_state.info_png.color.palettesize;
-            std::vector<uint32_t> rgba32_palette(png_palette, png_palette + palette_size);
-            palette = new Palette(rgba32_palette);
-        } break;
-        case SNES: {
-            // TODO: need to either import a palette somehow or generate one automatically for reference
-            std::vector<uint32_t> rgba32_palette;
+                // was a palette provided?
+                if (!palette_path.empty()) {
+                    std::ifstream palette_stream(palette_path);
+                    if (palette_stream.fail()) {
+                        std::cerr << "Error: failed to open palette file" << std::endl;
+                        return std::nullopt;
+                    }
 
-            // was a palette provided?
-            if (!palette_path.empty()) {
-                std::ifstream palette_stream(palette_path);
-                if (palette_stream.fail()) {
-                    std::cerr << "Error: failed to open palette file" << std::endl;
-                    return EXIT_FAILURE;
+                    auto palette = std::vector<uint8_t>(std::istreambuf_iterator<char>(palette_stream), {});
+                    palette_stream.close();
+
+                    auto palette_size = palette.size();
+                    if (palette_size % 3) {
+                        std::cerr << "Warning: expected palette to byte 3 bytes per color" << std::endl;
+                        palette_size -= palette_size % 3;
+                    }
+
+                    // (eventually 256 color support needed)
+                    const auto palette_size_4bpp = 16;
+                    const auto palette_base = palette_id * palette_size_4bpp;
+
+                    for (auto i = 0; i < palette_size_4bpp; i++) {
+                        size_t index = (palette_base + i) * 3;
+                        uint8_t r = palette[index];
+                        uint8_t g = palette[index + 1];
+                        uint8_t b = palette[index + 2];
+                        uint32_t color = 0xff << 24 | r | g << 8 | b << 16;
+
+                        rgba32_palette.push_back(color);
+                    }
+                } else {
+                    // ...if not, generate a simple monochrome one
+                    for (auto i = 0; i < 16 * 16; i++) {
+                        uint8_t component = i << 4;
+                        uint32_t color = component | component << 8 | component << 16;
+                        color |= 0xff << 24;
+                        rgba32_palette.push_back(color);
+                    }
                 }
 
-                auto palette = std::vector<uint8_t>(std::istreambuf_iterator<char>(palette_stream), {});
-                palette_stream.close();
+                return Palette(rgba32_palette);
+            } break;
+        }
 
-                auto palette_size = palette.size();
-                if (palette_size % 3) {
-                    std::cerr << "Warning: expected palette to byte 3 bytes per color" << std::endl;
-                    palette_size -= palette_size % 3;
-                }
+        std::cerr << "Error: unhandled palette input format: " << input_format << std::endl;
+        return std::nullopt;
+    };
 
-                // (eventually 256 color support needed)
-                const auto palette_size_4bpp = 16;
-                const auto palette_base = palette_id * palette_size_4bpp;
-
-                for (auto i = 0; i < palette_size_4bpp; i++) {
-                    size_t index = (palette_base + i) * 3;
-                    uint8_t r = palette[index];
-                    uint8_t g = palette[index + 1];
-                    uint8_t b = palette[index + 2];
-                    uint32_t color = 0xff << 24 | r | g << 8 | b << 16;
-
-                    rgba32_palette.push_back(color);
-                }
-            } else {
-                // ...if not, generate a simple monochrome one
-                for (auto i = 0; i < 16 * 16; i++) {
-                    uint8_t component = i << 4;
-                    uint32_t color = component | component << 8 | component << 16;
-                    color |= 0xff << 24;
-                    rgba32_palette.push_back(color);
-                }
-            }
-
-            palette = new Palette(rgba32_palette);
-        } break;
+    auto palette = load_palette();
+    if (!palette) {
+        std::cerr << "Error: palette conversion return no result" << std::endl;
+        return EXIT_FAILURE;
     }
-
 
     auto output_palette_path = output_directory;
     output_palette_path.append("palette.h");
@@ -211,8 +221,6 @@ int main(int argc, char **argv)  {
     output_palette_stream.close();
 
     save_transcoded_png(*tiles, *palette, width, height, 4);
-
-    delete palette;
 
     return EXIT_SUCCESS;
 }
@@ -230,7 +238,7 @@ void save_transcoded_png(Tiles tiles, Palette palette, uint16_t width, uint16_t 
 
     save_state.encoder.auto_convert = 0;
 
-    for(int i = 0; i < 16; i++) {
+    for (auto i = 0; i < 16; i++) {
         uint32_t color = palette.rgba32_palette[i];
         uint8_t r = color & 0xff;
         uint8_t g = color >> 8 & 0xff;

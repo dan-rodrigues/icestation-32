@@ -57,7 +57,7 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
     std::vector<uint8_t> tiles;
     uint8_t high_pixel = 0;
 
-    for (size_t i = 0; i < this->image.size(); i++) {
+    for (auto i = 0; i < this->image.size(); i++) {
         uint8_t pixel = this->image[i];
 
         if (i % 2) {
