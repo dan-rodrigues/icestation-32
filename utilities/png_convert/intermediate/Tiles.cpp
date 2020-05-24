@@ -21,7 +21,7 @@ std::vector<uint32_t> Tiles::ics_tiles() {
             // 8x8 conversion
             for (uint8_t pixel_y = 0; pixel_y < 8; pixel_y++) {
                 // write adjacent pixels at a time
-                uint8_t low_pixel = 0;
+                uint8_t high_pixel = 0;
                 uint32_t pixel_row = 0;
 
                 for (uint8_t pixel_x = 0; pixel_x < 8; pixel_x++) {
@@ -37,9 +37,9 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
                     if (pixel_x % 2) {
                         pixel_row <<= 8;
-                        pixel_row |= (pixel << 4 | low_pixel);
+                        pixel_row |= (pixel | high_pixel << 4);
                     } else {
-                        low_pixel = pixel;
+                        high_pixel = pixel;
                     }
                 }
 
@@ -55,15 +55,15 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
 std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
     std::vector<uint8_t> tiles;
-    uint8_t pixel_pair = 0;
+    uint8_t high_pixel = 0;
 
     for (size_t i = 0; i < this->image.size(); i++) {
         uint8_t pixel = this->image[i];
 
         if (i % 2) {
-            tiles.push_back(pixel << 4 | pixel_pair);
+            tiles.push_back(pixel | high_pixel << 4);
         } else {
-            pixel_pair = pixel;
+            high_pixel = pixel;
         }
     }
 

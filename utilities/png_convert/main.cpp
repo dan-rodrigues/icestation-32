@@ -108,7 +108,7 @@ int main(int argc, char **argv)  {
         case PNG:
             for (uint y = 0; y < height; y++) {
                 for (uint x = 0; x < width; x++) {
-                    size_t pixel_index = y * width + x;
+                    size_t pixel_index = y * width + (x ^ 0x01);
                     uint palette_index = lodepng::getPaletteValue(&png_decoded[0], pixel_index, lode_state.info_raw.bitdepth);
                     indexed_image.push_back(palette_index);
                 }

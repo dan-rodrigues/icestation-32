@@ -23,6 +23,9 @@ PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
 $(PNG_CONVERTER):
 	$(MAKE) -C $(PNG_CONVERTER_DIR)
 
-tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) -f png $(PNG)
+#tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
+#	$(PNG_CONVERTER) -f png $(PNG)
+
+tiles.h palette.h: GFX32.bin $(PNG_CONVERTER)
+	$(PNG_CONVERTER) -f snes GFX32.bin
 
