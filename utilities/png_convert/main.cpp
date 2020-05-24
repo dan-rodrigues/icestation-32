@@ -53,8 +53,8 @@ int main(int argc, char **argv)  {
 
     // load and decode input PNG
     
-    std::vector<uint8_t> png_data;
-    auto error = lodepng::load_file(png_data, png_path);
+    std::vector<uint8_t> input_data;
+    auto error = lodepng::load_file(input_data, png_path);
     if (error) {
         std::cerr << "Failed to load file: " << lodepng_error_text(error) << std::endl;
         return EXIT_FAILURE;
@@ -69,18 +69,23 @@ int main(int argc, char **argv)  {
 
     lode_state.decoder.color_convert = 0;
 
-    error = lodepng::decode(png_decoded, width, height, lode_state, png_data);
-    if (error) {
-        std::cerr << "Failed to decode png: " << lodepng_error_text(error) << std::endl;
-        return EXIT_FAILURE;
-    }
+    if (input_format == PNG) {
+        error = lodepng::decode(png_decoded, width, height, lode_state, input_data);
+        if (error) {
+            std::cerr << "Failed to decode png: " << lodepng_error_text(error) << std::endl;
+            return EXIT_FAILURE;
+        }
 
-    if (lode_state.info_png.color.colortype == LCT_PALETTE) {
-        std::cout << "Found paletted image" << std::endl;
-        std::cout << "Palette size: " << lode_state.info_raw.palettesize << std::endl;
-    } else {
-        std::cerr << "non-color-indexed PNG files not supported for now" << std::endl;
-        return EXIT_FAILURE;
+        if (lode_state.info_png.color.colortype == LCT_PALETTE) {
+            std::cout << "Found paletted image" << std::endl;
+            std::cout << "Palette size: " << lode_state.info_raw.palettesize << std::endl;
+        } else {
+            std::cerr << "non-color-indexed PNG files not supported for now" << std::endl;
+            return EXIT_FAILURE;
+        }
+    } else if (input_format == SNES) {
+        width = 128;
+        height = input_data.size() / 32 / 16 * 8;
     }
 
     // common directory to write output files to
@@ -96,6 +101,7 @@ int main(int argc, char **argv)  {
     std::vector<uint8_t> indexed_image;
 
     // FIXME: there should be a cleaner way of doing this
+    // some C++ equivalent of the swift "let tiles: Tiles ... tiles = Tiles()"
     Tiles *tiles;
 
     switch (input_format) {
@@ -111,7 +117,7 @@ int main(int argc, char **argv)  {
 
             break;
         case SNES:
-            tiles = new Tiles(png_data);
+            tiles = new Tiles(input_data);
             break;
     }
 
@@ -124,18 +130,41 @@ int main(int argc, char **argv)  {
 
     // --- ics palette output ---
 
-    uint32_t *png_palette = reinterpret_cast<uint32_t *>(lode_state.info_png.color.palette);
-    size_t palette_size = lode_state.info_png.color.palettesize;
-    std::vector<uint32_t> rgba32_palette(png_palette, png_palette + palette_size);
-    auto palette = Palette(rgba32_palette);
+    Palette *palette;
+
+    switch (input_format) {
+        case PNG: {
+            uint32_t *png_palette = reinterpret_cast<uint32_t *>(lode_state.info_png.color.palette);
+            size_t palette_size = lode_state.info_png.color.palettesize;
+            std::vector<uint32_t> rgba32_palette(png_palette, png_palette + palette_size);
+            palette = new Palette(rgba32_palette);
+        } break;
+        case SNES: {
+            // TODO: need to either import a palette somehow or generate one automatically for reference
+            std::vector<uint32_t> rgba32_palette;
+
+            for (auto i = 0; i < 16 * 16; i++) {
+                uint8_t component = i << 4;
+                uint32_t color = component | component << 8 | component << 16;
+                color |= 0xff << 24;
+                rgba32_palette.push_back(color);
+            }
+
+            palette = new Palette(rgba32_palette);
+        } break;
+    }
+
 
     auto output_palette_path = output_directory;
     output_palette_path.append("palette.h");
     std::ofstream output_palette_stream(output_palette_path, std::ios::out);
-    DataHeader::generate_header(palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
+    DataHeader::generate_header(palette->ics_palette(), "uint16_t", "palette", output_palette_stream);
     output_palette_stream.close();
 
-    save_transcoded_png(*tiles, palette, width, height, 4);
+    save_transcoded_png(*tiles, *palette, width, height, 4);
+
+    delete tiles;
+    delete palette;
 
     return EXIT_SUCCESS;
 }

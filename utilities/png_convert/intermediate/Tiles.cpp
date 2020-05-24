@@ -74,10 +74,11 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
 
 Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
     std::vector<uint8_t> tiles;
+    tiles.resize(snes_tiles.size() * 2);
 
     const auto snes_tile_size = 32;
 
-    auto size = tiles.size();
+    auto size = snes_tiles.size();
     if (size % snes_tile_size) {
         std::cerr << "Warning: expected size of SNES tiles to be a multiple of 32" << std::endl;
         size &= ~(snes_tile_size - 1);
@@ -85,18 +86,16 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
 
     const auto tile_count = size / snes_tile_size;
 
-    for (auto tile = size / snes_tile_size; tile < tile_count; tile++) {
+    for (auto tile = 0; tile < tile_count; tile++) {
         for (auto row = 0; row < 8; row++) {
-            auto index = tile * snes_tile_size + row * 2;
+            auto read_index = tile * snes_tile_size + row * 2;
 
-            auto bp0 = snes_tiles[index];
-            auto bp1 = snes_tiles[index + 1];
-            auto bp2 = snes_tiles[index + 16];
-            auto bp3 = snes_tiles[index + 17];
+            auto bp0 = snes_tiles[read_index];
+            auto bp1 = snes_tiles[read_index + 1];
+            auto bp2 = snes_tiles[read_index + 16];
+            auto bp3 = snes_tiles[read_index + 17];
 
-            uint32_t converted_row = 0;
             for (auto pixel = 0; pixel < 8; pixel++) {
-                converted_row <<= 4;
                 uint8_t converted_pixel = 0;
 
                 converted_pixel |= (bp3 & 0x80) >> 4;
@@ -104,17 +103,26 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
                 converted_pixel |= (bp1 & 0x80) >> 6;
                 converted_pixel |= (bp0 & 0x80) >> 7;
 
+                auto x = tile % 16 * 8 + pixel;
+                auto y = tile / 16 * 8 + row;
+                auto write_index = y * 128 + x;
+
+                tiles[write_index] = converted_pixel;
+
                 bp3 <<= 1;
                 bp2 <<= 1;
                 bp1 <<= 1;
                 bp0 <<= 1;
-
-                converted_row |= converted_pixel;
             }
         }
     }
 
     this->image = tiles;
+
+    // DIMENSIONS: can just assume 128xwhatever for now
+    // can handle this in main rather than here, where it's also needed
+    this->width = 128;
+    this->height = tile_count / 16 * 8;
 }
 
 // TODO: 256 color (for affine layer)

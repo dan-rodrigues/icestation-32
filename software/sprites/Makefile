@@ -24,5 +24,5 @@ $(PNG_CONVERTER):
 	$(MAKE) -C $(PNG_CONVERTER_DIR)
 
 tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) $(PNG)
+	$(PNG_CONVERTER) -f png $(PNG)
 
