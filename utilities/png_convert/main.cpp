@@ -20,14 +20,11 @@
 
 void save_transcoded_png(Image image);
 
-// input: 16 color paletted PNGs
-// output: ics-32 format C headers for tiles and palette
-
 int main(int argc, char **argv)  {
     InputFormat input_format = PNG;
 
     std::string palette_path;
-    std::optional<uint8_t> palette_id = 0;
+    std::optional<uint8_t> palette_id = std::nullopt;
 
     if (argc < 2) {
         std::cout << "Usage: (TODO: being modified)" << std::endl;
@@ -160,7 +157,7 @@ void save_transcoded_png(Image image) {
     }
 
     std::vector<uint8_t> buffer;
-    auto error = lodepng::encode(buffer, &packed_4bpp_tiles[0], image.width, image.height, save_state);
+    auto error = lodepng::encode(buffer, &packed_4bpp_tiles[0], image.tiles.width, image.tiles.height, save_state);
     if (error) {
       std::cerr << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
       return;

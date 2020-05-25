@@ -3,21 +3,20 @@
 
 #include <iostream>
 
-Tiles::Tiles() {}
+Tiles::Tiles() : width(0), height(0) {}
 
 Tiles::Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height) {
     this->image = image;
+    this->width = width;
+    this->height = height;
 }
 
 // 4bpp conversion
 std::vector<uint32_t> Tiles::ics_tiles() {
     std::vector<uint32_t> tiles;
 
-    const auto width = ImageMetrics::ICS::TILE_ROW_STRIDE;
-    const auto height = this->image.size() / width;
-
-    const uint8_t tiles_x_total = width / 8;
-    const uint8_t tiles_y_total = height / 8;
+    const uint8_t tiles_x_total = this->width / 8;
+    const uint8_t tiles_y_total = this->height / 8;
 
     // convert from the bitmap format to the 8x8 4bpp format
     for (uint8_t tile_y = 0; tile_y < tiles_y_total; tile_y++) {
@@ -122,6 +121,8 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
     }
 
     this->image = tiles;
+    this->width = ImageMetrics::SNES::TILE_ROW_STRIDE;
+    this->height = tiles.size() / this->width * 2;
 }
 
 

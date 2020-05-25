@@ -7,7 +7,7 @@
 #include "lodepng.h"
 #include "lodepng_util.h"
 
-Image::Image() : bpp(0), width(0), height(0) {}
+Image::Image() : bpp(0) {}
 
 Image::Image(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data, InputFormat format) {
     switch (format) {
@@ -28,8 +28,8 @@ Image::Image(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data, 
 void Image::init_from_png(std::vector<uint8_t> data) {
     uint32_t width, height;
     std::vector<uint8_t> png_decoded;
-    lodepng::State lode_state;
 
+    lodepng::State lode_state;
     lode_state.decoder.color_convert = 0;
 
     auto error = lodepng::decode(png_decoded, width, height, lode_state, data);
@@ -43,9 +43,6 @@ void Image::init_from_png(std::vector<uint8_t> data) {
     } else {
         throw std::invalid_argument("only color-indexed PNG files not supported for now");
     }
-
-    this->width = width;
-    this->height = height;
 
     std::vector<uint8_t> indexed_image;
     for (auto y = 0; y < height; y++) {
@@ -66,9 +63,6 @@ void Image::init_from_png(std::vector<uint8_t> data) {
 }
 
 void Image::init_from_snes(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data) {
-    this->width = ImageMetrics::SNES::TILE_ROW_STRIDE;
-    this->height = tile_data.size() / (ImageMetrics::SNES::TILE_ROW_STRIDE / 2);
-
     this->tiles = Tiles(tile_data);
 
     std::vector<uint32_t> rgba32_palette;
