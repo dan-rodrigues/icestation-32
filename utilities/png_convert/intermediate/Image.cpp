@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "Image.hpp"
+#include "ImageMetrics.h"
 
 #include "lodepng.h"
 #include "lodepng_util.h"
@@ -65,8 +66,8 @@ void Image::init_from_png(std::vector<uint8_t> data) {
 }
 
 void Image::init_from_snes(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data) {
-    this->width = 128;
-    this->height = (uint32_t)tile_data.size() / 32 / 16 * 8;
+    this->width = ImageMetrics::SNES::TILE_ROW_STRIDE;
+    this->height = tile_data.size() / (ImageMetrics::SNES::TILE_ROW_STRIDE / 2);
 
     this->tiles = Tiles(tile_data);
 

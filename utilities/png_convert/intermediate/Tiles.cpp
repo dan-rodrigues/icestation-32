@@ -1,4 +1,5 @@
 #include "Tiles.hpp"
+#include "ImageMetrics.h"
 
 #include <iostream>
 
@@ -12,8 +13,7 @@ Tiles::Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height) {
 std::vector<uint32_t> Tiles::ics_tiles() {
     std::vector<uint32_t> tiles;
 
-    // assumed metrics, could generalise though
-    const auto width = 128;
+    const auto width = ImageMetrics::ICS::TILE_ROW_STRIDE;
     const auto height = this->image.size() / width;
 
     const uint8_t tiles_x_total = width / 8;
@@ -74,25 +74,25 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
     return tiles;
 }
 
-// SNES format -> ics conversion
+// SNES format
 
 Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
     std::vector<uint8_t> tiles;
     tiles.resize(snes_tiles.size() * 2);
 
-    const auto snes_tile_size = 32;
+    const auto tile_size = ImageMetrics::SNES::TILE_SIZE;
 
     auto size = snes_tiles.size();
-    if (size % snes_tile_size) {
+    if (size % tile_size) {
         std::cerr << "Warning: expected size of SNES tiles to be a multiple of 32" << std::endl;
-        size &= ~(snes_tile_size - 1);
+        size &= ~(tile_size - 1);
     }
 
-    const auto tile_count = size / snes_tile_size;
+    const auto tile_count = size / tile_size;
 
     for (auto tile = 0; tile < tile_count; tile++) {
         for (auto row = 0; row < 8; row++) {
-            auto read_index = tile * snes_tile_size + row * 2;
+            auto read_index = tile * tile_size + row * 2;
 
             auto bp0 = snes_tiles[read_index];
             auto bp1 = snes_tiles[read_index + 1];
