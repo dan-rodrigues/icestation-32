@@ -5,8 +5,8 @@
 
 Tiles::Tiles() : width(0), height(0) {}
 
-Tiles::Tiles(std::vector<uint8_t> image, uint16_t width, uint16_t height) {
-    this->image = image;
+Tiles::Tiles(std::vector<uint8_t> bitmap, uint16_t width, uint16_t height) {
+    this->bitmap = bitmap;
     this->width = width;
     this->height = height;
 }
@@ -32,7 +32,7 @@ std::vector<uint32_t> Tiles::ics_tiles() {
                     uint16_t y = tile_y * 8 + pixel_y;
                     uint16_t base_index = y * width + x;
 
-                    uint8_t pixel = image[base_index];
+                    uint8_t pixel = bitmap[base_index];
                     if (pixel > 0x0f) {
                         std::cerr << "Pixel out of range for 4bpp conversion: " << std::hex << pixel << std::endl;
                         pixel = 0;
@@ -60,8 +60,8 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
     std::vector<uint8_t> tiles;
     uint8_t high_pixel = 0;
 
-    for (auto i = 0; i < this->image.size(); i++) {
-        uint8_t pixel = this->image[i];
+    for (auto i = 0; i < this->bitmap.size(); i++) {
+        uint8_t pixel = this->bitmap[i];
 
         if (i % 2) {
             tiles.push_back(pixel | high_pixel << 4);
@@ -76,8 +76,8 @@ std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
 // SNES format
 
 Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
-    std::vector<uint8_t> tiles;
-    tiles.resize(snes_tiles.size() * 2);
+    std::vector<uint8_t> bitmap;
+    bitmap.resize(snes_tiles.size() * 2);
 
     const auto tile_size = ImageMetrics::SNES::TILE_SIZE;
 
@@ -110,7 +110,7 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
                 auto y = tile / 16 * 8 + row;
                 auto write_index = y * 128 + x;
 
-                tiles[write_index] = converted_pixel;
+                bitmap[write_index] = converted_pixel;
 
                 bp3 <<= 1;
                 bp2 <<= 1;
@@ -120,9 +120,9 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
         }
     }
 
-    this->image = tiles;
+    this->bitmap = bitmap;
     this->width = ImageMetrics::SNES::TILE_ROW_STRIDE;
-    this->height = tiles.size() / this->width * 2;
+    this->height = bitmap.size() / this->width * 2;
 }
 
 

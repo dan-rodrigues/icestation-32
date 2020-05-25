@@ -113,7 +113,6 @@ int main(int argc, char **argv)  {
 
     auto output_tiles_path = output_directory;
     output_tiles_path.append("tiles.h");
-
     std::ofstream output_tiles_stream(output_tiles_path, std::ios::out);
     DataHeader::generate_header(image.tiles.ics_tiles(), "uint32_t", "tiles", output_tiles_stream);
     output_tiles_stream.close();
