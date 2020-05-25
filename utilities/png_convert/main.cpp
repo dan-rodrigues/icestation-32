@@ -27,7 +27,7 @@ int main(int argc, char **argv)  {
     InputFormat input_format = PNG;
 
     std::string palette_path;
-    uint8_t palette_id = 0;
+    std::optional<uint8_t> palette_id = 0;
 
     if (argc < 2) {
         std::cout << "Usage: (TODO: being modified)" << std::endl;
@@ -74,16 +74,31 @@ int main(int argc, char **argv)  {
     }
 
     // was a custom palette provided?
+
     std::vector<uint8_t> palette_data;
     if (!palette_path.empty()) {
-        std::ifstream palette_stream(palette_path);
+        std::fstream palette_stream(palette_path);
         if (palette_stream.fail()) {
             std::cerr << "Error: failed to open palette file" << std::endl;
             return EXIT_FAILURE;
         }
 
-        palette_data = std::vector<uint8_t>(std::istreambuf_iterator<char>(palette_stream), {});
+        // was only a single palette within the entire set requested?
+        if (palette_id.has_value()) {
+            // read only the 16 colors of interest
+            const auto rgb24_palette_size = 16 * 3;
+            palette_data.resize(rgb24_palette_size);
+            auto palette_file_base = palette_id.value() * rgb24_palette_size;
+            palette_stream.seekg(palette_file_base);
+            palette_stream.read(reinterpret_cast<char *>(&palette_data[0]), rgb24_palette_size);
+        } else {
+            // read the entire palette
+            palette_data = std::vector<uint8_t>(std::istreambuf_iterator<char>(palette_stream), {});
+        }
+
         palette_stream.close();
+    } else if (palette_id.has_value()) {
+        std::cout << "Custom palette ID specified but no palette was provided" << std::endl;
     }
 
     Image image;

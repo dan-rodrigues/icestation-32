@@ -82,15 +82,10 @@ void Image::init_from_snes(std::vector<uint8_t> tile_data, std::vector<uint8_t> 
 
         // (eventually 256 color support needed)
         const auto palette_size_4bpp = 16;
-
-        // FIXME: this was a param to select a subsection of the palette
-        // !!!
-        const auto palette_id = 8;
-
-        const auto palette_base = palette_id * palette_size_4bpp;
+        const auto rgb24_size = 3;
 
         for (auto i = 0; i < palette_size_4bpp; i++) {
-            size_t index = (palette_base + i) * 3;
+            size_t index = i * rgb24_size;
             uint8_t r = palette_data[index];
             uint8_t g = palette_data[index + 1];
             uint8_t b = palette_data[index + 2];
