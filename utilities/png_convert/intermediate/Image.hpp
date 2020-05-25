@@ -13,7 +13,7 @@ class Image {
 
 public:
     Image();
-    Image(std::vector<uint8_t> data, std::vector<uint8_t> palette_data, InputFormat format);
+    Image(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data, InputFormat format);
 
     uint8_t bpp;
 
@@ -22,6 +22,10 @@ public:
 
     Tiles tiles;
     Palette palette;
+
+private:
+    void init_from_png(std::vector<uint8_t> data);
+    void init_from_snes(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data);
 };
 
 #endif /* Image_hpp */

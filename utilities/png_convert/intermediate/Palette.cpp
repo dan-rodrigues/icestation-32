@@ -1,5 +1,7 @@
 #include "Palette.hpp"
 
+Palette::Palette() {}
+
 std::vector<uint16_t> Palette::ics_palette() {
     std::vector<uint16_t> ics_palette;
 
@@ -24,7 +26,3 @@ std::vector<uint16_t> Palette::ics_palette() {
 Palette::Palette(std::vector<uint32_t> rgba32_palette) { 
     this->rgba32_palette = rgba32_palette;
 }
-
-Palette::Palette() {}
-
-
