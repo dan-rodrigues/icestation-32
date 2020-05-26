@@ -25,6 +25,7 @@ int main(int argc, char **argv)  {
 
     std::string palette_path;
     std::optional<uint8_t> palette_id = std::nullopt;
+    std::string output_prefix = "";
 
     if (argc < 2) {
         std::cout << "Usage: (TODO: being modified)" << std::endl;
@@ -34,7 +35,7 @@ int main(int argc, char **argv)  {
     int opt;
     char *endptr;
 
-    while ((opt = getopt_long(argc, argv, "f:p:pi:", NULL, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "f:p:i:o:", NULL, NULL)) != -1) {
         switch (opt) {
             case 'f': {
                 auto input_format_arg = std::string(optarg);
@@ -55,6 +56,9 @@ int main(int argc, char **argv)  {
                 break;
             case 'i':
                 palette_id = strtol(optarg, &endptr, 10);
+                break;
+            case 'o':
+                output_prefix = std::string(optarg);
                 break;
         }
     }
@@ -112,7 +116,7 @@ int main(int argc, char **argv)  {
     auto output_directory = output_path.parent_path();
 
     auto output_tiles_path = output_directory;
-    output_tiles_path.append("tiles.h");
+    output_tiles_path.append(output_prefix + "tiles.h");
     std::ofstream output_tiles_stream(output_tiles_path, std::ios::out);
     DataHeader::generate_header(image.tiles.ics_tiles(), "uint32_t", "tiles", output_tiles_stream);
     output_tiles_stream.close();
@@ -120,7 +124,7 @@ int main(int argc, char **argv)  {
     // palette header creation
 
     auto output_palette_path = output_directory;
-    output_palette_path.append("palette.h");
+    output_palette_path.append(output_prefix + "palette.h");
     std::ofstream output_palette_stream(output_palette_path, std::ios::out);
     DataHeader::generate_header(image.palette.ics_palette(), "uint16_t", "palette", output_palette_stream);
     output_palette_stream.close();
