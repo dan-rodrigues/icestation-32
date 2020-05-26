@@ -104,7 +104,7 @@ void vdp_seek_vram(uint16_t address) {
     VDP_VRAM_ADDRESS = address;
 }
 
-void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, uint16_t *palette_start) {
+void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, const uint16_t *palette_start) {
     VDP_PALETTE_ADDRESS = color_id_start;
 
     for (uint16_t i = 0; i < count; i++) {

@@ -1,0 +1,23 @@
+#include <stddef.h>
+#include <stdint.h>
+
+const uint16_t palette[] = {
+    0xf06b,
+    0xffff,
+    0xf344,
+    0xf977,
+    0xfeb8,
+    0xf098,
+    0xfef8,
+    0xf3e6,
+    0xf000,
+    0xffff,
+    0xf435,
+    0xf3e6,
+    0xf835,
+    0xfd46,
+    0xfe85,
+    0xffc8
+};
+
+const size_t palette_length = 16;
