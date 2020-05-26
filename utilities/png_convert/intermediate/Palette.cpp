@@ -6,7 +6,7 @@ std::vector<uint16_t> Palette::ics_palette() {
     std::vector<uint16_t> ics_palette;
 
     auto round = [] (uint8_t component) {
-        return std::min(0x0f, (component + 8) / 0x10);
+        return (component - 8) / 0x10;
     };
 
     for (auto it = begin(rgba32_palette); it != end(rgba32_palette); ++it) {
