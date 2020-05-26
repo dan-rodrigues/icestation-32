@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-const uint16_t palette[] = {
+const uint16_t fg_palette[] = {
     0xf06b,
     0xffff,
     0xf344,
@@ -20,4 +20,4 @@ const uint16_t palette[] = {
     0xffc8
 };
 
-const size_t palette_length = 16;
+const size_t fg_palette_length = 16;

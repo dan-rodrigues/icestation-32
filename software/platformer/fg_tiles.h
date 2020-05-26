@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-const uint32_t tiles[] = {
+const uint32_t fg_tiles[] = {
     0x00002222,
     0x00225777,
     0x02575765,
@@ -1028,4 +1028,4 @@ const uint32_t tiles[] = {
     0x22222222
 };
 
-const size_t tiles_length = 1024;
+const size_t fg_tiles_length = 1024;

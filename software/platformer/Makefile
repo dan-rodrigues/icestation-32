@@ -12,12 +12,16 @@ HEADERS = \
 	../lib/math_util.h \
 	fg_tiles.h \
 	fg_palette.h \
-	map-flat.h
+	map-flat.h \
+	sprite_tiles.h \
+	sprite_palette.h
 
 include ../common/common.mk
 
 FG_GFX = GFX15.bin
 FG_PAL = redrawn-palette.pal
+
+SPRITE_PNG = miyamoto.png
 
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
 PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
@@ -30,4 +34,7 @@ $(PNG_CONVERTER):
 
 fg_tiles.h fg_palette.h: $(FG_GFX) $(FG_PAL) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f snes -p $(FG_PAL) -i 2 $(FG_GFX) -o fg_
+
+sprite_tiles.h sprite_palette.h: $(SPRITE_PNG) $(PNG_CONVERTER)
+	$(PNG_CONVERTER) -f png $(SPRITE_PNG) -o sprite_
 
