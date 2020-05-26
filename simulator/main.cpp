@@ -136,8 +136,12 @@ int main(int argc, const char * argv[]) {
 #endif
         main_time++;
 
+        auto round_color = [] (uint8_t component) {
+            return component | component << 4;
+        };
+
         // render current VGA output pixel
-        SDL_SetRenderDrawColor(renderer, tb->vga_r << 4, tb->vga_g << 4, tb->vga_b << 4, 255);
+        SDL_SetRenderDrawColor(renderer, round_color(tb->vga_r), round_color(tb->vga_g), round_color(tb->vga_b), 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
