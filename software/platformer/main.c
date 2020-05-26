@@ -75,10 +75,17 @@ void upload_16x16_sprite(const uint32_t *tiles, uint16_t source_tile_base, uint1
 
 int main() {
     vdp_enable_layers(SCROLL0 | SPRITES);
-    vdp_set_wide_map_layers(SCROLL0);
+
+    // the foregound is a 512x512 map tiled repeatedly
+    vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
 
-    vdp_set_layer_scroll(0, 0, 0);
+    vdp_set_layer_scroll(0, 0, -48);
+
+    // clear for fpga but disable for sim, this is pretty slow
+    vdp_set_vram_increment(1);
+    vdp_seek_vram(0);
+    vdp_fill_vram(0x8000, 0x0000);
 
     const uint16_t tile_vram_base = 0x0000;
 
@@ -139,11 +146,38 @@ int main() {
     // background color
 
     vdp_set_single_palette_color(0, 0xf088);
-    
+
+    uint8_t frame_counter = 0;
+
+    // relocate to animatio specific function
+    HeroFrame hero_frame = RUN0;
+    uint16_t hero_x = 0;
+    uint8_t hero_frame_counter = 0;
+
     while (1) {
-        draw_hero_sprites(&base_sprite_id, RUN2, 32, 32, 0);
+        // quick and dirty walk animation
+        // needs to be made speed aware
+        hero_x++;
+
+        // walk counter update
+        if (hero_frame_counter == 0) {
+            const uint8_t hero_default_frame_duration = 5;
+            hero_frame_counter = hero_default_frame_duration;
+
+            hero_frame = (hero_frame == RUN2 ? RUN0 : hero_frame + 1);
+        }
+
+        hero_frame_counter--;
+
+        // draw hero
+
+        const int16_t ground_offset = 415;
+        draw_hero_sprites(&base_sprite_id, hero_frame, hero_x, ground_offset, 0);
 
         vdp_wait_frame_ended();
+
+        frame_counter++;
+        base_sprite_id = 0;
     }
 
     return 0;
