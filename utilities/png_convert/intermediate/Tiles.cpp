@@ -122,7 +122,7 @@ Tiles::Tiles(std::vector<uint8_t> snes_tiles) {
 
     this->bitmap = bitmap;
     this->width = ImageMetrics::SNES::TILE_ROW_STRIDE;
-    this->height = bitmap.size() / this->width * 2;
+    this->height = bitmap.size() / this->width;
 }
 
 
