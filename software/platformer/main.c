@@ -91,7 +91,7 @@ int main() {
     // clear for fpga but disable for sim, this is pretty slow
     vdp_set_vram_increment(1);
     vdp_seek_vram(0);
-    vdp_fill_vram(0x8000, 0x0000);
+//    vdp_fill_vram(0x8000, 0x0000);
 
     const uint16_t tile_vram_base = 0x0000;
 

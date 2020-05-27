@@ -28,6 +28,7 @@ module bus_arbiter #(
     input cpu_ram_en,
     input dsp_en,
     input status_en,
+    input pad_en,
 
     // ready inputs from read sources
     input flash_read_ready,
@@ -38,6 +39,7 @@ module bus_arbiter #(
     input [31:0] flash_read_data,
     input [15:0] vdp_read_data,
     input [31:0] dsp_read_data,
+    input [1:0] pad_read_data,
 
     // CPU outputs
     output reg cpu_mem_ready,
@@ -93,6 +95,9 @@ module bus_arbiter #(
     assign cpu_read_data = cpu_read_data_s;
 
     always @* begin
+        // default to reading RAM
+        cpu_ram_read_data_ps = cpu_ram_read_data;
+
         if (flash_read_en_r) begin
             cpu_ram_read_data_ps = flash_read_data;
         end else if (vdp_en) begin
@@ -103,9 +108,8 @@ module bus_arbiter #(
             cpu_ram_read_data_ps = {2{vdp_read_data}};
         end else if (dsp_en) begin
             cpu_ram_read_data_ps = dsp_read_data;
-        end else begin
-            // default to reading RAM
-            cpu_ram_read_data_ps = cpu_ram_read_data;
+        end else if (pad_en) begin
+            cpu_ram_read_data_ps[1:0] = pad_read_data;
         end
     end
 

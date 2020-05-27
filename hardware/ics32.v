@@ -127,6 +127,7 @@ module ics32 #(
     wire status_en, status_write_en;
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
+    wire pad_en, pad_write_en;
 
     address_decoder #(
         .REGISTERED_INPUTS(!ENABLE_FAST_CPU)
@@ -148,6 +149,9 @@ module ics32 #(
 
         .dsp_en(dsp_en),
         .dsp_write_en(dsp_write_en),
+
+        .pad_en(pad_en),
+        .pad_write_en(pad_write_en),
 
         .flash_read_en(flash_read_en)
     );
@@ -322,6 +326,41 @@ module ics32 #(
         .read_data(cpu_ram_data_out)
     );
 
+    // --- Gamepad reading --- (TODO, 3 buttons on breakout board for now)
+
+    wire [1:0] pad_read_data;
+    reg [1:0] pad_ctrl;
+
+    wire pad_latch = pad_ctrl[0];
+    wire pad_clk = pad_ctrl[1];
+
+    reg pad_clk_r;
+
+    // mock 16 bits of dummy page state
+    // this won't exist when the actual gamepad is used
+    reg [15:0] pad_mock_state;
+    assign pad_read_data[0] = pad_mock_state[0];
+    assign pad_read_data[1] = 0;
+
+    always @(posedge vdp_clk) begin
+        if (pad_latch) begin
+            // test alternate bit pattern for now
+            pad_mock_state <= 16'haa55;
+        end
+
+        if (pad_clk && !pad_clk_r) begin
+            pad_mock_state <= {1'b0, pad_mock_state[15:1]};
+        end
+
+        pad_clk_r <= pad_clk;
+    end
+
+    always @(posedge vdp_clk) begin
+        if (pad_write_en) begin
+            pad_ctrl <= cpu_write_data[1:0];
+        end
+    end
+
     // --- Bus arbiter ---
 
     wire [31:0] cpu_read_data;
@@ -353,6 +392,7 @@ module ics32 #(
         .flash_read_en(flash_read_en),
         .dsp_en(dsp_en),
         .status_en(status_en),
+        .pad_en(pad_en),
 
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
@@ -363,6 +403,7 @@ module ics32 #(
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
+        .pad_read_data(pad_read_data),
 
         .cpu_mem_ready(cpu_mem_ready),
         .cpu_read_data(cpu_read_data),

@@ -31,7 +31,8 @@ module address_decoder #(
     output reg dsp_en,
     output reg dsp_write_en,
 
-    output reg pad_en
+    output reg pad_en,
+    output reg pad_write_en
     // (pad write, clk outputs as needed)
 );
     wire [18:0] cpu_address_s;
@@ -91,6 +92,7 @@ module address_decoder #(
             vdp_write_en = vdp_en && cpu_wstrb_s;
             status_write_en = status_en && cpu_wstrb_s;
             dsp_write_en = dsp_en && cpu_wstrb_s;
+            pad_write_en = pad_en && cpu_wstrb_s;
         end
     end
  
