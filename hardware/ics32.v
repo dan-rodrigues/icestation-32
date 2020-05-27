@@ -129,7 +129,7 @@ module ics32 #(
     wire dsp_en, dsp_write_en;
 
     address_decoder #(
-        .SUPPORT_2X_CLK(!ENABLE_FAST_CPU)
+        .REGISTERED_INPUTS(!ENABLE_FAST_CPU)
     ) decoder (
         .clk(vdp_clk),
         .reset(vdp_reset),

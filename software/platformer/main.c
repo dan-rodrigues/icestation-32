@@ -7,6 +7,7 @@
 #include "vdp.h"
 #include "math_util.h"
 #include "assert.h"
+#include "gamepad.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -144,6 +145,8 @@ int main() {
     uint16_t hero_x = 400;
     uint8_t hero_frame_counter = 0;
 
+    uint16_t pad_data = 0;
+
     while (1) {
         // quick and dirty walk animation
         // needs to be made speed aware
@@ -165,6 +168,8 @@ int main() {
         draw_hero_sprites(&base_sprite_id, hero_frame, hero_x, ground_offset, 0);
 
         vdp_wait_frame_ended();
+
+        pad_data = pad_read_p1();
 
         frame_counter++;
         base_sprite_id = 0;

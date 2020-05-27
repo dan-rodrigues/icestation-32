@@ -5,6 +5,7 @@ SOURCES = \
 	../lib/vdp.c \
 	../lib/math_util.c \
 	../lib/assert.c \
+	../lib/gamepad.c \
 	../common/font.c \
 	map-flat.c
 
@@ -12,6 +13,7 @@ HEADERS = \
 	../lib/vdp.h \
 	../lib/math_util.h \
 	../lib/assert.h \
+	../lib/gamepad.h \
 	fg_tiles.h \
 	fg_palette.h \
 	fg_map.h \
