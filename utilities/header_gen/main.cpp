@@ -43,27 +43,18 @@ int main(int argc, char **argv) {
     }
 
     std::fstream stream(input_path);
-    // load 16bits, 32bits..
     std::istreambuf_iterator<char> it(stream);
     std::istreambuf_iterator<char> end;
     std::vector<uint16_t> data;
 
-    auto byte_counter = 0;
-    size_t bytes_read = 0;
-    uint16_t word = 0;
-
     // 16bit only for now
-    for (std::istreambuf_iterator<char> it(stream); it != end && bytes_read < max_length; ++it) {
-        if (byte_counter == 0) {
-            word = (*it & 0xff);
-            byte_counter++;
+    uint8_t low_byte = 0;
+    for (size_t i = 0; it != end && i < max_length; i++) {
+        if (i & 1) {
+            data.push_back((*it++ << 8) | low_byte);
         } else {
-            word |= *it << 8;
-            byte_counter = 0;
-            data.push_back(word);
+            low_byte = (*it++ & 0xff);
         }
-
-        bytes_read++;
     }
 
     stream.close();
