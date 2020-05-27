@@ -33,7 +33,8 @@ void DataHeader::generate_header(std::vector<T> data, std::string header_type, s
 
     for (auto it = begin(data); it != end(data); ++it) {
         auto separator = (it + 1 == end(data)) ? "" : ",";
-        stream << indentation << "0x" << std::setfill('0') << std::setw(characters) << std::hex << *it << separator << "\n";
+        uint32_t data = *it;
+        stream << indentation << "0x" << std::setfill('0') << std::setw(characters) << std::hex << data << separator << "\n";
     }
 
     stream << "};" << "\n\n";
