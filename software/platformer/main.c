@@ -150,7 +150,12 @@ int main() {
     while (1) {
         // quick and dirty walk animation
         // needs to be made speed aware
-        hero_x--;
+
+        if (pad_data & 0x2000) {
+            hero_x--;
+        } else if (pad_data & 0x8000) {
+            hero_x++;
+        }
 
         // walk counter update
         if (hero_frame_counter == 0) {

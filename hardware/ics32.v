@@ -27,6 +27,10 @@ module ics32 #(
     output led_r,
     output led_b,
 
+    input btn1,
+    input btn2,
+    input btn3,
+
     output flash_sck,
     output flash_csn,
     output flash_mosi,
@@ -345,7 +349,8 @@ module ics32 #(
     always @(posedge vdp_clk) begin
         if (pad_latch) begin
             // test alternate bit pattern for now
-            pad_mock_state <= 16'haa55;
+            // pad_mock_state <= 16'haa55;
+            pad_mock_state <= {btn3, btn2, btn1};
         end
 
         if (pad_clk && !pad_clk_r) begin
