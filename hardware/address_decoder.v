@@ -74,6 +74,8 @@ module address_decoder #(
                 1: vdp_en = 1;
                 2: status_en = 1;
                 3: dsp_en = 1;
+                // (pad read...)
+                // (BRAM / bootloader read...)
                 4, 5, 6, 7: flash_read_en = 1;
             endcase
 

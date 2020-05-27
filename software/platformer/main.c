@@ -6,6 +6,7 @@
 
 #include "vdp.h"
 #include "math_util.h"
+#include "assert.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,6 +19,10 @@
 
 // TODO rename and convert from bin
 #include "map-flat.h"
+
+// vram layout constants
+
+static const uint16_t SPRITE_TILE_BASE = 0x6000;
 
 // hero frame defs, from earlier demo
 
@@ -38,39 +43,41 @@ typedef enum {
     PEACE_SIGN
 } HeroFrame;
 
+static const uint8_t HERO_FRAME_MAX_TILES = 2;
+static const int16_t HERO_FRAME_TILES_END = -1;
+
 typedef struct {
     HeroFrame frame;
 
     int16_t x_offset;
     int16_t y_offset;
 
-    uint16_t x_flip;
+    uint8_t x_flip;
 
-    // fixing this at 3 tiles for now
-    const int16_t tiles[3 + 1];
+    const int16_t tiles[2]; // tiles[HERO_FRAME_MAX_TILES]
 } SpriteFrame;
 
 static const SpriteFrame hero_frames[] = {
-    {RUN0, 0, -1, 0, {0x000, 0x0e0, -1}},
-    {RUN1, 0, 0, 0, {0x002, 0x0e0, -1}},
-    {RUN2, 0, 0, 0, {0x004, 0x0e0, -1}},
+    {RUN0, 0, -1, 0, {0x000, 0x0e0}},
+    {RUN1, 0, 0, 0, {0x002, 0x0e0}},
+    {RUN2, 0, 0, 0, {0x004, 0x0e0}},
 
-    {JUMP_RISING, 0, 0, 0, {0x006, 0x0e8, -1}},
-    {JUMP_FALLING, 0, 0, 0, {0x1a4, 0x18e, -1}},
+    {JUMP_RISING, 0, 0, 0, {0x006, 0x0e8}},
+    {JUMP_FALLING, 0, 0, 0, {0x1a4, 0x18e}},
 
-    {LOOKING_UP, 0, 0, 0, {0x004, 0x140, -1}},
+    {LOOKING_UP, 0, 0, 0, {0x004, 0x140}},
 
-    {LOOKING_SCREEN_DIRECT, 0, 0, 0, {0x00e, 0x108, -1}},
-    {LOOKING_SCREEN_LEFT, 0, 0, 0, {0x00e, 0x0e0, -1}},
-    {LOOKING_SCREEN_RIGHT, 0, 0, 1, {0x00e, 0x0e0, -1}},
+    {LOOKING_SCREEN_DIRECT, 0, 0, 0, {0x00e, 0x108}},
+    {LOOKING_SCREEN_LEFT, 0, 0, 0, {0x00e, 0x0e0}},
+    {LOOKING_SCREEN_RIGHT, 0, 0, 1, {0x00e, 0x0e0}},
 
-    {PEACE_SIGN, 0, 0, 0, {0x16e, 0x166, -1}},
+    {PEACE_SIGN, 0, 0, 0, {0x16e, 0x166}},
 };
 
 static const size_t hero_frame_count = sizeof(hero_frames) / sizeof(SpriteFrame);
 
 void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int16_t y, int16_t sprite_tile_id);
-void upload_16x16_sprite(const uint32_t *tiles, uint16_t source_tile_base, uint16_t sprite_tile_base, uint16_t sprite_tile);
+void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile);
 
 
 int main() {
@@ -98,10 +105,7 @@ int main() {
     vdp_set_vram_increment(1);
     // this loads it to the 3rd "page" of 128 tiles, where it is expected
     vdp_seek_vram(0 + 0x1800);
-    for (uint16_t i = 0; i < foreground_tile_count * 32 / 4; i++) {
-        vdp_write_vram(fg_tiles[i] & 0xffff);
-        vdp_write_vram(fg_tiles[i] >> 16);
-    }
+    vdp_write_vram_block((uint16_t *)fg_tiles, foreground_tile_count * 32 / 2);
 
     // foreground map
 
@@ -111,12 +115,7 @@ int main() {
 
     vdp_set_vram_increment(2);
     vdp_seek_vram(map_vram_base);
-
-    uint32_t *map = (uint32_t *)mapFlat;
-    for (uint16_t i = 0; i < 0x2000 / 4; i++) {
-        vdp_write_vram(map[i] & 0xffff);
-        vdp_write_vram(map[i] >> 16);
-    }
+    vdp_write_vram_block((uint16_t *)mapFlat, 0x2000 / 2);
 
     vdp_set_vram_increment(1);
 
@@ -127,17 +126,10 @@ int main() {
 
     // sprites (GFX is uploaded frame-by-frame)
 
+    vdp_set_sprite_tile_base(SPRITE_TILE_BASE);
+
     vdp_seek_palette(0);
-
-    const uint16_t sprite_vram_base = 0x6000;
-
-    vdp_set_sprite_tile_base(sprite_vram_base);
-
     vdp_write_palette_range(0, 0x10, sprite_palette);
-
-    // DEMO: one sprite on screen
-    // just borrow the affine_demo stuff where it uploads frames automatically
-    // and cleanup as going along etc.
 
     uint8_t base_sprite_id = 0;
 
@@ -151,13 +143,13 @@ int main() {
 
     // relocate to animatio specific function
     HeroFrame hero_frame = RUN0;
-    uint16_t hero_x = 0;
+    uint16_t hero_x = 400;
     uint8_t hero_frame_counter = 0;
 
     while (1) {
         // quick and dirty walk animation
         // needs to be made speed aware
-        hero_x++;
+        hero_x--;
 
         // walk counter update
         if (hero_frame_counter == 0) {
@@ -183,30 +175,25 @@ int main() {
     return 0;
 }
 
-void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int16_t y, int16_t sprite_tile_id) {
+void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int16_t y, int16_t sprite_tile) {
     const uint8_t hero_palette = 0;
+    const uint8_t hero_priority = 3;
 
-    // resolve frame
     const SpriteFrame *sprite_frame = NULL;
-    for (int i = 0; i < hero_frame_count; i++) {
+    for (uint16_t i = 0; i < hero_frame_count; i++) {
         if (hero_frames[i].frame == frame) {
             sprite_frame = &hero_frames[i];
             break;
         }
     }
 
-    // should never happen, have a proper assert for this case
-    if (sprite_frame == NULL) {
-        // move to some common utility file
-        __asm__("ebreak");
-    }
+    assert(sprite_frame != NULL);
 
     uint8_t sprite_id = *base_sprite_id;
 
-    const int16_t *charMap = sprite_frame->tiles;
-    for (int i = 0; i < 8; i++) {
-        int16_t sourceChar = charMap[i];
-        if (sourceChar == -1) {
+    for (uint8_t i = 0; i < HERO_FRAME_MAX_TILES; i++) {
+        int16_t frame_tile = sprite_frame->tiles[i];
+        if (frame_tile == HERO_FRAME_TILES_END) {
             break;
         }
 
@@ -214,24 +201,18 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
 
         uint16_t x_block = x + sprite_frame->x_offset;
         x_block &= 0x3ff;
-        // assuming flipped state
-        // *unless the attribute says otherwise*
-        if (sprite_frame->x_flip) {
-            // ... nothing!
-        } else {
-            x_block |= SPRITE_X_FLIP;
-        }
+        x_block |= (sprite_frame->x_flip ? SPRITE_X_FLIP : 0);
 
         uint16_t y_block = y + sprite_frame->y_offset;
         y_block &= 0x1ff;
         y_block |= SPRITE_16_TALL | SPRITE_16_WIDE;
 
-        uint16_t g_block = sprite_tile_id;
-        g_block |= 3 << SPRITE_PRIORITY_SHIFT | hero_palette << SPRITE_PAL_SHIFT;
+        uint16_t g_block = sprite_tile;
+        g_block |= hero_priority << SPRITE_PRIORITY_SHIFT | hero_palette << SPRITE_PAL_SHIFT;
 
         // upload and set graphics
 
-        upload_16x16_sprite(sprite_tiles, sourceChar, 0x6000, sprite_tile_id);
+        upload_16x16_sprite(frame_tile, sprite_tile);
 
         vdp_write_single_sprite_meta(sprite_id, x_block, y_block, g_block);
 
@@ -239,30 +220,23 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
 
         y -= 16;
         sprite_id++;
-        sprite_tile_id += 2;
+        sprite_tile += 2;
     }
 
     *base_sprite_id = sprite_id;
 }
 
-void upload_16x16_sprite(const uint32_t *tiles, uint16_t source_tile_base, uint16_t sprite_tile_base, uint16_t sprite_tile) {
-    vdp_set_vram_increment(1);
-    vdp_seek_vram(sprite_tile_base + sprite_tile * 0x10);
+void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile) {
+    vdp_seek_vram(SPRITE_TILE_BASE + sprite_tile * 0x10);
 
-    // 16x16 arrangement
-    for (int i = 0; i < 4; i++) {
-        if (i == 2) {
-            vdp_seek_vram(sprite_tile_base + (0x10 + sprite_tile) * 0x10);
-        }
+    uint16_t *source_tiles = (uint16_t *)(sprite_tiles + source_tile_base * 8);
+    const uint16_t frame_row_word_size = 0x10 * 2;
 
-        uint8_t nextRow = i & 2;
+    // first row (upper 16x8 half)
+    vdp_write_vram_block(source_tiles, frame_row_word_size);
 
-        for (int row = 0; row < 8; row++) {
-            // could reuse the new 32bit function
-            // TODO: share a block copy function
-            uint32_t doubleRow = tiles[((i & 1) + source_tile_base + (nextRow ? 0x10 : 0)) * 8 + row];
-            vdp_write_vram(doubleRow & 0xffff);
-            vdp_write_vram(doubleRow >> 16);
-        }
-    }
+    // second row (lower 16x8 half)
+    const uint16_t sprite_row_word_stride = 0x20 * 0x10 / 2;
+    vdp_seek_vram(SPRITE_TILE_BASE + (0x10 + sprite_tile) * 0x10);
+    vdp_write_vram_block(source_tiles + sprite_row_word_stride, frame_row_word_size);
 }

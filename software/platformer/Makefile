@@ -4,12 +4,14 @@ SOURCES = \
 	../common/start.S \
 	../lib/vdp.c \
 	../lib/math_util.c \
+	../lib/assert.c \
 	../common/font.c \
 	map-flat.c
 
 HEADERS = \
 	../lib/vdp.h \
 	../lib/math_util.h \
+	../lib/assert.h \
 	fg_tiles.h \
 	fg_palette.h \
 	map-flat.h \

@@ -9,8 +9,7 @@ std::vector<uint16_t> Palette::ics_palette() {
         return (component - 8) / 0x10;
     };
 
-    for (auto it = begin(rgba32_palette); it != end(rgba32_palette); ++it) {
-        uint32_t color = *it;
+    for (auto color : this->rgba32_palette) {
         uint8_t a = round(color >> 24 & 0xff);
         uint8_t b = round(color >> 16 & 0xff);
         uint8_t g = round(color >> 8 & 0xff);

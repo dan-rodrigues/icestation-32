@@ -95,7 +95,7 @@ void vdp_write_vram(uint16_t word) {
 }
 
 void vdp_fill_vram(uint16_t count, uint16_t word) {
-    for (uint16_t i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         VDP_VRAM_WRITE_DATA = word;
     }
 }
@@ -133,6 +133,12 @@ void vdp_set_layer_scroll(uint8_t layer, uint16_t scroll_x, uint16_t scroll_y) {
 
 void vdp_set_vram_increment(uint8_t increment) {
     VDP_ADDRESS_INCREMENT = increment;
+}
+
+void vdp_write_vram_block(uint16_t *data, uint16_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        VDP_VRAM_WRITE_DATA = data[i];
+    }
 }
 
 void vdp_write_single_sprite_meta(uint8_t sprite_id, uint16_t x_block, uint16_t y_block, uint16_t g_block) {
