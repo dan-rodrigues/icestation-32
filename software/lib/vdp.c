@@ -135,7 +135,7 @@ void vdp_set_vram_increment(uint8_t increment) {
     VDP_ADDRESS_INCREMENT = increment;
 }
 
-void vdp_write_vram_block(uint16_t *data, uint16_t size) {
+void vdp_write_vram_block(const uint16_t *data, uint16_t size) {
     for (uint32_t i = 0; i < size; i++) {
         VDP_VRAM_WRITE_DATA = data[i];
     }

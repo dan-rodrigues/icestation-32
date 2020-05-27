@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <optional>
 #include <getopt.h>
 #include <stdint.h>
 
@@ -9,10 +10,12 @@ int main(int argc, char **argv) {
     std::string type_name = "uint16_t";
     std::string identifier = "data";
     std::string output_path = "data.h";
+    size_t max_length = SIZE_MAX;
 
     int opt;
+    char *endptr;
 
-    while ((opt = getopt_long(argc, argv, "t:i:o:", NULL, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "t:i:o:m:", NULL, NULL)) != -1) {
         switch (opt) {
             case 't':
                 type_name = optarg;
@@ -22,6 +25,9 @@ int main(int argc, char **argv) {
                 break;
             case 'o':
                 output_path = optarg;
+                break;
+            case 'm':
+                max_length = strtol(optarg, &endptr, 10);
                 break;
             case '?':
                 return EXIT_FAILURE;
@@ -43,10 +49,11 @@ int main(int argc, char **argv) {
     std::vector<uint16_t> data;
 
     auto byte_counter = 0;
+    size_t bytes_read = 0;
     uint16_t word = 0;
 
     // 16bit only for now
-    for (std::istreambuf_iterator<char> it(stream); it != end; ++it) {
+    for (std::istreambuf_iterator<char> it(stream); it != end && bytes_read < max_length; ++it) {
         if (byte_counter == 0) {
             word = (*it & 0xff);
             byte_counter++;
@@ -55,6 +62,8 @@ int main(int argc, char **argv) {
             byte_counter = 0;
             data.push_back(word);
         }
+
+        bytes_read++;
     }
 
     stream.close();

@@ -12,13 +12,11 @@
 #include <stdbool.h>
 
 #include "fg_tiles.h"
+#include "fg_map.h"
 #include "fg_palette.h"
 
 #include "sprite_tiles.h"
 #include "sprite_palette.h"
-
-// TODO rename and convert from bin
-#include "map-flat.h"
 
 // vram layout constants
 
@@ -115,7 +113,7 @@ int main() {
 
     vdp_set_vram_increment(2);
     vdp_seek_vram(map_vram_base);
-    vdp_write_vram_block((uint16_t *)mapFlat, 0x2000 / 2);
+    vdp_write_vram_block(fg_map, fg_map_length);
 
     vdp_set_vram_increment(1);
 
