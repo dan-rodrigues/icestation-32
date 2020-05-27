@@ -14,7 +14,7 @@ module address_decoder #(
     input clk,
     input reset,
 
-    input [18:0] cpu_address,
+    input [19:0] cpu_address,
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
 
@@ -35,13 +35,13 @@ module address_decoder #(
     output reg pad_write_en
     // (pad write, clk outputs as needed)
 );
-    wire [18:0] cpu_address_s;
+    wire [19:0] cpu_address_s;
     wire cpu_mem_valid_s;
     wire [3:0] cpu_wstrb_s;
 
     generate
         if (REGISTERED_INPUTS) begin
-            reg [18:0] cpu_address_r;
+            reg [19:0] cpu_address_r;
             reg cpu_mem_valid_r;
             reg [3:0] cpu_wstrb_r;
 
@@ -71,6 +71,7 @@ module address_decoder #(
         dsp_en = 0;
         dsp_write_en = 0;
         pad_en = 0;
+        pad_write_en = 0;
 
         if (cpu_mem_valid_s && !reset) begin
             if (cpu_address_s[19]) begin
