@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
     if (argc == optind + 1) {
         input_path = argv[optind];
     } else {
-        std::cerr << "Usage: (TODO) <input file>" << std::endl;
-        return EXIT_FAILURE;
+        std::cerr << "Usage: [options] <input-file>" << std::endl;
+        return EXIT_SUCCESS;
     }
 
     std::fstream stream(input_path);

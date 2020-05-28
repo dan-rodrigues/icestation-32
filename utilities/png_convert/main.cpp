@@ -28,7 +28,7 @@ int main(int argc, char **argv)  {
     std::string output_prefix = "";
 
     if (argc < 2) {
-        std::cout << "Usage: (TODO: being modified)" << std::endl;
+        std::cout << "Usage: [options] <input-file>" << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -60,6 +60,8 @@ int main(int argc, char **argv)  {
             case 'o':
                 output_prefix = std::string(optarg);
                 break;
+            case '?':
+                return EXIT_FAILURE;
         }
     }
 
