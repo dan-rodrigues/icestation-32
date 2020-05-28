@@ -63,6 +63,10 @@ typedef struct {
 
 static const int32_t Q_1 = 0x10000;
 
+typedef enum {
+    LEFT, RIGHT
+} SpriteDirection;
+
 typedef struct {
     int16_t x, y;
     int16_t x_fraction, y_fraction;
@@ -72,10 +76,19 @@ typedef struct {
     int32_t x, y;
 } SpriteVelocity;
 
-void update_hero_state(SpritePosition *position, SpriteVelocity *velocity, uint16_t pad, uint16_t pad_edge);
+typedef struct {
+    HeroFrame frame;
+    uint8_t frame_counter;
+
+    SpritePosition position;
+    SpriteVelocity velocity;
+    SpriteDirection direction;
+} Hero;
+
+void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge);
 void apply_velocity(SpriteVelocity *velocity, SpritePosition *position);
 
-void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int16_t y, int16_t sprite_tile_id);
+void draw_hero_sprites(uint8_t *base_sprite_id, Hero *hero, int16_t sprite_tile);
 void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile);
 
 static const int16_t GROUND_OFFSET = 415;
@@ -86,12 +99,13 @@ int main() {
     // the foregound is a 512x512 map tiled repeatedly
     vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
+    vdp_set_vram_increment(1);
 
     const int16_t map_y_offset = -48;
     vdp_set_layer_scroll(0, 0, map_y_offset);
 
     // clear for fpga but disable for sim, this is pretty slow
-    vdp_set_vram_increment(1);
+
     vdp_seek_vram(0);
 //    vdp_fill_vram(0x8000, 0x0000);
 
@@ -111,7 +125,6 @@ int main() {
     vdp_set_vram_increment(2);
     vdp_seek_vram(SCROLL_MAP_BASE);
     vdp_write_vram_block(fg_map, fg_map_length);
-
     vdp_set_vram_increment(1);
 
     // foreground palette
@@ -130,70 +143,68 @@ int main() {
 
     // background color
 
-    const uint16_t background_color = 0xf088;
+    const uint16_t background_color = 0xf488;
     vdp_set_single_palette_color(0, background_color);
-
-    uint8_t frame_counter = 0;
-
-    // relocate to animatio specific function
-    HeroFrame hero_frame = RUN0;
-    uint8_t hero_frame_counter = 0;
 
     SpritePosition hero_position = {.x = 400, .y = GROUND_OFFSET, .x_fraction = 0, .y_fraction = 0};
     SpriteVelocity hero_velocity = {0, 0};
 
-    // gamepad state
+    Hero hero = { .frame = RUN2, .direction = RIGHT, .position = hero_position, .velocity = hero_velocity};
+
+    // init gamepad state
+
     uint16_t p1_pad = 0;
     uint16_t p1_pad_edge = 0;
 
-    // sprites init
+    // init sprites context before entering game loop
+
     uint8_t base_sprite_id = 0;
     vdp_clear_all_sprites();
 
     while (true) {
-        update_hero_state(&hero_position, &hero_velocity, p1_pad, p1_pad_edge);
-
-        // walk counter update
-        if (hero_frame_counter == 0) {
-            const uint8_t hero_default_frame_duration = 5;
-            hero_frame_counter = hero_default_frame_duration;
-            hero_frame = (hero_frame == RUN2 ? RUN0 : hero_frame + 1);
-        }
-
-        hero_frame_counter--;
-
-        // draw hero
-
-        draw_hero_sprites(&base_sprite_id, hero_frame, hero_position.x, hero_position.y, 0);
+        update_hero_state(&hero, p1_pad, p1_pad_edge);
+        draw_hero_sprites(&base_sprite_id, &hero, 0);
 
         vdp_wait_frame_ended();
 
         pad_read(&p1_pad, NULL, &p1_pad_edge, NULL);
 
-        frame_counter++;
         base_sprite_id = 0;
     }
 
     return 0;
 }
 
-void update_hero_state(SpritePosition *position, SpriteVelocity *velocity, uint16_t pad, uint16_t pad_edge) {
+// could wrap these individual params into one
+
+void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
     // walking left/right
 
     const int32_t walk_max_speed = 2 * Q_1;
     const int32_t walk_correction_delta = Q_1 / 2;
     const int32_t walk_idle_delta = Q_1 / 8;
 
+    SpriteVelocity *velocity = &hero->velocity;
+    SpritePosition *position = &hero->position;
+
     if (pad & GP_LEFT && (~pad & GP_RIGHT)) {
         velocity->x += !SIGN(velocity->x) ? -walk_correction_delta : -walk_idle_delta;
         velocity->x = MAX(-walk_max_speed, velocity->x);
+
+        if (SIGN(velocity->x)) {
+            hero->direction = LEFT;
+        }
     } else if (pad & GP_RIGHT && (~pad & GP_LEFT)) {
         velocity->x += (SIGN(velocity->x) && velocity->x) ? walk_correction_delta : walk_idle_delta;
         velocity->x = MIN(walk_max_speed, velocity->x);
+
+        if (!SIGN(velocity->x)) {
+            hero->direction = RIGHT;
+        }
     } else {
         int32_t abs_velocity = ABS(velocity->x);
         abs_velocity -= walk_idle_delta;
-        abs_velocity = (SIGN(abs_velocity) ? 0 : abs_velocity); // SIGN()
+        abs_velocity = (SIGN(abs_velocity) ? 0 : abs_velocity);
         velocity->x = (SIGN(velocity->x) ? -abs_velocity : abs_velocity);
     }
 
@@ -201,7 +212,7 @@ void update_hero_state(SpritePosition *position, SpriteVelocity *velocity, uint1
 
     const int32_t jump_initial_speed = 5 * Q_1;
 
-    bool grounded = position->y >= GROUND_OFFSET;
+    bool grounded = hero->position.y >= GROUND_OFFSET;
 
     if (grounded && (pad_edge & GP_B)) {
         velocity->y = -jump_initial_speed;
@@ -231,6 +242,16 @@ void update_hero_state(SpritePosition *position, SpriteVelocity *velocity, uint1
         position->y = GROUND_OFFSET;
         position->y_fraction = 0;
     }
+
+    // animation
+
+    if (hero->frame_counter == 0) {
+        const uint8_t hero_default_frame_duration = 5;
+        hero->frame_counter = hero_default_frame_duration;
+        hero->frame = (hero->frame == RUN2 ? RUN0 : hero->frame + 1);
+    }
+
+    hero->frame_counter--;
 }
 
 void apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {
@@ -245,7 +266,7 @@ void apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {
     position->y = y_full / Q_1;
 }
 
-void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int16_t y, int16_t sprite_tile) {
+void draw_hero_sprites(uint8_t *base_sprite_id, Hero *hero, int16_t sprite_tile) {
     static const SpriteFrame hero_frames[] = {
         {RUN0, 0, -1, 0, {0x000, 0x0e0}},
         {RUN1, 0, 0, 0, {0x002, 0x0e0}},
@@ -270,7 +291,7 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
 
     const SpriteFrame *sprite_frame = NULL;
     for (uint16_t i = 0; i < hero_frame_count; i++) {
-        if (hero_frames[i].frame == frame) {
+        if (hero_frames[i].frame == hero->frame) {
             sprite_frame = &hero_frames[i];
             break;
         }
@@ -279,6 +300,7 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
     assert(sprite_frame);
 
     uint8_t sprite_id = *base_sprite_id;
+    int16_t sprite_y = hero->position.y;
 
     for (uint8_t i = 0; i < HERO_FRAME_MAX_TILES; i++) {
         int16_t frame_tile = sprite_frame->tiles[i];
@@ -288,11 +310,13 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
 
         // sprite metadata
 
-        uint16_t x_block = x + sprite_frame->x_offset;
+        uint16_t x_block = hero->position.x + sprite_frame->x_offset;
         x_block &= 0x3ff;
-        x_block |= (sprite_frame->x_flip ? SPRITE_X_FLIP : 0);
+        bool hero_needs_flip = (hero->direction == RIGHT);
+        bool frame_needs_flip = sprite_frame->x_flip;
+        x_block |= (hero_needs_flip ^ frame_needs_flip ? SPRITE_X_FLIP : 0);
 
-        uint16_t y_block = y + sprite_frame->y_offset;
+        uint16_t y_block = sprite_y + sprite_frame->y_offset;
         y_block &= 0x1ff;
         y_block |= SPRITE_16_TALL | SPRITE_16_WIDE;
 
@@ -305,7 +329,7 @@ void draw_hero_sprites(uint8_t *base_sprite_id, HeroFrame frame, int16_t x, int1
         // set sprite metadata (pointing to the graphics uploaded in previous step)
         vdp_write_single_sprite_meta(sprite_id, x_block, y_block, g_block);
 
-        y -= 16;
+        sprite_y -= 16;
         sprite_id++;
         sprite_tile += 2;
     }
