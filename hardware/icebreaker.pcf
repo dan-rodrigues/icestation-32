@@ -29,3 +29,7 @@ set_io flash_csn 16
 set_io flash_mosi 14
 set_io flash_miso 17
 
+set_io -nowarn btn1 20
+set_io -nowarn btn2 19
+set_io -nowarn btn3 18
+

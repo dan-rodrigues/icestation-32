@@ -4,9 +4,9 @@ MEMORY
 
     // This memory region would be used if the progam was XIP from the flash
     // Instead it is copied to the SPRAM
-    // FLASH_IPL (xr) : ORIGIN = 0x00040000, LENGTH = 0x010000
+    // FLASH_IPL (xr) : ORIGIN = 0x00080000, LENGTH = 0x010000
 
-    FLASH_ASSETS (xr) : ORIGIN = 0x00050000, LENGTH = 0x030000
+    FLASH_ASSETS (xr) : ORIGIN = 0x00090000, LENGTH = 0x070000
 }
 
 SECTIONS {

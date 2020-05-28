@@ -28,6 +28,7 @@ module bus_arbiter #(
     input cpu_ram_en,
     input dsp_en,
     input status_en,
+    input pad_en,
 
     // ready inputs from read sources
     input flash_read_ready,
@@ -38,6 +39,7 @@ module bus_arbiter #(
     input [31:0] flash_read_data,
     input [15:0] vdp_read_data,
     input [31:0] dsp_read_data,
+    input [1:0] pad_read_data,
 
     // CPU outputs
     output reg cpu_mem_ready,
@@ -65,12 +67,13 @@ module bus_arbiter #(
 
     generate
         // using !cpu_mem_ready only works if the CPU clk is full speed
+        // (refactor this that cpu_mem_ready check is the only point of difference)
         if (!SUPPORT_2X_CLK) begin
             assign cpu_ram_ready = cpu_ram_en && !cpu_mem_ready;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en) && !cpu_mem_ready;
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en) && !cpu_mem_ready;
         end else begin
             assign cpu_ram_ready = cpu_ram_en;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en);
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en);
         end
     endgenerate
 
@@ -93,6 +96,9 @@ module bus_arbiter #(
     assign cpu_read_data = cpu_read_data_s;
 
     always @* begin
+        // default to reading RAM
+        cpu_ram_read_data_ps = cpu_ram_read_data;
+
         if (flash_read_en_r) begin
             cpu_ram_read_data_ps = flash_read_data;
         end else if (vdp_en) begin
@@ -103,9 +109,8 @@ module bus_arbiter #(
             cpu_ram_read_data_ps = {2{vdp_read_data}};
         end else if (dsp_en) begin
             cpu_ram_read_data_ps = dsp_read_data;
-        end else begin
-            // default to reading RAM
-            cpu_ram_read_data_ps = cpu_ram_read_data;
+        end else if (pad_en) begin
+            cpu_ram_read_data_ps[1:0] = pad_read_data;
         end
     end
 

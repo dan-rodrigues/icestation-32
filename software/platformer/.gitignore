@@ -1,0 +1,18 @@
+# GCC
+
+*.elf
+*.bin
+*.hex
+
+/sections_p.lds
+
+# Generated sources
+
+/tiles.h
+/palette.h
+/sin_table.h
+
+# Optional disassembly
+
+/dasm
+

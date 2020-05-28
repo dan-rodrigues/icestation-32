@@ -16,13 +16,25 @@ HEADERS = \
 
 include ../common/common.mk
 
-PNG = crystal-32-ia.png
+# Ensure utility dependencies are up to date
+
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
 PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
 
-$(PNG_CONVERTER):
-	$(MAKE) -C $(PNG_CONVERTER_DIR)
+pre-build:
+	@$(MAKE) -C $(PNG_CONVERTER_DIR)
+
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(BIN)
+
+.PHONY: main-build
+
+.DEFAULT_GOAL := main-build
+
+###
+
+PNG = crystal-32-ia.png
 
 tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) $(PNG)
+	$(PNG_CONVERTER) -f png $(PNG)
 

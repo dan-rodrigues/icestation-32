@@ -95,7 +95,7 @@ void vdp_write_vram(uint16_t word) {
 }
 
 void vdp_fill_vram(uint16_t count, uint16_t word) {
-    for (uint16_t i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         VDP_VRAM_WRITE_DATA = word;
     }
 }
@@ -104,10 +104,10 @@ void vdp_seek_vram(uint16_t address) {
     VDP_VRAM_ADDRESS = address;
 }
 
-void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, uint16_t *palette_start) {
+void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, const uint16_t *palette_start) {
     VDP_PALETTE_ADDRESS = color_id_start;
 
-    for (uint16_t i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         VDP_PALETTE_WRITE_DATA = palette_start[i];
     }
 }
@@ -126,13 +126,21 @@ void vdp_write_palette_color(uint16_t color) {
 }
 
 void vdp_set_layer_scroll(uint8_t layer, uint16_t scroll_x, uint16_t scroll_y) {
-    uint8_t index = layer &0xff;
+    uint8_t index = layer & 0xff;
     VDP_HSCROLL_BASE[index] = scroll_x;
     VDP_VSCROLL_BASE[index] = scroll_y;
 }
 
 void vdp_set_vram_increment(uint8_t increment) {
     VDP_ADDRESS_INCREMENT = increment;
+}
+
+void vdp_write_vram_block(const uint16_t *data, uint16_t size) {
+    uint32_t size_32 = size;
+    while (size_32 != 0) {
+        VDP_VRAM_WRITE_DATA = *data++;
+        size_32--;
+    }
 }
 
 void vdp_write_single_sprite_meta(uint8_t sprite_id, uint16_t x_block, uint16_t y_block, uint16_t g_block) {
@@ -162,7 +170,7 @@ void vdp_clear_all_sprites() {
 
     VDP_SPRITE_BLOCK_ADDRESS = 0;
 
-    for (uint16_t i = 0; i < 256; i++) {
+    for (uint32_t i = 0; i < 256; i++) {
         VDP_SPRITE_DATA = 0;
         VDP_SPRITE_DATA = y_block;
         VDP_SPRITE_DATA = 0;

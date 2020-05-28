@@ -136,8 +136,12 @@ int main(int argc, const char * argv[]) {
 #endif
         main_time++;
 
+        auto round_color = [] (uint8_t component) {
+            return component | component << 4;
+        };
+
         // render current VGA output pixel
-        SDL_SetRenderDrawColor(renderer, tb->vga_r << 4, tb->vga_g << 4, tb->vga_b << 4, 255);
+        SDL_SetRenderDrawColor(renderer, round_color(tb->vga_r), round_color(tb->vga_g), round_color(tb->vga_b), 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
@@ -155,10 +159,19 @@ int main(int argc, const char * argv[]) {
             SDL_RenderPresent(renderer);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
+
+            // input test (using mocked 3-button setup as the iCEBreaker)
+            SDL_PumpEvents();
+            const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_LEFT];
+            tb->ics32_tb__DOT__ics32__DOT__btn2 = state[SDL_SCANCODE_RSHIFT];
+            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_RIGHT];
         }
 
         vga_vsync_previous = tb->vga_vsync;
-        
+
+        // exit checking
         SDL_Event e;
         SDL_PollEvent(&e);
 

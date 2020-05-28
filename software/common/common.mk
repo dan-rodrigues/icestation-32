@@ -7,7 +7,9 @@ DFLAGS = --line-numbers
 LDS = ../common/sections.lds
 LDS_P = sections_p.lds
 
-prog.bin: prog.elf
+BIN = prog.bin
+
+$(BIN): prog.elf
 	$(CROSS)objcopy -O binary prog.elf prog.bin
 
 dasm: prog.elf
@@ -20,4 +22,6 @@ prog.elf: $(LDS_P) $(HEADERS) $(SOURCES)
 	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -o prog.elf $(SOURCES)
 
 clean:
-	rm -f prog.elf prog.hex prog.bin
+	rm -f prog.elf prog.hex $(BIN)
+
+.PHONY: clean
