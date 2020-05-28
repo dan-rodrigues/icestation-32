@@ -18,6 +18,9 @@ include ../common/common.mk
 
 # Ensure utility dependencies are up to date
 
+PNG_CONVERTER_DIR = ../../utilities/png_convert/
+PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
+
 pre-build:
 	@$(MAKE) -C $(PNG_CONVERTER_DIR)
 
@@ -31,11 +34,7 @@ main-build: pre-build
 ###
 
 PNG = crystal-32-ia.png
-PNG_CONVERTER_DIR = ../../utilities/png_convert/
-PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
-
-$(PNG_CONVERTER):
-	$(MAKE) -C $(PNG_CONVERTER_DIR)
 
 tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f png $(PNG)
+
