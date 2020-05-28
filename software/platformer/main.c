@@ -130,7 +130,7 @@ int main() {
     // foreground palette
 
     const uint8_t palette_size = 0x10;
-    
+
     const uint8_t map_palette_id = 2;
     vdp_write_palette_range(map_palette_id * palette_size, palette_size, fg_palette);
 
@@ -149,7 +149,13 @@ int main() {
     SpritePosition hero_position = {.x = 400, .y = GROUND_OFFSET, .x_fraction = 0, .y_fraction = 0};
     SpriteVelocity hero_velocity = {0, 0};
 
-    Hero hero = { .frame = IDLE_HERO_FRAME, .direction = RIGHT, .position = hero_position, .velocity = hero_velocity};
+    Hero hero = {
+        .frame = IDLE_HERO_FRAME,
+        .frame_counter = 0,
+        .direction = RIGHT,
+        .position = hero_position,
+        .velocity = hero_velocity
+    };
 
     // init gamepad state
 
@@ -261,11 +267,14 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
         if (frame_counter < 0) {
             const int32_t hero_default_frame_duration = 5 * Q_1;
             frame_counter = hero_default_frame_duration;
-            frame_counter = (hero->frame == RUN2 ? RUN0 : hero->frame + 1);
+            hero->frame = (hero->frame == RUN2 ? RUN0 : hero->frame + 1);
+        } else if (hero->velocity.x != 0) {
+            int32_t frame_counter_delta = ABS(hero->velocity.x);
+            frame_counter -= frame_counter_delta;
+        } else {
+            hero->frame = IDLE_HERO_FRAME;
         }
 
-        int32_t frame_counter_delta = ABS(hero->velocity.x);
-        frame_counter -= frame_counter_delta;
         hero->frame_counter = frame_counter;
     } else {
         // frame for jumping or falling
