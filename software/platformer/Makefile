@@ -26,7 +26,6 @@ include ../common/common.mk
 
 pre-build:
 	@$(MAKE) -C $(PNG_CONVERTER_DIR)
-	@$(MAKE) -C $(HEADER_GEN_DIR)
 
 main-build: pre-build
 	@$(MAKE) --no-print-directory $(BIN)
@@ -37,30 +36,19 @@ main-build: pre-build
 
 ###
 
-FG_GFX = GFX15.bin
-FG_PAL = redrawn-palette.pal
-
-FG_MAP = flat-map-fg
+FG_GFX = fg_tiles.bin
+FG_PAL = fg_palette.pal
 
 SPRITE_PNG = miyamoto.png
 
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
 PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
 
-HEADER_GEN_DIR = ../../utilities/header_gen/
-HEADER_GEN = $(HEADER_GEN_DIR)header-gen
-
 $(PNG_CONVERTER):
 	$(MAKE) -C $(PNG_CONVERTER_DIR)
-
-$(HEADER_GEN):
-	$(MAKE) -C $(HEADER_GEN_DIR)
 
 fg_tiles.h fg_palette.h: $(FG_GFX) $(FG_PAL) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f snes -p $(FG_PAL) -i 2 $(FG_GFX) -o fg_
 
 sprite_tiles.h sprite_palette.h: $(SPRITE_PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f png $(SPRITE_PNG) -o sprite_
-
-fg_map.h: $(FG_MAP) $(HEADER_GEN)
-	$(HEADER_GEN) -o fg_map.h -i fg_map -m 7168 $(FG_MAP)
