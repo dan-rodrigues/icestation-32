@@ -44,6 +44,8 @@ typedef enum {
     PEACE_SIGN
 } HeroFrame;
 
+static const HeroFrame IDLE_HERO_FRAME = RUN2;
+
 static const uint8_t HERO_FRAME_MAX_TILES = 2;
 static const int16_t HERO_FRAME_TILES_END = -1;
 
@@ -78,7 +80,7 @@ typedef struct {
 
 typedef struct {
     HeroFrame frame;
-    uint8_t frame_counter;
+    uint32_t frame_counter;
 
     SpritePosition position;
     SpriteVelocity velocity;
@@ -104,17 +106,15 @@ int main() {
     const int16_t map_y_offset = -48;
     vdp_set_layer_scroll(0, 0, map_y_offset);
 
-    // clear for fpga but disable for sim, this is pretty slow
-
     vdp_seek_vram(0);
-//    vdp_fill_vram(0x8000, 0x0000);
+    vdp_fill_vram(0x8000, 0x0000);
 
     // foreground tiles
 
     vdp_set_layer_tile_base(0, SCROLL_TILE_BASE);
 
     vdp_set_vram_increment(1);
-    // this loads it to the 3rd "page" of 128 tiles, where it is expected
+    // this loads tileset to the 3rd "page" of 128 tiles, where it is expected
     vdp_seek_vram(0 + 0x1800);
     vdp_write_vram_block((uint16_t *)fg_tiles, fg_tiles_length * 2);
 
@@ -129,9 +129,9 @@ int main() {
 
     // foreground palette
 
-    // the original map expeccts palette_id = 2
-    const uint8_t map_palette_id = 2;
     const uint8_t palette_size = 0x10;
+    
+    const uint8_t map_palette_id = 2;
     vdp_write_palette_range(map_palette_id * palette_size, palette_size, fg_palette);
 
     // sprites
@@ -149,7 +149,7 @@ int main() {
     SpritePosition hero_position = {.x = 400, .y = GROUND_OFFSET, .x_fraction = 0, .y_fraction = 0};
     SpriteVelocity hero_velocity = {0, 0};
 
-    Hero hero = { .frame = RUN2, .direction = RIGHT, .position = hero_position, .velocity = hero_velocity};
+    Hero hero = { .frame = IDLE_HERO_FRAME, .direction = RIGHT, .position = hero_position, .velocity = hero_velocity};
 
     // init gamepad state
 
@@ -174,8 +174,6 @@ int main() {
 
     return 0;
 }
-
-// could wrap these individual params into one
 
 void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
     // walking left/right
@@ -245,13 +243,35 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
 
     // animation
 
-    if (hero->frame_counter == 0) {
-        const uint8_t hero_default_frame_duration = 5;
-        hero->frame_counter = hero_default_frame_duration;
-        hero->frame = (hero->frame == RUN2 ? RUN0 : hero->frame + 1);
-    }
+    grounded = hero->position.y >= GROUND_OFFSET;
 
-    hero->frame_counter--;
+    if (grounded) {
+        // frame for idle state or walking
+
+        switch (hero->frame) {
+            case RUN0: case RUN1: case RUN2:
+                break;
+            default:
+                hero->frame = IDLE_HERO_FRAME;
+                break;
+        }
+
+        int32_t frame_counter = hero->frame_counter;
+
+        if (frame_counter < 0) {
+            const int32_t hero_default_frame_duration = 5 * Q_1;
+            frame_counter = hero_default_frame_duration;
+            frame_counter = (hero->frame == RUN2 ? RUN0 : hero->frame + 1);
+        }
+
+        int32_t frame_counter_delta = ABS(hero->velocity.x);
+        frame_counter -= frame_counter_delta;
+        hero->frame_counter = frame_counter;
+    } else {
+        // frame for jumping or falling
+
+        hero->frame = (SIGN(velocity->y) ? JUMP_RISING : JUMP_FALLING);
+    }
 }
 
 void apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {

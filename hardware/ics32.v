@@ -355,7 +355,7 @@ module ics32 #(
     always @(posedge vdp_clk) begin
         if (pad_latch) begin
             // left, right, B inputs respectively
-            pad_mock_state <= {btn3, btn1, 5'b0, btn2};
+            pad_mock_state <= {btn1, btn3, 5'b0, btn2};
         end
 
         if (pad_clk && !pad_clk_r) begin

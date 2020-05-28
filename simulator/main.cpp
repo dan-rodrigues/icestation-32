@@ -164,9 +164,9 @@ int main(int argc, const char * argv[]) {
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_LEFT];
-            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_RIGHT];
+            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_LEFT];
             tb->ics32_tb__DOT__ics32__DOT__btn2 = state[SDL_SCANCODE_RSHIFT];
+            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_RIGHT];
         }
 
         vga_vsync_previous = tb->vga_vsync;

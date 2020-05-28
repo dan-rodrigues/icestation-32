@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-// indent
 typedef enum {
     GP_B        = 1 << 0,
     GP_Y        = 1 << 1,
