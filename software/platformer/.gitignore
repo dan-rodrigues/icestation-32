@@ -1,8 +1,8 @@
 # GCC
 
-*.elf
-*.bin
-*.hex
+/prog.elf
+/prog.bin
+/prog.hex
 
 /sections_p.lds
 

@@ -5,9 +5,7 @@ SOURCES = \
 	../lib/vdp.c \
 	../lib/math_util.c \
 	../lib/assert.c \
-	../lib/gamepad.c \
-	../common/font.c \
-	map-flat.c
+	../lib/gamepad.c
 
 HEADERS = \
 	../lib/vdp.h \
