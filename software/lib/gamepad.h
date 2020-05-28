@@ -1,3 +1,9 @@
+// gamepad.h
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef gamepad_h
 #define gamepad_h
 
