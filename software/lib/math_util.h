@@ -9,6 +9,11 @@
 
 #include <stdint.h>
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define ABS(a) (((a) < 0) ? (-a) : (a))
+#define SIGN(a) ((a) < 0)
+
 int32_t sys_multiply(int16_t a, int16_t b);
 
 static const uint16_t SIN_PERIOD = 0x400;

@@ -340,17 +340,22 @@ module ics32 #(
 
     reg pad_clk_r;
 
-    // mock 16 bits of dummy page state
-    // this won't exist when the actual gamepad is used
+    always @(posedge vdp_clk) begin
+        if (pad_write_en) begin
+            pad_ctrl <= cpu_write_data[1:0];
+        end
+    end
+
+    // --- Gamepad mocking using iCEBreaker buttons (temporary) ---
+
     reg [15:0] pad_mock_state;
     assign pad_read_data[0] = pad_mock_state[0];
     assign pad_read_data[1] = 0;
 
     always @(posedge vdp_clk) begin
         if (pad_latch) begin
-            // test alternate bit pattern for now
-            // pad_mock_state <= 16'haa55;
-            pad_mock_state <= {btn3, btn2, btn1};
+            // left, right, B inputs respectively
+            pad_mock_state <= {btn3, btn1, 5'b0, btn2};
         end
 
         if (pad_clk && !pad_clk_r) begin
@@ -358,12 +363,6 @@ module ics32 #(
         end
 
         pad_clk_r <= pad_clk;
-    end
-
-    always @(posedge vdp_clk) begin
-        if (pad_write_en) begin
-            pad_ctrl <= cpu_write_data[1:0];
-        end
     end
 
     // --- Bus arbiter ---

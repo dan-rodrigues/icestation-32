@@ -22,6 +22,21 @@ HEADERS = \
 
 include ../common/common.mk
 
+# Ensure utility dependencies are up to date
+
+pre-build:
+	@$(MAKE) -C $(PNG_CONVERTER_DIR)
+	@$(MAKE) -C $(HEADER_GEN_DIR)
+
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(BIN)
+
+.PHONY: main-build
+
+.DEFAULT_GOAL := main-build
+
+###
+
 FG_GFX = GFX15.bin
 FG_PAL = redrawn-palette.pal
 

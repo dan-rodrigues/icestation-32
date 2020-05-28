@@ -159,10 +159,19 @@ int main(int argc, const char * argv[]) {
             SDL_RenderPresent(renderer);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
+
+            // input test (using mocked 3-button setup as the iCEBreaker)
+            SDL_PumpEvents();
+            const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_LEFT];
+            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_RIGHT];
+            tb->ics32_tb__DOT__ics32__DOT__btn2 = state[SDL_SCANCODE_RSHIFT];
         }
 
         vga_vsync_previous = tb->vga_vsync;
-        
+
+        // exit checking
         SDL_Event e;
         SDL_PollEvent(&e);
 

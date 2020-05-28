@@ -8,7 +8,7 @@
 int main(int argc, const char * argv[]) {
     if (argc < 2) {
         std::cout << "Usage: <output-file>" << std::endl;
-        return EXIT_FAILURE;
+        return EXIT_SUCCESS;
     }
 
     const auto output_path = argv[1];

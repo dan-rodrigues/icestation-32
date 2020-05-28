@@ -16,6 +16,20 @@ HEADERS = \
 
 include ../common/common.mk
 
+# Ensure utility dependencies are up to date
+
+pre-build:
+	@$(MAKE) -C $(PNG_CONVERTER_DIR)
+
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(BIN)
+
+.PHONY: main-build
+
+.DEFAULT_GOAL := main-build
+
+###
+
 PNG = crystal-32-ia.png
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
 PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
@@ -25,7 +39,3 @@ $(PNG_CONVERTER):
 
 tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f png $(PNG)
-
-#tiles.h palette.h: GFX32.bin $(PNG_CONVERTER)
-#	$(PNG_CONVERTER) -f snes -p sample.pal -i 8 GFX32.bin
-
