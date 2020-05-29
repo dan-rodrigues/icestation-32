@@ -57,7 +57,12 @@ module vdp #(
     output reg [13:0] vram_address_odd,
     output reg vram_we_odd,
     input [15:0] vram_read_data_odd,    
-    output reg [15:0] vram_write_data_odd
+    output reg [15:0] vram_write_data_odd,
+
+    // Copper RAM interface
+
+    output reg [10:0] copper_ram_read_address,
+    input [15:0] copper_ram_read_data
 );
     // --- Video timing ---
 

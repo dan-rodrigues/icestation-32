@@ -132,6 +132,7 @@ module ics32 #(
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
     wire pad_en, pad_write_en;
+    wire cop_ram_write_en;
 
     address_decoder #(
         .REGISTERED_INPUTS(!ENABLE_FAST_CPU)
@@ -157,39 +158,31 @@ module ics32 #(
         .pad_en(pad_en),
         .pad_write_en(pad_write_en),
 
+        .cop_ram_write_en(cop_ram_write_en),
+
         .flash_read_en(flash_read_en)
     );
 
     wire active_display;
     assign vga_de = active_display;
 
-    // --- IRQ control ---
+    // TODO: copper ram relocate
 
-    reg vdp_active_frame_ended_r;
+    reg [15:0] cop_ram [0:2047];
+
+    wire [10:0] cop_ram_write_address = {cpu_address[11:2], cpu_wstrb[2]};
+
+    // todo: vdp read
+    wire [10:0] cop_ram_read_address;
+    reg [15:0] cop_ram_read_data;
 
     always @(posedge vdp_clk) begin
-        if (vdp_reset) begin
-            vdp_active_frame_ended_r <= 0;
-        end else begin
-            vdp_active_frame_ended_r <= vdp_active_frame_ended;
+        if (cop_ram_write_en) begin
+            cop_ram[cop_ram_write_address] <= cpu_write_data[15:0];
         end
+
+        cop_ram_read_data <= cop_ram[cop_ram_read_address];
     end
-
-    // this is being removed in favor of a Copper-like coprocessor in the VDP
-    // end-of-frame checking can be done by polling the RASTER_Y register
-
-    cpu_irq_control irq_control(
-        .clk(vdp_clk),
-        .reset(vdp_reset),
-
-        .frame_irq_requested(vdp_active_frame_ended_r),
-        .raster_irq_requested(vdp_target_raster_hit),
-
-        .irq_acknowledge(cpu_eoi[0]),
-        .raster_irq_acknowledge(cpu_eoi[1]),
-
-        .irq(cpu_irq)
-    );
 
     // --- 1x <-> 2x clock sync (if required) ---
 
@@ -197,8 +190,6 @@ module ics32 #(
     wire cpu_mem_valid;
     wire [3:0] cpu_wstrb;
     wire [31:0] cpu_write_data;
-
-    wire [31:0] cpu_irq, cpu_eoi;
 
     localparam CPU_NEEDS_SYNC = ENABLE_WIDESCREEN;
 
@@ -213,35 +204,29 @@ module ics32 #(
                 .cpu_wstrb(cpu_wstrb_1x),
                 .cpu_write_data(cpu_write_data_1x),
                 .cpu_mem_valid(cpu_mem_valid_1x),
-                .cpu_eoi(cpu_eoi_1x),
 
                 // 2x inputs
                 .cpu_mem_ready(cpu_mem_ready),
                 .cpu_read_data(cpu_read_data),
-                .cpu_irq(cpu_irq),
 
                 // 1x outputs (back to CPU)
                 .cpu_read_data_1x(cpu_read_data_1x),
                 .cpu_mem_ready_1x(cpu_mem_ready_1x),
-                .cpu_irq_1x(cpu_irq_1x),
 
                 // 2x outputs
                 .cpu_wstrb_2x(cpu_wstrb),
                 .cpu_write_data_2x(cpu_write_data),
                 .cpu_address_2x(cpu_address),
-                .cpu_mem_valid_2x(cpu_mem_valid),
-                .cpu_eoi_2x(cpu_eoi)
+                .cpu_mem_valid_2x(cpu_mem_valid)
             );
         end else begin
             assign cpu_wstrb = cpu_wstrb_1x;
             assign cpu_address = cpu_address_1x;
             assign cpu_write_data = cpu_write_data_1x;
             assign cpu_mem_valid = cpu_mem_valid_1x;
-            assign cpu_eoi = cpu_eoi_1x;
 
             assign cpu_read_data_1x = cpu_read_data;
             assign cpu_mem_ready_1x = cpu_mem_ready;
-            assign cpu_irq_1x = cpu_irq;
         end
     endgenerate
 
@@ -420,8 +405,6 @@ module ics32 #(
 
     // --- CPU ---
 
-    wire [31:0] cpu_irq_1x, cpu_eoi_1x;
-
     wire [31:0] cpu_address_1x;
     wire [3:0] cpu_wstrb_1x;
     wire cpu_mem_valid_1x;
@@ -458,18 +441,14 @@ module ics32 #(
         // this seems neutral at best even with retiming?
         .TWO_CYCLE_COMPARE(0),
 
-        // IRQ currently used, but will be removed at some point
-        .ENABLE_IRQ(1),
-        .PROGADDR_IRQ(32'h0000_0010),
-        .MASKED_IRQ({{30{1'b1}}, {2{1'b0}}}),
-        // using level sensitive IRQ
-        .LATCHED_IRQ(32'b0011),
-
-        // IRQ timers / QREGS are not used
-        .ENABLE_IRQ_TIMER(0),
-        .ENABLE_IRQ_QREGS(0),
+        // rdcycle(h) instructions are not needed
         .ENABLE_COUNTERS(0),
-        .ENABLE_COUNTERS64(0)
+        .ENABLE_COUNTERS64(0),
+
+        // IRQ now disabled (vdp_copper to be used instead)
+        .ENABLE_IRQ(0),
+        .ENABLE_IRQ_QREGS(0),
+        .ENABLE_IRQ_TIMER(0)
     ) pico (
         .clk(cpu_clk),
         .resetn(!cpu_reset),
@@ -481,8 +460,7 @@ module ics32 #(
         .mem_wdata(cpu_write_data_1x),
         .mem_wstrb(cpu_wstrb_1x),
 
-        .irq(cpu_irq_1x),
-        .eoi(cpu_eoi_1x)
+        .irq(0)
     );
     
     // verilator lint_restore
