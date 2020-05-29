@@ -8,25 +8,27 @@
 
 `include "debug.vh"
 
+// TODO: naming cleanup here
+
 module vdp_host_interface #(
     parameter USE_8BIT_BUS = 0
 ) (
     input clk,
     input reset,
 
-    input [6:0] address_in,
-    output reg [5:0] address_out,
+    input [6:0] host_address,
+    output reg [5:0] register_write_address,
 
     // writes
 
-    output reg write_en_out,
-    output reg [15:0] data_out,
+    output reg register_write_en,
+    output reg [15:0] register_write_data,
     output reg ready,
 
     // ..from CPU
 
-    input write_en_in,
-    input [15:0] data_in,
+    input host_write_en,
+    input [15:0] host_write_data,
     
     // ..from copper (make above names consistent too)
 
@@ -39,41 +41,31 @@ module vdp_host_interface #(
 
     // CPU reads
 
-    input read_en_in,
+    input host_read_en,
     output reg [5:0] read_address
 );
-    reg write_en_in_r, write_en_in_d;
-    reg read_en_in_r, read_en_in_d;
+    reg host_write_en_r, host_write_en_d;
+    reg host_read_en_r, host_read_en_d;
 
     // only used in 8bit mode
-    reg [7:0] data_in_r;
-    reg [6:0] address_in_r;
+    reg [7:0] host_write_data_r;
+    reg [6:0] host_address_r;
     
     always @(posedge clk) begin
-        address_in_r <= address_in;
-        data_in_r <= data_in;
+        host_address_r <= host_address;
+        host_write_data_r <= host_write_data;
 
-        write_en_in_r <= write_en_in;
-        write_en_in_d <= write_en_in_r;
+        host_write_en_r <= host_write_en;
+        host_write_en_d <= host_write_en_r;
 
-        read_en_in_r <= read_en_in;
-        read_en_in_d <= read_en_in_r;
+        host_read_en_r <= host_read_en;
+        host_read_en_d <= host_read_en_r;
     end
 
     // this is intended to stall by some variable number of cycles, when that's inevitably needed
     
     reg [1:0] busy_counter;
     reg busy;
-
-    // TODO: handle contention by stalling copper if needed
-    // write_en currently active for just 1 cycle
-    // OR: stalling possibly isn't needed, it can just buffer the write
-
-    always @(posedge clk) begin
-        if (cop_write_en) begin
-
-        end
-    end
 
     // cpu read / write control
 
@@ -92,7 +84,7 @@ module vdp_host_interface #(
             end else if (busy) begin
                 ready <= 1;
                 busy <= 0;
-            end else if (read_en_in_r && !read_en_in_d || write_en_in_r && !write_en_in_d) begin
+            end else if (host_read_en_r && !host_read_en_d || host_write_en_r && !host_write_en_d) begin
                 ready <= 1;
                 busy_counter <= 0;
                 busy <= 0;
@@ -102,59 +94,52 @@ module vdp_host_interface #(
 
     reg [7:0] data_t;
 
-    // FIXME: buffer writes betwee cpu/cop
-    reg cpu_write_pending, cop_write_pending;
-    reg [5:0] cpu_pending_address, cop_pending_address;
-    reg [15:0] cpu_pending_data, cop_pending_data;
-
     always @(posedge clk) begin
         if (reset) begin
             data_t <= 0;
-            write_en_out <= 0;
-            address_out <= 0;
-            data_out <= 0;
+            register_write_en <= 0;
+            register_write_address <= 0;
+            register_write_data <= 0;
         end else if (USE_8BIT_BUS) begin
-            if (write_en_in_r) begin
-                if (address_in_r[0]) begin
-                    data_out <= {data_in_r[7:0], data_t};
-                    address_out <= address_in_r[6:1];
-                    write_en_out <= 1;
+            if (host_write_en_r) begin
+                if (host_address_r[0]) begin
+                    register_write_data <= {host_write_data_r[7:0], data_t};
+                    register_write_address <= host_address_r[6:1];
+                    register_write_en <= 1;
 
                     data_t <= 0;
                 end else begin
-                    data_t <= data_in_r[7:0];
-                    write_en_out <= 0;
+                    data_t <= host_write_data_r[7:0];
+                    register_write_en <= 0;
                 end
             end else begin
-                address_out <= 0; 
-                write_en_out <= 0;
+                register_write_address <= 0; 
+                register_write_en <= 0;
             end
         end else begin
-            // FIXME: this must be shared between cpu/cop
-
             // is there a CPU <-> COP write conflict?
-            if (cop_write_en && write_en_in) begin
+            if (cop_write_en && host_write_en) begin
                 // this is either a software or hardware bug so flag it accordingly
                 `stop($display("CPU / VDP copper write conflict");)
             end
 
             // if there was a conflict, prioritize the CPU
-            if (write_en_in) begin
-                address_out <= address_in;
-                data_out <= data_in;
+            if (host_write_en) begin
+                register_write_address <= host_address;
+                register_write_data <= host_write_data;
             end else if (cop_write_en) begin
-                address_out <= cop_write_address;
-                data_out <= cop_write_data;
+                register_write_address <= cop_write_address;
+                register_write_data <= cop_write_data;
             end
 
             // CPU is always free to read
-            read_address <= address_in_r;
+            read_address <= host_address_r;
 
             // 1 cycle wstrb on rising edge only
-            if (cop_write_en || (write_en_in && !write_en_in_r)) begin
-                write_en_out <= 1;
+            if (cop_write_en || (host_write_en && !host_write_en_r)) begin
+                register_write_en <= 1;
             end else begin
-                write_en_out <= 0;
+                register_write_en <= 0;
             end
         end
     end

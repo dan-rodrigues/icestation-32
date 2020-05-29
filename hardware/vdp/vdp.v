@@ -139,7 +139,7 @@ module vdp #(
 
     // --- Host interface ---
 
-    wire [5:0] register_address, register_read_address;
+    wire [5:0] register_write_address, register_read_address;
     wire [15:0] register_write_data;
     wire register_write_en;
 
@@ -147,20 +147,20 @@ module vdp #(
         .clk(clk),
         .reset(reset),
 
-        .read_en_in(host_read_en),
+        .host_read_en(host_read_en),
         .ready(host_ready),
 
-        .write_en_in(host_write_en),
-        .write_en_out(register_write_en),
+        .host_write_en(host_write_en),
+        .register_write_en(register_write_en),
 
         .cop_write_address(cop_write_address),
         .cop_write_data(cop_write_data),
         .cop_write_en(copper_write_en),
 
-        .address_in(host_address),
-        .data_in(host_write_data),
-        .data_out(register_write_data),
-        .address_out(register_address),
+        .host_address(host_address),
+        .host_write_data(host_write_data),
+        .register_write_data(register_write_data),
+        .register_write_address(register_write_address),
         .read_address(register_read_address)
     );
 
@@ -233,8 +233,8 @@ module vdp #(
         end
 
         if (register_write_en) begin
-            if (register_address[5:4] == 2'b00) begin
-                case (register_address[3:0])
+            if (register_write_address[5:4] == 2'b00) begin
+                case (register_write_address[3:0])
                     0: begin
                         sprite_metadata_address <= register_write_data[7:0];
                         sprite_metadata_block_select <= 3'b001;
@@ -273,26 +273,26 @@ module vdp #(
                         cop_enable <= register_write_data[0];
                     end
                     default: begin
-                        `stop($display("unimplemented register: %x", register_address);)
+                        `stop($display("unimplemented register: %x", register_write_address);)
                     end
                 endcase
-            end else if (register_address[5:4] == 2'b01) begin
-                case (register_address[3:2])
+            end else if (register_write_address[5:4] == 2'b01) begin
+                case (register_write_address[3:2])
                     // can save LUTs by packing this into a single reg and write all at once
-                    0: scroll_tile_base[register_address[1:0]] <= register_write_data;
-                    1: scroll_x[register_address[1:0]] <= register_write_data;
-                    2: scroll_y[register_address[1:0]] <= register_write_data;
-                    3: scroll_map_base[register_address[1:0]] <= register_write_data;
+                    0: scroll_tile_base[register_write_address[1:0]] <= register_write_data;
+                    1: scroll_x[register_write_address[1:0]] <= register_write_data;
+                    2: scroll_y[register_write_address[1:0]] <= register_write_data;
+                    3: scroll_map_base[register_write_address[1:0]] <= register_write_data;
                 endcase
-            end else if (register_address[5:4] == 2'b10) begin
-                case (register_address[3:0])
+            end else if (register_write_address[5:4] == 2'b10) begin
+                case (register_write_address[3:0])
                     0: layer_enable <= register_write_data[5:0];
                     1: layer_enable_alpha_over <= register_write_data[7:0];
                     2: scroll_use_wide_map <= register_write_data[3:0];
                     3: target_raster_x <= register_write_data[10:0];
                     4: target_raster_y <= register_write_data[9:0];
                     default: begin
-                        `stop($display("unimplemented register: %x", register_address);)
+                        `stop($display("unimplemented register: %x", register_write_address);)
                     end
                 endcase
             end

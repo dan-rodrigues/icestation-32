@@ -27,8 +27,10 @@ clean:
 	rm -f prog.elf prog.hex $(BIN)
 
 # TODO: optional tracing
+ # --trace
+
 sim: $(BIN)
-	cd $(SIM_DIR) && ./build.sh # --trace
+	cd $(SIM_DIR) && ./build.sh
 	$(SIM_DIR)obj_dir/ics32-sim $(BIN)
 
 .PHONY: clean sim
