@@ -26,6 +26,7 @@ VDP_SOURCES := vdp/vdp.v \
 	 	sprite_render.v \
 	 	affine_layer.v \
 	 	blender.v \
+	 	copper.v \
 	)
 
 SOURCES := $(SOURCES) $(VDP_SOURCES)

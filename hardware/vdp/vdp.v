@@ -61,8 +61,8 @@ module vdp #(
 
     // Copper RAM interface
 
-    output reg [10:0] copper_ram_read_address,
-    input [15:0] copper_ram_read_data
+    output reg [10:0] cop_ram_read_address,
+    input [15:0] cop_ram_read_data
 );
     // --- Video timing ---
 
@@ -153,10 +153,39 @@ module vdp #(
         .write_en_in(host_write_en),
         .write_en_out(register_write_en),
 
+        .cop_write_address(cop_write_address),
+        .cop_write_data(cop_write_data),
+        .cop_write_en(copper_write_en),
+
         .address_in(host_address),
         .data_in(host_write_data),
         .data_out(register_write_data),
         .address_out(register_address)
+    );
+
+    // --- Copper ---
+
+    wire [5:0] cop_write_address;
+    wire [15:0] cop_write_data;
+    wire copper_write_en;
+    wire cop_write_ready;
+
+    vdp_copper copper(
+        .clk(clk),
+        .reset(reset),
+
+        .enable(cop_enable),
+
+        .raster_x(raster_x),
+        .raster_y(raster_y),
+
+        .ram_read_address(cop_ram_read_address),
+        .ram_read_data(cop_ram_read_data),
+
+        .reg_write_address(cop_write_address),
+        .reg_write_data(cop_write_data),
+        .reg_write_en(copper_write_en),
+        .reg_write_ready(cop_write_ready)
     );
 
     // --- Register writes ---
@@ -165,7 +194,6 @@ module vdp #(
     reg [4:0] layer_enable_alpha_over = 0;
 
     wire affine_enabled = layer_enable[5];
-    wire enable_render = |layer_enable;
 
     reg [13:0] scroll_tile_base [0:3];
     reg [13:0] scroll_map_base [0:3];
@@ -183,7 +211,13 @@ module vdp #(
     reg [14:0] vram_write_address_full = 0;
     reg [7:0] vram_port_address_increment;
 
+    reg cop_enable;
+
     always @(posedge clk) begin
+        if (reset) begin
+            cop_enable <= 0;
+        end
+
         palette_write_en <= 0;
         sprite_metadata_write_en <= 0;
 
@@ -232,6 +266,10 @@ module vdp #(
                     end
                     7: begin
                         sprite_tile_base <= register_write_data;
+                    end
+                    8: begin
+                        // TODO:
+                        cop_enable <= register_write_data[0];
                     end
                     default: begin
                         `stop($display("unimplemented register: %x", register_address);)
@@ -362,7 +400,7 @@ module vdp #(
         .output_color(blender_output_color)
     );
 
-    wire [11:0] output_color = (enable_render && active_display ? blender_output_color : 12'b0);
+    wire [11:0] output_color = (active_display ? blender_output_color : 12'b0);
 
     always @(posedge clk) begin
         r <= output_color[11:8];

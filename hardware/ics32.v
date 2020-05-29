@@ -285,7 +285,10 @@ module ics32 #(
         .vram_address_odd(vram_address_odd),
         .vram_we_odd(vram_we_odd),
         .vram_write_data_odd(vram_write_data_odd),
-        .vram_read_data_odd(vram_read_data_odd)
+        .vram_read_data_odd(vram_read_data_odd),
+
+        .cop_ram_read_address(cop_ram_read_address),
+        .cop_ram_read_data(cop_ram_read_data)
     );
 
     vram vram(

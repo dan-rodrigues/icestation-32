@@ -6,6 +6,8 @@
 
 `default_nettype none
 
+`include "debug.vh"
+
 module vdp_host_interface #(
     parameter USE_8BIT_BUS = 0
 ) (
@@ -17,17 +19,27 @@ module vdp_host_interface #(
 
     // writes
 
-    input write_en_in,
-    input [15:0] data_in,
     output reg write_en_out,
     output reg [15:0] data_out,
+    output reg ready,
 
-    // reads
+    // ..from CPU
 
-    // must delay the CPU by atleast 1 cycle because this is all pipelined
+    input write_en_in,
+    input [15:0] data_in,
+    
+    // ..from copper (make above names consistent too)
 
-    input read_en_in,
-    output reg ready
+    input cop_write_en,
+    input [5:0] cop_write_address,
+    input [15:0] cop_write_data,
+    
+    // (this may not be needed)
+    output reg cop_write_ready,
+
+    // CPU reads
+
+    input read_en_in
 );
     reg write_en_in_r, write_en_in_d;
     reg read_en_in_r, read_en_in_d;
@@ -51,6 +63,18 @@ module vdp_host_interface #(
     
     reg [1:0] busy_counter;
     reg busy;
+
+    // TODO: handle contention by stalling copper if needed
+    // write_en currently active for just 1 cycle
+    // OR: stalling possibly isn't needed, it can just buffer the write
+
+    always @(posedge clk) begin
+        if (cop_write_en) begin
+
+        end
+    end
+
+    // cpu read / write control
 
     always @(posedge clk) begin
         if (reset) begin
@@ -77,6 +101,11 @@ module vdp_host_interface #(
 
     reg [7:0] data_t;
 
+    // FIXME: buffer writes betwee cpu/cop
+    reg cpu_write_pending, cop_write_pending;
+    reg [5:0] cpu_pending_address, cop_pending_address;
+    reg [15:0] cpu_pending_data, cop_pending_data;
+
     always @(posedge clk) begin
         if (reset) begin
             data_t <= 0;
@@ -100,11 +129,25 @@ module vdp_host_interface #(
                 write_en_out <= 0;
             end
         end else begin
-            address_out <= address_in;
-            data_out <= data_in;
+            // FIXME: this must be shared between cpu/cop
+
+            // is there a CPU <-> COP write conflict?
+            if (cop_write_en && write_en_in) begin
+                // this is either a software or hardware bug so flag it accordingly
+                `stop($display("CPU / VDP copper write conflict");)
+            end
+
+            // if there was a conflict, prioritize the CPU
+            if (write_en_in) begin
+                address_out <= address_in;
+                data_out <= data_in;
+            end else begin
+                address_out <= cop_write_address;
+                data_out <= cop_write_data;
+            end
 
             // 1 cycle wstrb on rising edge only
-            if (write_en_in && !write_en_in_r) begin
+            if (cop_write_en || (write_en_in && !write_en_in_r)) begin
                 write_en_out <= 1;
             end else begin
                 write_en_out <= 0;

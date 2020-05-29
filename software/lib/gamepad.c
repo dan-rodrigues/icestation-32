@@ -10,7 +10,7 @@
 
 #include "assert.h"
 
-static const volatile uint32_t *PAD_BASE = (uint32_t *)0x40000;
+static volatile uint32_t * const PAD_BASE = (uint32_t *)0x40000;
 
 static const uint32_t PAD_LATCH = 1 << 0;
 static const uint32_t PAD_CLK = 1 << 1;
