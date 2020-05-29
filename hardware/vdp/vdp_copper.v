@@ -57,6 +57,7 @@ module vdp_copper(
     localparam OP_WAIT_TARGET_Y = 3'h1;
     // ...
     localparam OP_WRITE_REG = 3'h2;
+    localparam OP_JUMP = 3'h3;
 
     // ooo----- --rrrrrr
     // r: register
@@ -100,6 +101,9 @@ module vdp_copper(
                         reg_write_address <= ram_read_data[5:0];
                         state <= STATE_DATA_FETCH;
                         pc <= pc + 1;
+                    end
+                    OP_JUMP: begin
+                        pc <= ram_read_data[10:0];
                     end
                 endcase
 

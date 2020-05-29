@@ -1,0 +1,22 @@
+# GCC
+
+/prog.elf
+/prog.bin
+/prog.hex
+
+/sections_p.lds
+
+# Generated sources
+
+/tiles.h
+/palette.h
+/sin_table.h
+/fg_palette.h
+/fg_tiles.h
+/sprite_palette.h
+/sprite_tiles.h
+
+# Optional disassembly
+
+/dasm
+

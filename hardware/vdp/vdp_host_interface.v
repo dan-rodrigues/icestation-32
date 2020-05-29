@@ -138,10 +138,10 @@ module vdp_host_interface #(
             end
 
             // if there was a conflict, prioritize the CPU
-            if (write_en_in) begin
+            if (write_en_in || read_en_in_r) begin
                 address_out <= address_in;
                 data_out <= data_in;
-            end else begin
+            end else if (cop_write_en) begin
                 address_out <= cop_write_address;
                 data_out <= cop_write_data;
             end
