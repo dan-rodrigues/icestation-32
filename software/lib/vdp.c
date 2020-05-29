@@ -48,6 +48,8 @@ const uint16_t SPRITE_PAL_SHIFT = 12;
 
 // convenience macros
 
+#define VDP_ENABLE_COPPER (*((volatile uint16_t *) VDP_BASE + 8))
+
 #define VDP_LAYER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 0))
 #define VDP_ALPHA_OVER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 1))
 #define VDP_SCROLL_WIDE_MAP_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 2))
@@ -73,6 +75,11 @@ const uint16_t SPRITE_PAL_SHIFT = 12;
 #define VDP_VRAM_ADDRESS (*((volatile uint16_t *) VDP_BASE + 4))
 #define VDP_VRAM_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 5))
 #define VDP_ADDRESS_INCREMENT (*((volatile uint16_t *) VDP_BASE + 6))
+
+// stdbool...
+void vdp_enable_copper(uint8_t enable) {
+    VDP_ENABLE_COPPER = enable;
+}
 
 void vdp_set_layer_map_base(uint8_t layer, uint16_t address) {
     VDP_SCROLL_MAP_ADDRESS_BASE[layer] = address / 2;

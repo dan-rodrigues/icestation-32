@@ -57,6 +57,8 @@ void vdp_wait_frame_ended();
 
 // MARK: VDP write functions
 
+void vdp_enable_copper(uint8_t enable);
+
 void vdp_enable_layers(VDPLayer layers);
 void vdp_set_alpha_over_layers(VDPLayer layers);
 void vdp_set_wide_map_layers(VDPLayer layers);

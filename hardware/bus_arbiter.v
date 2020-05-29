@@ -29,6 +29,7 @@ module bus_arbiter #(
     input dsp_en,
     input status_en,
     input pad_en,
+    input cop_en,
 
     // ready inputs from read sources
     input flash_read_ready,
@@ -70,10 +71,10 @@ module bus_arbiter #(
         // (refactor this that cpu_mem_ready check is the only point of difference)
         if (!SUPPORT_2X_CLK) begin
             assign cpu_ram_ready = cpu_ram_en && !cpu_mem_ready;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en) && !cpu_mem_ready;
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en) && !cpu_mem_ready;
         end else begin
             assign cpu_ram_ready = cpu_ram_en;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en);
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en);
         end
     endgenerate
 

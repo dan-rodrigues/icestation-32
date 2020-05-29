@@ -83,35 +83,38 @@ module vdp_copper(
 
         reg_write_en <= 0;
 
-        if (state == STATE_OP_FETCH) begin
-            // decode op (already fetched)
-            case (op)
-                OP_SET_TARGET_X: begin
-                    target_x <= ram_read_data[10:0];
-                end
-                OP_WAIT_TARGET_Y: begin
-                    target_y <= ram_read_data[9:0];
-                    state <= STATE_RASTER_WAITING;
-                end
-                OP_WRITE_REG: begin
-                    reg_write_address <= ram_read_data[5:0];
-                    state <= STATE_DATA_FETCH;
-                end
-            endcase
+        // wrapping the whole thing in an if is simple but inefficient, refine later
+        if (enable) begin
+            if (state == STATE_OP_FETCH) begin
+                // decode op (already fetched)
+                case (op)
+                    OP_SET_TARGET_X: begin
+                        target_x <= ram_read_data[10:0];
+                    end
+                    OP_WAIT_TARGET_Y: begin
+                        target_y <= ram_read_data[9:0];
+                        state <= STATE_RASTER_WAITING;
+                    end
+                    OP_WRITE_REG: begin
+                        reg_write_address <= ram_read_data[5:0];
+                        state <= STATE_DATA_FETCH;
+                    end
+                endcase
 
-            // fetch next op (or data)
-            pc <= pc + 1;
-            op_current <= op;
-        end else if (state == STATE_DATA_FETCH) begin
-            case (op_current)
-                OP_WRITE_REG: begin
-                    reg_write_data <= ram_read_data;
-                    reg_write_en <= 1;
-                    state <= STATE_OP_FETCH;
-                end
-            endcase
+                // fetch next op (or data)
+                pc <= pc + 1;
+                op_current <= op;
+            end else if (state == STATE_DATA_FETCH) begin
+                case (op_current)
+                    OP_WRITE_REG: begin
+                        reg_write_data <= ram_read_data;
+                        reg_write_en <= 1;
+                        state <= STATE_OP_FETCH;
+                    end
+                endcase
 
-            pc <= pc + 1;
+                pc <= pc + 1;
+            end
         end
     end
 

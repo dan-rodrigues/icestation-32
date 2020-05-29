@@ -385,6 +385,7 @@ module ics32 #(
         .dsp_en(dsp_en),
         .status_en(status_en),
         .pad_en(pad_en),
+        .cop_en(cop_ram_write_en),
 
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
