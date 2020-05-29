@@ -139,7 +139,7 @@ module vdp #(
 
     // --- Host interface ---
 
-    wire [5:0] register_address;
+    wire [5:0] register_address, register_read_address;
     wire [15:0] register_write_data;
     wire register_write_en;
 
@@ -160,7 +160,8 @@ module vdp #(
         .address_in(host_address),
         .data_in(host_write_data),
         .data_out(register_write_data),
-        .address_out(register_address)
+        .address_out(register_address),
+        .read_address(register_read_address)
     );
 
     // --- Copper ---
@@ -301,7 +302,7 @@ module vdp #(
     // --- Register reads ---
 
     always @(posedge clk) begin
-        case (register_address[1:0])
+        case (register_read_address[1:0])
             0: host_read_data <= raster_x;
             2: host_read_data <= raster_y;
         endcase

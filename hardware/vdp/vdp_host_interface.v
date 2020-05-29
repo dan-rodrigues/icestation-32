@@ -39,7 +39,8 @@ module vdp_host_interface #(
 
     // CPU reads
 
-    input read_en_in
+    input read_en_in,
+    output reg [5:0] read_address
 );
     reg write_en_in_r, write_en_in_d;
     reg read_en_in_r, read_en_in_d;
@@ -138,13 +139,16 @@ module vdp_host_interface #(
             end
 
             // if there was a conflict, prioritize the CPU
-            if (write_en_in || read_en_in_r) begin
+            if (write_en_in) begin
                 address_out <= address_in;
                 data_out <= data_in;
             end else if (cop_write_en) begin
                 address_out <= cop_write_address;
                 data_out <= cop_write_data;
             end
+
+            // CPU is always free to read
+            read_address <= address_in_r;
 
             // 1 cycle wstrb on rising edge only
             if (cop_write_en || (write_en_in && !write_en_in_r)) begin
