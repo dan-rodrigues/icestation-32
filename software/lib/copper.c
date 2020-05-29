@@ -13,7 +13,7 @@ static uint16_t current_address = 0;
 
 // 3bit ops
 
-static const uint8_t OP_SHIFT = 12;
+static const uint8_t OP_SHIFT = 13;
 
 typedef enum {
     SET_TARGET_X = 0,

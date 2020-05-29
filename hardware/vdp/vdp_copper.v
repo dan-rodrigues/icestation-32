@@ -90,6 +90,7 @@ module vdp_copper(
                 case (op)
                     OP_SET_TARGET_X: begin
                         target_x <= ram_read_data[10:0];
+                        pc <= pc + 1;
                     end
                     OP_WAIT_TARGET_Y: begin
                         target_y <= ram_read_data[9:0];
@@ -98,11 +99,12 @@ module vdp_copper(
                     OP_WRITE_REG: begin
                         reg_write_address <= ram_read_data[5:0];
                         state <= STATE_DATA_FETCH;
+                        pc <= pc + 1;
                     end
                 endcase
 
                 // fetch next op (or data)
-                pc <= pc + 1;
+                // pc <= pc + 1;
                 op_current <= op;
             end else if (state == STATE_DATA_FETCH) begin
                 case (op_current)
@@ -114,6 +116,11 @@ module vdp_copper(
                 endcase
 
                 pc <= pc + 1;
+            end else if (state == STATE_RASTER_WAITING) begin
+                if (target_hit) begin
+                    state <= STATE_OP_FETCH;
+                    pc <= pc + 1;
+                end
             end
         end
     end
