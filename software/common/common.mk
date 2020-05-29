@@ -1,6 +1,8 @@
-COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
-
 CROSS = riscv-none-embed-
+
+COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
+SIM_DIR = $(COMMON_DIR)../../simulator/
+
 CFLAGS = -Wall -Os -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
@@ -10,7 +12,7 @@ LDS_P = sections_p.lds
 BIN = prog.bin
 
 $(BIN): prog.elf
-	$(CROSS)objcopy -O binary prog.elf prog.bin
+	$(CROSS)objcopy -O binary prog.elf $(BIN)
 
 dasm: prog.elf
 	$(CROSS)objdump -d $(DFLAGS) prog.elf > dasm
@@ -24,4 +26,8 @@ prog.elf: $(LDS_P) $(HEADERS) $(SOURCES)
 clean:
 	rm -f prog.elf prog.hex $(BIN)
 
-.PHONY: clean
+sim: $(BIN)
+	cd $(SIM_DIR) && ./build.sh
+	$(SIM_DIR)obj_dir/ics32-sim $(BIN)
+
+.PHONY: clean sim

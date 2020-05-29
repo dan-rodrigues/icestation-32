@@ -35,33 +35,12 @@ module cpu_peripheral_sync(
 
     // --- 1x -> 2x ---
 
-    // 1x -> FF
-
-    reg [31:0] cpu_write_data_r;
-    reg [3:0] cpu_wstrb_r;
-    reg [23:0] cpu_address_r;
-    reg cpu_mem_valid_r;
-    reg [31:0] cpu_eoi_r;
-
-    // trying to eliminate this stage caused some interesting side effects
-    // may be a coincidence or something else, have to look into it further
-    
-    always @(posedge clk_1x) begin
-        cpu_write_data_r <= cpu_write_data;
-        cpu_address_r <= cpu_address;
-        cpu_wstrb_r <= cpu_wstrb;
-        cpu_mem_valid_r <= cpu_mem_valid;
-        cpu_eoi_r <= cpu_eoi;
-    end
-
-    // FF -> 2x
-
     always @(negedge clk_2x) begin
-        cpu_write_data_2x <= cpu_write_data_r;
-        cpu_address_2x <= cpu_address_r;
-        cpu_wstrb_2x <= cpu_wstrb_r;
-        cpu_mem_valid_2x <= cpu_mem_valid_r;
-        cpu_eoi_2x <= cpu_eoi_r;
+        cpu_write_data_2x <= cpu_write_data;
+        cpu_address_2x <= cpu_address;
+        cpu_wstrb_2x <= cpu_wstrb;
+        cpu_mem_valid_2x <= cpu_mem_valid;
+        cpu_eoi_2x <= cpu_eoi;
     end
 
     // --- 2x -> 1x ---
