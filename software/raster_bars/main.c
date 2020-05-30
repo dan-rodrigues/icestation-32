@@ -67,6 +67,8 @@ int main() {
 
     const uint8_t test_batch_count = 32;
 
+    cop_set_target_x(0);
+    
     config.batch_count = test_batch_count - 1;
     config.batch_wait_between_lines = true;
     cop_start_batch_write(&config);
