@@ -5,7 +5,7 @@
 #include "assert.h"
 
 // volatile is strictly correct here considering a coprocessor is reading this
-// in practice it might
+// in practice it might not matter by the time the function returns
 static volatile uint16_t * const COP_RAM = (uint16_t *)0x50000;
 static const size_t COP_RAM_SIZE = 0x1000 / sizeof(uint16_t);
 
@@ -19,15 +19,24 @@ typedef enum {
     SET_TARGET_X = 0,
     WAIT_TARGET_Y = 1,
     WRITE_REG = 2,
-    JUMP = 3
+    JUMP = 3,
+    WAIT_TARGET_X = 4
 } Op;
 
 void cop_ram_seek(uint16_t address) {
+    assert(address < COP_RAM_SIZE);
+
     current_address = address;
 }
 
 void cop_set_target_x(uint16_t target_x) {
     uint16_t op_word = SET_TARGET_X << OP_SHIFT; // macro..
+    op_word |= target_x;
+    COP_RAM[current_address++] = op_word;
+}
+
+void cop_wait_target_x(uint16_t target_x) {
+    uint16_t op_word = WAIT_TARGET_X << OP_SHIFT;
     op_word |= target_x;
     COP_RAM[current_address++] = op_word;
 }

@@ -7,6 +7,8 @@ void cop_ram_seek(uint16_t address);
 
 // op writes
 void cop_set_target_x(uint16_t target_x);
+
+void cop_wait_target_x(uint16_t target_x);
 void cop_wait_target_y(uint16_t target_y);
 
 // some way to hide the reg is ideal but may not be possible

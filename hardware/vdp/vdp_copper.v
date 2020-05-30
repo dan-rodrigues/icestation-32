@@ -53,11 +53,16 @@ module vdp_copper(
     wire [2:0] op = ram_read_data[15:13];
     reg [2:0] op_current;
 
+    // TODO: reorder appropriately
+    // TODO: some of these ops are repeats of each other
     localparam OP_SET_TARGET_X = 3'h0;
     localparam OP_WAIT_TARGET_Y = 3'h1;
-    // ...
     localparam OP_WRITE_REG = 3'h2;
     localparam OP_JUMP = 3'h3;
+    // ...
+
+    // ignore Y? maybe set to current? depends
+    localparam OP_WAIT_TARGET_X = 3'h4;
 
     // ooo----- --rrrrrr
     // r: register
@@ -73,25 +78,26 @@ module vdp_copper(
 
     reg [1:0] state;
 
+    // TODO: this should probably be reset by the CPU to reset the PC in turn
+
     always @(posedge clk) begin
-        if (reset) begin
+        if (reset || !enable) begin
             pc <= PC_RESET;
             reg_write_en <= 0;
             state <= STATE_OP_FETCH;
         end else begin
-            // pc <= pc_nx;
-        end
-
-        reg_write_en <= 0;
-
-        // wrapping the whole thing in an if is simple but inefficient, refine later
-        if (enable) begin
+            reg_write_en <= 0;
+            
             if (state == STATE_OP_FETCH) begin
                 // decode op (already fetched)
                 case (op)
                     OP_SET_TARGET_X: begin
                         target_x <= ram_read_data[10:0];
                         pc <= pc + 1;
+                    end
+                    OP_WAIT_TARGET_X: begin
+                        target_x <= ram_read_data[10:0];
+                        state <= STATE_RASTER_WAITING;
                     end
                     OP_WAIT_TARGET_Y: begin
                         target_y <= ram_read_data[9:0];
