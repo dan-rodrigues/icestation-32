@@ -60,13 +60,26 @@ module vdp_copper(
 
     // SET_TARGET / WAIT_TARGET
 
+    // oo--wsvv vvvvvvvv
+    //
+    // v: raster x/y value
+    // s:
+    //      0: select x
+    //      1: select y
+    // w:
+    //      0: don't wait, immediately advance to next op
+    //      1: wait until raster x/y reaches the target before advancing to next op
+
     wire op_target_wait = ram_read_data[12];
     wire op_target_select = ram_read_data[11];
     wire [10:0] op_target_value = ram_read_data[10:0];
 
-    // ooo----- --rrrrrr
-    // r: register
-    // ?:
+    // REG_WRITE
+
+    // oo------ --rrrrrr
+    //
+    // r: target register
+    // ?: fields to alter how the writes are managed
 
     // the preceeding op must have ram_read_data ready
 

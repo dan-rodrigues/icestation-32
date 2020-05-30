@@ -38,16 +38,16 @@ void cop_wait_target_x(uint16_t target_x) {
     cop_target(target_x, false, true);
 }
 
+void cop_wait_target_y(uint16_t target_y) {
+    cop_target(target_y, true, true);
+}
+
 static void cop_target(uint16_t target, bool is_y, bool wait) {
     uint16_t op_word = (wait ? WAIT_TARGET : SET_TARGET) << OP_SHIFT;
     op_word |= is_y ? 1 << 11 : 0;
     op_word |= wait ? 1 << 12 : 0;
     op_word |= target;
     COP_RAM[current_address++] = op_word;
-}
-
-void cop_wait_target_y(uint16_t target_y) {
-    cop_target(target_y, true, true);
 }
 
 void cop_write(uint8_t reg, uint16_t data) {
