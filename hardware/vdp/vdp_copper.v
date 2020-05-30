@@ -48,15 +48,15 @@ module vdp_copper(
 
     // --- Ops ---
 
-    // ooo----- --------
-    // o: 3bit op
+    // oo------ --------
+    // o: 2bit op
     // -: op defined fields
 
     wire [1:0] op = ram_read_data[15:14];
     reg [1:0] op_current;
 
     localparam OP_SET_TARGET = 2'h0;
-    localparam OP_WAIT_TARGET = 2'h1;
+    localparam OP_SIGNAL = 2'h1;
     localparam OP_WRITE_REG = 2'h2;
     localparam OP_JUMP = 2'h3;
 
@@ -132,6 +132,18 @@ module vdp_copper(
         endcase
     end
 
+    // JUMP
+
+    wire [10:0] op_jump_target = ram_read_data[10:0];
+
+    // SIGNAL
+
+    // (this will be surfaced for debug use)
+
+    wire [7:0] op_signal_state = ram_read_data[7:0];
+
+    reg [7:0] op_signal_state_r;
+
     // --- FSM ---
 
     localparam STATE_OP_FETCH = 0;
@@ -150,7 +162,7 @@ module vdp_copper(
 
             if (state == STATE_OP_FETCH) begin
                 case (op)
-                    OP_SET_TARGET, OP_WAIT_TARGET: begin
+                    OP_SET_TARGET: begin
                         if (op_target_select) begin
                             target_y <= op_target_value;
                         end else begin
@@ -176,7 +188,11 @@ module vdp_copper(
                         pc <= pc + 1;
                     end
                     OP_JUMP: begin
-                        pc <= ram_read_data[10:0];
+                        pc <= op_jump_target;
+                    end
+                    OP_SIGNAL: begin
+                        op_signal_state <= op_signal_state;
+                        pc <= pc + 1;
                     end
                 endcase
 
