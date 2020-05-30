@@ -134,7 +134,9 @@ module vdp_copper(
         endcase
     end
 
-    // --- FSM ---
+    // the preceeding op must have ram_read_data ready
+
+    // TODO: break this up accordingly
 
     localparam STATE_OP_FETCH = 0;
     localparam STATE_DATA_FETCH = 1;
@@ -150,80 +152,78 @@ module vdp_copper(
         end else begin
             reg_write_en <= 0;
 
-            case (state)
-                STATE_OP_FETCH: begin
-                    case (op)
-                        OP_SET_TARGET, OP_WAIT_TARGET: begin
-                            if (op_target_select) begin
-                                target_y <= op_target_value;
-                            end else begin
-                                target_x <= op_target_value;
-                            end
+            if (state == STATE_OP_FETCH) begin
+                case (op)
+                    OP_SET_TARGET, OP_WAIT_TARGET: begin
+                        if (op_target_select) begin
+                            target_y <= op_target_value;
+                        end else begin
+                            target_x <= op_target_value;
+                        end
 
-                            if (op_target_wait) begin
-                                state <= STATE_RASTER_WAITING;
-                            end else begin
+                        if (op_target_wait) begin
+                            state <= STATE_RASTER_WAITING;
+                        end else begin
+                            state <= STATE_OP_FETCH;
+                            pc <= pc + 1;
+                        end
+                    end
+                    OP_WRITE_REG: begin
+                        op_write_target_reg_r <= op_write_target_reg;
+                        op_write_batch_count_r <= op_write_batch_count == 0 ? 5'h20 : op_write_batch_count;
+                        op_write_auto_wait_r <= op_write_auto_wait;
+                        op_write_increment_mode_r <= op_write_increment_mode;
+
+                        op_write_counter <= 0;
+
+                        state <= STATE_DATA_FETCH;
+                        pc <= pc + 1;
+                    end
+                    OP_JUMP: begin
+                        pc <= ram_read_data[10:0];
+                    end
+                endcase
+
+                op_current <= op;
+            end else if (state == STATE_DATA_FETCH) begin
+                case (op_current)
+                    OP_WRITE_REG: begin
+                        reg_write_data <= ram_read_data;
+                        reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
+                        reg_write_en <= 1;
+
+                        op_write_counter <= op_write_counter + 1;
+
+                        if (op_write_batch_complete) begin
+                            if (op_write_batch_count_r == 0) begin
                                 state <= STATE_OP_FETCH;
                                 pc <= pc + 1;
-                            end
-                        end
-                        OP_WRITE_REG: begin
-                            op_write_target_reg_r <= op_write_target_reg;
-                            op_write_batch_count_r <= op_write_batch_count == 0 ? 5'h20 : op_write_batch_count;
-                            op_write_auto_wait_r <= op_write_auto_wait;
-                            op_write_increment_mode_r <= op_write_increment_mode;
-
-                            op_write_counter <= 0;
-
-                            state <= STATE_DATA_FETCH;
-                            pc <= pc + 1;
-                        end
-                        OP_JUMP: begin
-                            pc <= ram_read_data[10:0];
-                        end
-                    endcase
-
-                    op_current <= op;
-                end
-
-                STATE_DATA_FETCH: begin
-                    reg_write_data <= ram_read_data;
-                    reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
-                    reg_write_en <= 1;
-
-                    op_write_counter <= op_write_counter + 1;
-
-                    if (op_write_batch_complete) begin
-                        if (op_write_batch_count_r == 0) begin
-                            state <= STATE_OP_FETCH;
-                            pc <= pc + 1;
-                        end else begin
-                            op_write_batch_count_r <= op_write_batch_count_r - 1;
-
-                            if (op_write_auto_wait_r) begin
-                                target_y <= raster_y + 1;
-                                state <= STATE_RASTER_WAITING;
                             end else begin
-                                pc <= pc + 1;
+                                op_write_batch_count_r <= op_write_batch_count_r - 1;
+
+                                if (op_write_auto_wait_r) begin
+                                    target_y <= raster_y + 1;
+                                    state <= STATE_RASTER_WAITING;
+                                end else begin
+                                    pc <= pc + 1;
+                                end
                             end
-                        end
-                    end else begin
-                        pc <= pc + 1;
-                    end
-                end
-
-                STATE_RASTER_WAITING: begin
-                    if (target_hit) begin
-                        if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
-                            state <= STATE_DATA_FETCH;
                         end else begin
-                            state <= STATE_OP_FETCH;
+                            pc <= pc + 1;
                         end
-
-                        pc <= pc + 1;
                     end
+                endcase
+            end else if (state == STATE_RASTER_WAITING) begin
+                if (target_hit) begin
+                    if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
+                        state <= STATE_DATA_FETCH;
+                    end else begin
+                        state <= STATE_OP_FETCH;
+                    end
+
+                    pc <= pc + 1;
                 end
-            endcase
+            end
         end
     end
 
