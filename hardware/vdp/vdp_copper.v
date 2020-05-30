@@ -134,9 +134,7 @@ module vdp_copper(
         endcase
     end
 
-    // the preceeding op must have ram_read_data ready
-
-    // TODO: break this up accordingly
+    // --- FSM ---
 
     localparam STATE_OP_FETCH = 0;
     localparam STATE_DATA_FETCH = 1;
@@ -186,33 +184,29 @@ module vdp_copper(
 
                 op_current <= op;
             end else if (state == STATE_DATA_FETCH) begin
-                case (op_current)
-                    OP_WRITE_REG: begin
-                        reg_write_data <= ram_read_data;
-                        reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
-                        reg_write_en <= 1;
+                reg_write_data <= ram_read_data;
+                reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
+                reg_write_en <= 1;
 
-                        op_write_counter <= op_write_counter + 1;
+                op_write_counter <= op_write_counter + 1;
 
-                        if (op_write_batch_complete) begin
-                            if (op_write_batch_count_r == 0) begin
-                                state <= STATE_OP_FETCH;
-                                pc <= pc + 1;
-                            end else begin
-                                op_write_batch_count_r <= op_write_batch_count_r - 1;
+                if (op_write_batch_complete) begin
+                    if (op_write_batch_count_r == 0) begin
+                        state <= STATE_OP_FETCH;
+                        pc <= pc + 1;
+                    end else begin
+                        op_write_batch_count_r <= op_write_batch_count_r - 1;
 
-                                if (op_write_auto_wait_r) begin
-                                    target_y <= raster_y + 1;
-                                    state <= STATE_RASTER_WAITING;
-                                end else begin
-                                    pc <= pc + 1;
-                                end
-                            end
+                        if (op_write_auto_wait_r) begin
+                            target_y <= raster_y + 1;
+                            state <= STATE_RASTER_WAITING;
                         end else begin
                             pc <= pc + 1;
                         end
                     end
-                endcase
+                end else begin
+                    pc <= pc + 1;
+                end
             end else if (state == STATE_RASTER_WAITING) begin
                 if (target_hit) begin
                     if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
