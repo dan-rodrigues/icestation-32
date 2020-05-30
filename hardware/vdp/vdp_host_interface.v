@@ -8,8 +8,6 @@
 
 `include "debug.vh"
 
-// TODO: naming cleanup here
-
 module vdp_host_interface #(
     parameter USE_8BIT_BUS = 0
 ) (
@@ -117,7 +115,6 @@ module vdp_host_interface #(
                 register_write_en <= 0;
             end
         end else begin
-            // is there a CPU <-> COP write conflict?
             if (cop_write_en && host_write_en) begin
                 // this is either a software or hardware bug so flag it accordingly
                 `stop($display("CPU / VDP copper write conflict");)
@@ -135,7 +132,6 @@ module vdp_host_interface #(
             // CPU is always free to read
             read_address <= host_address_r;
 
-            // 1 cycle wstrb on rising edge only
             if (cop_write_en || (host_write_en && !host_write_en_r)) begin
                 register_write_en <= 1;
             end else begin

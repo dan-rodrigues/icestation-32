@@ -89,47 +89,45 @@ module vdp_copper(
     //      ...
     // y: autoincrement target Y and wait between batches
 
+    // op fields
+
     wire [5:0] op_write_target_reg = ram_read_data[5:0];
     wire [4:0] op_write_batch_count = ram_read_data[10:6];
     wire op_write_auto_wait = ram_read_data[11];
     wire [1:0] op_write_increment_mode = ram_read_data[13:12];
 
     reg [5:0] op_write_target_reg_r;
-    reg [5:0] op_write_batch_count_r;
+    reg [4:0] op_write_batch_count_r;
     reg op_write_auto_wait_r;
     reg [1:0] op_write_increment_mode_r;
 
     // working state
 
     reg [1:0] op_write_counter;
-    reg [1:0] op_write_counter_masked;
+    reg [1:0] op_write_reg_offset;
 
     always @* begin
         case (op_write_increment_mode_r)
-            0: op_write_counter_masked = 0;
-            1: op_write_counter_masked = op_write_counter & 2'b01;
-            2: op_write_counter_masked = op_write_counter & 2'b11;
+            0: op_write_reg_offset = 0;
+            1: op_write_reg_offset = op_write_counter & 2'b01;
+            2: op_write_reg_offset = op_write_counter & 2'b11;
             3: begin
-                // unsupported
-                op_write_counter_masked = 0;
-                `stop($stop;)
+                op_write_reg_offset = 0;
+                `stop($display("unexpected state");)
             end
         endcase
     end
-
-    // may be able to reuse the results of this above
 
     reg op_write_batch_complete;
 
     always @* begin
         case (op_write_increment_mode_r)
             0: op_write_batch_complete = 1;
-            1: op_write_batch_complete = op_write_counter_masked & 1;
-            2: op_write_batch_complete = op_write_batch_complete == 2'b11;
+            1: op_write_batch_complete = op_write_counter & 1;
+            2: op_write_batch_complete = op_write_counter == 2'b11;
             3: begin
-                // unsupported
                 op_write_batch_complete = 1;
-                `stop($stop;)
+                `stop($display("unexpected state");)
             end
         endcase
     end
@@ -168,7 +166,7 @@ module vdp_copper(
                     end
                     OP_WRITE_REG: begin
                         op_write_target_reg_r <= op_write_target_reg;
-                        op_write_batch_count_r <= op_write_batch_count == 0 ? 5'h20 : op_write_batch_count;
+                        op_write_batch_count_r <= op_write_batch_count;
                         op_write_auto_wait_r <= op_write_auto_wait;
                         op_write_increment_mode_r <= op_write_increment_mode;
 
@@ -185,7 +183,7 @@ module vdp_copper(
                 op_current <= op;
             end else if (state == STATE_DATA_FETCH) begin
                 reg_write_data <= ram_read_data;
-                reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
+                reg_write_address <= op_write_target_reg_r + op_write_reg_offset;
                 reg_write_en <= 1;
 
                 op_write_counter <= op_write_counter + 1;
