@@ -25,11 +25,8 @@ int main() {
 
     cop_set_target_x(0);
     cop_wait_target_y(32);
-//    // paddr
-//    cop_write(0x02, 0);
-//    // pdata
-//    // teal
-//    cop_write(0x03, 0xf088);
+
+    // should probably have a separate for config and in-progress write
     COPBatchWriteConfig config = {
         .mode = CWM_DOUBLE,
         .reg = 0x02,
@@ -37,15 +34,15 @@ int main() {
         .batch_wait_between_lines = false
     };
 
+    // teal
     cop_start_batch_write(&config);
-    cop_add_batch_double(&config, 0, 0xf880);
+    cop_add_batch_double(&config, 0, 0xf088);
 
     cop_wait_target_y(64);
-    // paddr
-    cop_write(0x02, 0);
-    // pdata
+
     // yellow
-    cop_write(0x03, 0xf880);
+    cop_start_batch_write(&config);
+    cop_add_batch_double(&config, 0, 0xf880);
 
     // half wide block, enabled / disabled midline
 
@@ -55,19 +52,15 @@ int main() {
 
         cop_wait_target_x(400);
 
-        // paddr
-        cop_write(0x02, 0);
-        // pdata
         // green
-        cop_write(0x03, 0xf080);
+        cop_start_batch_write(&config);
+        cop_add_batch_double(&config, 0, 0xf080);
 
         cop_wait_target_x(400 + 256);
 
-        // paddr
-        cop_write(0x02, 0);
-        // pdata
-        // yellow
-        cop_write(0x03, 0xf440);
+        // brown
+        cop_start_batch_write(&config);
+        cop_add_batch_double(&config, 0, 0xf440);
     }
 
     cop_jump(0);
