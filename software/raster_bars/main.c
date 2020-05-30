@@ -68,17 +68,17 @@ int main() {
     const uint8_t test_batch_count = 32;
 
     cop_set_target_x(0);
-    
+
     config.batch_count = test_batch_count - 1;
     config.batch_wait_between_lines = true;
     cop_start_batch_write(&config);
 
-    for (uint8_t i = 0; i < test_batch_count / 2; i++) {
+    for (uint8_t i = 0; i < 16; i++) {
         // (other color components too)
-        cop_add_batch_double(&config, 0, 0xf000 | (i/2 << 8));
+        cop_add_batch_double(&config, 0, 0xf000 | (i << 4));
     }
-    for (uint8_t i = 0; i < test_batch_count / 2; i++) {
-        cop_add_batch_double(&config, 0, 0xf800 - (i/2 << 8));
+    for (uint8_t i = 0; i < 16; i++) {
+        cop_add_batch_double(&config, 0, 0xff00 - (i << 8));
     }
 
     // fade up
