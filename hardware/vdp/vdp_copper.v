@@ -194,12 +194,10 @@ module vdp_copper(
 
                         op_write_counter <= op_write_counter + 1;
 
-                        // FIXME: this depends on batch count etc.
-
                         if (op_write_batch_complete) begin
                             if (op_write_batch_count_r == 0) begin
                                 state <= STATE_OP_FETCH;
-                                // pc <= pc + 1;
+                                pc <= pc + 1;
                             end else begin
                                 op_write_batch_count_r <= op_write_batch_count_r - 1;
 
@@ -207,25 +205,23 @@ module vdp_copper(
                                     target_y <= raster_y + 1;
                                     state <= STATE_RASTER_WAITING;
                                 end else begin
-                                    // pc <= pc + 1;
+                                    pc <= pc + 1;
                                 end
                             end
                         end else begin
-                            // pc <= pc + 1;
+                            pc <= pc + 1;
                         end
-
-                        pc <= pc + 1;
                     end
                 endcase
             end else if (state == STATE_RASTER_WAITING) begin
                 if (target_hit) begin
                     if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
                         state <= STATE_DATA_FETCH;
-                        pc <= pc + 1;
                     end else begin
                         state <= STATE_OP_FETCH;
-                        pc <= pc + 1;
                     end
+
+                    pc <= pc + 1;
                 end
             end
         end

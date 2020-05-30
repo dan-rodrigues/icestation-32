@@ -50,13 +50,13 @@ int main() {
         cop_set_target_x(0);
         cop_wait_target_y(96 + i);
 
-        cop_wait_target_x(400);
+        cop_wait_target_x(240 + 256);
 
         // green
         cop_start_batch_write(&config);
         cop_add_batch_double(&config, 0, 0xf080);
 
-        cop_wait_target_x(400 + 256);
+        cop_wait_target_x(1100 - 256);
 
         // brown
         cop_start_batch_write(&config);
@@ -79,6 +79,22 @@ int main() {
     }
     for (uint8_t i = 0; i < 16; i++) {
         cop_add_batch_double(&config, 0, 0xff00 - (i << 8));
+    }
+
+    config.batch_count = 16 - 1;
+    config.batch_wait_between_lines = true;
+    cop_start_batch_write(&config);
+
+    for (uint8_t i = 0; i < 16; i++) {
+        cop_add_batch_double(&config, 0, 0xf000 + (i << 0));
+    }
+
+    config.batch_count = 16 - 1;
+    config.batch_wait_between_lines = true;
+    cop_start_batch_write(&config);
+
+    for (uint8_t i = 0; i < 16; i++) {
+        cop_add_batch_double(&config, 0, 0xf00f - (i << 0));
     }
 
     // fade up
