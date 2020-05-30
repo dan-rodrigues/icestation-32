@@ -63,6 +63,18 @@ int main() {
         cop_add_batch_double(&config, 0, 0xf440);
     }
 
+    // batch write
+
+    const uint8_t test_batch_count = 16;
+
+    config.batch_count = test_batch_count - 1;
+    config.batch_wait_between_lines = true;
+    cop_start_batch_write(&config);
+
+    for (uint8_t i = 0; i < test_batch_count; i++) {
+        cop_add_batch_double(&config, 0, 0xf000 + (i << 8));
+    }
+
     cop_jump(0);
 
     vdp_enable_copper(true);
