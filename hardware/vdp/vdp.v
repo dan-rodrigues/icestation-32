@@ -269,7 +269,6 @@ module vdp #(
                         sprite_tile_base <= register_write_data;
                     end
                     8: begin
-                        // TODO:
                         cop_enable <= register_write_data[0];
                     end
                     default: begin

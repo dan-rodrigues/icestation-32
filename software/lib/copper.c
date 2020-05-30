@@ -11,17 +11,18 @@ static const size_t COP_RAM_SIZE = 0x1000 / sizeof(uint16_t);
 
 static uint16_t current_address = 0;
 
-// 3bit ops
+// 2bit ops
 
 static const uint8_t OP_SHIFT = 13;
 
 typedef enum {
-    SET_TARGET_X = 0,
-    WAIT_TARGET_Y = 1,
+    SET_TARGET = 0,
+    WAIT_TARGET = 1,
     WRITE_REG = 2,
-    JUMP = 3,
-    WAIT_TARGET_X = 4
+    JUMP = 3
 } Op;
+
+static void cop_target(uint16_t target, bool is_y, bool wait);
 
 void cop_ram_seek(uint16_t address) {
     assert(address < COP_RAM_SIZE);
@@ -30,21 +31,23 @@ void cop_ram_seek(uint16_t address) {
 }
 
 void cop_set_target_x(uint16_t target_x) {
-    uint16_t op_word = SET_TARGET_X << OP_SHIFT; // macro..
-    op_word |= target_x;
-    COP_RAM[current_address++] = op_word;
+    cop_target(target_x, false, false);
 }
 
 void cop_wait_target_x(uint16_t target_x) {
-    uint16_t op_word = WAIT_TARGET_X << OP_SHIFT;
-    op_word |= target_x;
+    cop_target(target_x, false, true);
+}
+
+static void cop_target(uint16_t target, bool is_y, bool wait) {
+    uint16_t op_word = (wait ? WAIT_TARGET : SET_TARGET) << OP_SHIFT;
+    op_word |= is_y ? 1 << 11 : 0;
+    op_word |= wait ? 1 << 12 : 0;
+    op_word |= target;
     COP_RAM[current_address++] = op_word;
 }
 
 void cop_wait_target_y(uint16_t target_y) {
-    uint16_t op_word = WAIT_TARGET_Y << OP_SHIFT;
-    op_word |= target_y;
-    COP_RAM[current_address++] = op_word;
+    cop_target(target_y, true, true);
 }
 
 void cop_write(uint8_t reg, uint16_t data) {
