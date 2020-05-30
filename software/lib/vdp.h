@@ -11,6 +11,8 @@
 
 typedef volatile uint16_t *const VDP_REG;
 
+static VDP_REG VDP_BASE = (VDP_REG)0x010000;
+
 typedef enum {
     SCROLL0 = 1 << 0,
     SCROLL1 = 1 << 1,
@@ -48,7 +50,7 @@ extern const uint16_t SPRITE_X_FLIP;
 
 // MARK: VDP read functions
 
-extern VDP_REG VDP_CURRENT_RASTER_BASE;
+static const VDP_REG VDP_CURRENT_RASTER_BASE = VDP_BASE + 0x00;
 
 #define VDP_CURRENT_RASTER_X (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 0))
 #define VDP_CURRENT_RASTER_Y (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 2))

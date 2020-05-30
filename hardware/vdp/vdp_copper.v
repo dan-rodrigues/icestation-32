@@ -191,7 +191,7 @@ module vdp_copper(
                         pc <= op_jump_target;
                     end
                     OP_SIGNAL: begin
-                        op_signal_state <= op_signal_state;
+                        op_signal_state_r <= op_signal_state;
                         pc <= pc + 1;
                     end
                 endcase

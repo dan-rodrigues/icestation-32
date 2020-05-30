@@ -1,0 +1,44 @@
+#ifndef vdp_regs_h
+#define vdp_regs_h
+
+#include "vdp.h"
+
+// these register locations are kept in a separate header to avoid importing them using vdp.h
+// only code that actually needs to know reg locations should include this (i.e. copper program)
+
+static VDP_REG VDP_RENDER_CTRL_BASE = VDP_BASE + 0x20;
+
+static VDP_REG VDP_SCROLL_TILE_ADDRESS_BASE = VDP_BASE + 0x10;
+static VDP_REG VDP_HSCROLL_BASE = VDP_BASE + 0x14;
+static VDP_REG VDP_VSCROLL_BASE = VDP_BASE + 0x18;
+static VDP_REG VDP_SCROLL_MAP_ADDRESS_BASE = VDP_BASE + 0x1c;
+
+#define VDP_ENABLE_COPPER (*((volatile uint16_t *) VDP_BASE + 8))
+
+#define VDP_LAYER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 0))
+#define VDP_ALPHA_OVER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 1))
+#define VDP_SCROLL_WIDE_MAP_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 2))
+
+#define VDP_TARGET_RASTER_X (*((VDP_REG) VDP_RENDER_CTRL_BASE + 3))
+#define VDP_TARGET_RASTER_Y (*((VDP_REG) VDP_RENDER_CTRL_BASE + 4))
+
+#define VDP_MATRIX_A (*((VDP_REG) VDP_HSCROLL_BASE + 1))
+#define VDP_MATRIX_B (*((VDP_REG) VDP_HSCROLL_BASE + 2))
+#define VDP_MATRIX_C (*((VDP_REG) VDP_HSCROLL_BASE + 3))
+#define VDP_MATRIX_D (*((VDP_REG) VDP_VSCROLL_BASE + 1))
+
+#define VDP_AFFINE_PRETRANSLATE_X (*((VDP_REG) VDP_VSCROLL_BASE + 2))
+#define VDP_AFFINE_PRETRANSLATE_Y (*((VDP_REG) VDP_VSCROLL_BASE + 3))
+
+#define VDP_SPRITE_TILE_BASE (*((volatile uint16_t *) VDP_BASE + 7))
+#define VDP_SPRITE_BLOCK_ADDRESS (*((VDP_REG) VDP_BASE + 0))
+#define VDP_SPRITE_DATA (*((VDP_REG) VDP_BASE + 1))
+
+#define VDP_PALETTE_ADDRESS (*((volatile uint16_t *) VDP_BASE + 2))
+#define VDP_PALETTE_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 3))
+
+#define VDP_VRAM_ADDRESS (*((volatile uint16_t *) VDP_BASE + 4))
+#define VDP_VRAM_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 5))
+#define VDP_ADDRESS_INCREMENT (*((volatile uint16_t *) VDP_BASE + 6))
+
+#endif /* vdp_regs_h */

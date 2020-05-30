@@ -2,9 +2,8 @@
 #include <stdbool.h>
 
 #include "vdp.h"
+#include "vdp_regs.h"
 #include "copper.h"
-
-// can aim for just color 0 driving this
 
 int main() {
     // atleast one layer active is needed to enable display
@@ -15,12 +14,6 @@ int main() {
     vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
 
-    // WIP: copper setup
-    /*
-     #define VDP_PALETTE_ADDRESS (*((volatile uint16_t *) VDP_BASE + 2))
-     #define VDP_PALETTE_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 3))
-     */
-
     cop_ram_seek(0);
 
     cop_set_target_x(0);
@@ -29,7 +22,7 @@ int main() {
     // should probably have a separate for config and in-progress write
     COPBatchWriteConfig config = {
         .mode = CWM_DOUBLE,
-        .reg = 0x02,
+        .reg = &VDP_PALETTE_ADDRESS,
         .batch_count = 1 - 1,
         .batch_wait_between_lines = false
     };
@@ -96,15 +89,6 @@ int main() {
     for (uint8_t i = 0; i < 16; i++) {
         cop_add_batch_double(&config, 0, 0xf00f - (i << 0));
     }
-
-    // fade up
-//    for (uint8_t i = 0; i < 16; i++) {
-//        cop_add_batch_double(&config, 0, 0xf000 + (i << 4));
-//    }
-    // fade down
-//    for (uint8_t i = 0; i < 16; i++) {
-//        cop_add_batch_double(&config, 0, 0xf080 - (i << 4));
-//    }
 
     cop_jump(0);
 

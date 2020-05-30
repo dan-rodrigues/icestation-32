@@ -11,10 +11,9 @@ static const size_t COP_RAM_SIZE = 0x1000 / sizeof(uint16_t);
 
 static uint16_t cop_pc = 0;
 
-// 2bit ops
-
 static const uint8_t OP_SHIFT = 14;
 
+// 2bit ops
 typedef enum {
     SET_TARGET = 0,
     SIGNAL = 1,
@@ -23,6 +22,7 @@ typedef enum {
 } Op;
 
 static void cop_target(uint16_t target, bool is_y, bool wait);
+static uint8_t cop_reg(VDP_REG reg);
 
 void cop_ram_seek(uint16_t address) {
     assert(address < COP_RAM_SIZE);
@@ -50,11 +50,16 @@ static void cop_target(uint16_t target, bool is_y, bool wait) {
     COP_RAM[cop_pc++] = op_word;
 }
 
-void cop_write(uint8_t reg, uint16_t data) {
-    uint16_t op_word = WRITE_REG << OP_SHIFT;
-    op_word |= reg;
-    COP_RAM[cop_pc++] = op_word;
-    COP_RAM[cop_pc++] = data;
+void cop_write(VDP_REG reg, uint16_t data) {
+    COPBatchWriteConfig config = {
+        .mode = CWM_SINGLE,
+        .reg = reg,
+        .batch_count = 0,
+        .batch_wait_between_lines = false
+    };
+
+    cop_start_batch_write(&config);
+    cop_add_batch_single(&config, data);
 }
 
 void cop_jump(uint16_t address) {
@@ -69,7 +74,7 @@ void cop_jump(uint16_t address) {
 
 void cop_start_batch_write(COPBatchWriteConfig *config) {
     uint16_t op_word = WRITE_REG << OP_SHIFT;
-    op_word |= config->reg;
+    op_word |= cop_reg(config->reg);
     op_word |= config->batch_count << 6;
     op_word |= config->batch_wait_between_lines ? 1 << 11 : 0;
     op_word |= config->mode << 12;
@@ -111,4 +116,8 @@ void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t da
 
 void cop_signal(uint8_t data) {
     COP_RAM[cop_pc++] = data;
+}
+
+static uint8_t cop_reg(VDP_REG reg) {
+    return ((uint32_t)reg / 2) & 0x3f;
 }
