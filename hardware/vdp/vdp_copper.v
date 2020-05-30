@@ -178,7 +178,7 @@ module vdp_copper(
                         op_write_counter <= 0;
 
                         state <= STATE_DATA_FETCH;
-                        // pc <= pc + 1;
+                        pc <= pc + 1;
                     end
                     OP_JUMP: begin
                         pc <= ram_read_data[10:0];
@@ -208,8 +208,6 @@ module vdp_copper(
                         pc <= pc + 1;
                     end
                 endcase
-
-                pc <= pc + 1;
             end else if (state == STATE_RASTER_WAITING) begin
                 if (target_hit) begin
                     state <= STATE_OP_FETCH;
