@@ -30,7 +30,7 @@ clean:
  # --trace
 
 sim: $(BIN)
-	cd $(SIM_DIR) && ./build.sh
+	cd $(SIM_DIR) && ./build.sh --trace
 	$(SIM_DIR)obj_dir/ics32-sim $(BIN)
 
 .PHONY: clean sim

@@ -69,7 +69,6 @@ void cop_jump(uint16_t address) {
 
 void cop_start_batch_write(COPBatchWriteConfig *config) {
     uint16_t op_word = WRITE_REG << OP_SHIFT;
-
     op_word |= config->reg;
     op_word |= config->batch_count << 6;
     op_word |= config->batch_wait_between_lines ? 1 << 11 : 0;
@@ -83,10 +82,10 @@ void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data) {
 
 }
 void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1) {
-    assert(config->batches_written < config->batch_count);
+    assert(config->batches_written <= config->batch_count);
 
     COP_RAM[current_address++] = data0;
     COP_RAM[current_address++] = data1;
-    
+
     config->batches_written++;
 }

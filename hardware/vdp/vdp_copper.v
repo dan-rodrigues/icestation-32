@@ -107,8 +107,8 @@ module vdp_copper(
     always @* begin
         case (op_write_increment_mode_r)
             0: op_write_counter_masked = 0;
-            1: op_write_counter_masked = op_write_counter_masked & 2'b01;
-            2: op_write_counter_masked = op_write_counter_masked & 2'b11;
+            1: op_write_counter_masked = op_write_counter & 2'b01;
+            2: op_write_counter_masked = op_write_counter & 2'b11;
             3: begin
                 // unsupported
                 op_write_counter_masked = 0;
@@ -177,10 +177,8 @@ module vdp_copper(
 
                         op_write_counter <= 0;
 
-                        // TODO: support more modes
-                        // reg_write_address <= ram_read_data[5:0];
                         state <= STATE_DATA_FETCH;
-                        pc <= pc + 1;
+                        // pc <= pc + 1;
                     end
                     OP_JUMP: begin
                         pc <= ram_read_data[10:0];
@@ -191,10 +189,8 @@ module vdp_copper(
             end else if (state == STATE_DATA_FETCH) begin
                 case (op_current)
                     OP_WRITE_REG: begin
-                        // TODO: support auto wait mode
-                        reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
-
                         reg_write_data <= ram_read_data;
+                        reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
                         reg_write_en <= 1;
 
                         op_write_counter <= op_write_counter + 1;
@@ -208,6 +204,8 @@ module vdp_copper(
                                 op_write_batch_count_r <= op_write_batch_count_r - 1;
                             end
                         end
+
+                        pc <= pc + 1;
                     end
                 endcase
 

@@ -25,11 +25,20 @@ int main() {
 
     cop_set_target_x(0);
     cop_wait_target_y(32);
-    // paddr
-    cop_write(0x02, 0);
-    // pdata
-    // teal
-    cop_write(0x03, 0xf088);
+//    // paddr
+//    cop_write(0x02, 0);
+//    // pdata
+//    // teal
+//    cop_write(0x03, 0xf088);
+    COPBatchWriteConfig config = {
+        .mode = CWM_DOUBLE,
+        .reg = 0x02,
+        .batch_count = 1 - 1,
+        .batch_wait_between_lines = false
+    };
+
+    cop_start_batch_write(&config);
+    cop_add_batch_double(&config, 0, 0xf880);
 
     cop_wait_target_y(64);
     // paddr
