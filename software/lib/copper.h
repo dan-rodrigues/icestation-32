@@ -35,17 +35,12 @@ typedef struct  {
 
 void cop_write(uint8_t reg, uint16_t data);
 
-// params
 void cop_start_batch_write(COPBatchWriteConfig *config);
 void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data);
 void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1);
 void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1, uint16_t data2, uint16_t data3);
 
-// optional assert potentitally
-//void cop_end_batch_write(COPBatchWriteConfig *config)
-
-// signal that it's done for the frame (assertions etc)
-void cop_done();
+void cop_signal(uint8_t data);
 
 void cop_jump(uint16_t address);
 

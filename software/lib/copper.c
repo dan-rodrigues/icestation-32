@@ -17,7 +17,7 @@ static const uint8_t OP_SHIFT = 14;
 
 typedef enum {
     SET_TARGET = 0,
-    // (vacant op)
+    SIGNAL = 1,
     WRITE_REG = 2,
     JUMP = 3
 } Op;
@@ -79,13 +79,36 @@ void cop_start_batch_write(COPBatchWriteConfig *config) {
 }
 
 void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data) {
+    assert(config->batches_written <= config->batch_count);
+    assert(config->mode == CWM_SINGLE);
 
+    COP_RAM[cop_pc++] = data;
+
+    config->batches_written++;
 }
+
 void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1) {
     assert(config->batches_written <= config->batch_count);
+    assert(config->mode == CWM_DOUBLE);
 
     COP_RAM[cop_pc++] = data0;
     COP_RAM[cop_pc++] = data1;
 
     config->batches_written++;
+}
+
+void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1, uint16_t data2, uint16_t data3) {
+    assert(config->batches_written <= config->batch_count);
+    assert(config->mode == CWM_QUAD);
+
+    COP_RAM[cop_pc++] = data0;
+    COP_RAM[cop_pc++] = data1;
+    COP_RAM[cop_pc++] = data2;
+    COP_RAM[cop_pc++] = data3;
+
+    config->batches_written++;
+}
+
+void cop_signal(uint8_t data) {
+    COP_RAM[cop_pc++] = data;
 }
