@@ -13,7 +13,7 @@ static uint16_t current_address = 0;
 
 // 2bit ops
 
-static const uint8_t OP_SHIFT = 13;
+static const uint8_t OP_SHIFT = 14;
 
 typedef enum {
     SET_TARGET = 0,
@@ -63,4 +63,30 @@ void cop_jump(uint16_t address) {
     uint16_t op_word = JUMP << OP_SHIFT;
     op_word |= address;
     COP_RAM[current_address++] = op_word;
+}
+
+// batch writes
+
+void cop_start_batch_write(COPBatchWriteConfig *config) {
+    uint16_t op_word = WRITE_REG << OP_SHIFT;
+
+    op_word |= config->reg;
+    op_word |= config->batch_count << 6;
+    op_word |= config->batch_wait_between_lines ? 1 << 11 : 0;
+    op_word |= config->mode << 12;
+    COP_RAM[current_address++] = op_word;
+
+    config->batches_written = 0;
+}
+
+void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data) {
+
+}
+void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1) {
+    assert(config->batches_written < config->batch_count);
+
+    COP_RAM[current_address++] = data0;
+    COP_RAM[current_address++] = data1;
+    
+    config->batches_written++;
 }

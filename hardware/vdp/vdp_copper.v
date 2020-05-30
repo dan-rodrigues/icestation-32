@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+`include "debug.vh"
+
 `default_nettype none
 
 module vdp_copper(
@@ -50,8 +52,8 @@ module vdp_copper(
     // o: 3bit op
     // -: op defined fields
 
-    wire [2:0] op = ram_read_data[15:13];
-    reg [2:0] op_current;
+    wire [1:0] op = ram_read_data[15:14];
+    reg [1:0] op_current;
 
     localparam OP_SET_TARGET = 2'h0;
     localparam OP_WAIT_TARGET = 2'h1;
@@ -76,10 +78,61 @@ module vdp_copper(
 
     // REG_WRITE
 
-    // oo------ --rrrrrr
+    // ooiiynnn nnrrrrrr
     //
     // r: target register
-    // ?: fields to alter how the writes are managed
+    // n: number of batches write
+    // i: reg increment mode (batch size)
+    //      0: reg[0], repeat
+    //      1: reg[0], reg[1], repeat
+    //      2: reg[0], reg[1], reg[2], reg[3], repeat
+    //      ...
+    // y: autoincrement target Y and wait between batches
+
+    wire [5:0] op_write_target_reg = ram_read_data[5:0];
+    wire [4:0] op_write_batch_count = ram_read_data[10:6];
+    wire op_write_auto_wait = ram_read_data[11];
+    wire [1:0] op_write_increment_mode = ram_read_data[13:12];
+
+    reg [5:0] op_write_target_reg_r;
+    reg [4:0] op_write_batch_count_r;
+    reg op_write_auto_wait_r;
+    reg [1:0] op_write_increment_mode_r;
+
+    // working state
+
+    reg [1:0] op_write_counter;
+    reg [1:0] op_write_counter_masked;
+
+    always @* begin
+        case (op_write_increment_mode_r)
+            0: op_write_counter_masked = 0;
+            1: op_write_counter_masked = op_write_counter_masked & 2'b01;
+            2: op_write_counter_masked = op_write_counter_masked & 2'b11;
+            3: begin
+                // unsupported
+                op_write_counter_masked = 0;
+                `stop($stop;)
+            end
+        endcase
+    end
+
+    // may be able to reuse the results of this above
+
+    reg op_write_batch_complete;
+
+    always @* begin
+        case (op_write_increment_mode_r)
+            0: op_write_batch_complete = 1;
+            1: op_write_batch_complete = op_write_counter_masked & 1;
+            2: op_write_batch_complete = op_write_batch_complete == 2'b11;
+            3: begin
+                // unsupported
+                op_write_batch_complete = 1;
+                `stop($stop;)
+            end
+        endcase
+    end
 
     // the preceeding op must have ram_read_data ready
 
@@ -117,7 +170,15 @@ module vdp_copper(
                         end
                     end
                     OP_WRITE_REG: begin
-                        reg_write_address <= ram_read_data[5:0];
+                        op_write_target_reg_r <= op_write_target_reg;
+                        op_write_batch_count_r <= op_write_batch_count;
+                        op_write_auto_wait_r <= op_write_auto_wait;
+                        op_write_increment_mode_r <= op_write_increment_mode;
+
+                        op_write_counter <= 0;
+
+                        // TODO: support more modes
+                        // reg_write_address <= ram_read_data[5:0];
                         state <= STATE_DATA_FETCH;
                         pc <= pc + 1;
                     end
@@ -130,9 +191,23 @@ module vdp_copper(
             end else if (state == STATE_DATA_FETCH) begin
                 case (op_current)
                     OP_WRITE_REG: begin
+                        // TODO: support auto wait mode
+                        reg_write_address <= op_write_target_reg_r + op_write_counter_masked;
+
                         reg_write_data <= ram_read_data;
                         reg_write_en <= 1;
-                        state <= STATE_OP_FETCH;
+
+                        op_write_counter <= op_write_counter + 1;
+
+                        // FIXME: this depends on batch count etc.
+
+                        if (op_write_batch_complete) begin
+                            if (op_write_batch_count_r == 0) begin
+                                state <= STATE_OP_FETCH;
+                            end else begin
+                                op_write_batch_count_r <= op_write_batch_count_r - 1;
+                            end
+                        end
                     end
                 endcase
 
