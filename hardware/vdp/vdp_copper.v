@@ -153,7 +153,6 @@ module vdp_copper(
             reg_write_en <= 0;
 
             if (state == STATE_OP_FETCH) begin
-                // decode op (already fetched)
                 case (op)
                     OP_SET_TARGET, OP_WAIT_TARGET: begin
                         if (op_target_select) begin
@@ -200,12 +199,20 @@ module vdp_copper(
                         if (op_write_batch_complete) begin
                             if (op_write_batch_count_r == 0) begin
                                 state <= STATE_OP_FETCH;
+                                pc <= pc + 1;
                             end else begin
                                 op_write_batch_count_r <= op_write_batch_count_r - 1;
-                            end
-                        end
 
-                        pc <= pc + 1;
+                                if (op_write_auto_wait_r) begin
+                                    target_y <= target_y + 1;
+                                    state <= STATE_RASTER_WAITING;
+                                end else begin
+                                    pc <= pc + 1;
+                                end
+                            end
+                        end else begin
+                            pc <= pc + 1;
+                        end
                     end
                 endcase
             end else if (state == STATE_RASTER_WAITING) begin
