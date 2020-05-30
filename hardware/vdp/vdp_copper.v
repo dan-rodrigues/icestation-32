@@ -95,7 +95,7 @@ module vdp_copper(
     wire [1:0] op_write_increment_mode = ram_read_data[13:12];
 
     reg [5:0] op_write_target_reg_r;
-    reg [4:0] op_write_batch_count_r;
+    reg [5:0] op_write_batch_count_r;
     reg op_write_auto_wait_r;
     reg [1:0] op_write_increment_mode_r;
 
@@ -170,7 +170,7 @@ module vdp_copper(
                     end
                     OP_WRITE_REG: begin
                         op_write_target_reg_r <= op_write_target_reg;
-                        op_write_batch_count_r <= op_write_batch_count;
+                        op_write_batch_count_r <= op_write_batch_count == 0 ? 5'h20 : op_write_batch_count;
                         op_write_auto_wait_r <= op_write_auto_wait;
                         op_write_increment_mode_r <= op_write_increment_mode;
 

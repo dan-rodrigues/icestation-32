@@ -65,15 +65,28 @@ int main() {
 
     // batch write
 
-    const uint8_t test_batch_count = 16;
+    const uint8_t test_batch_count = 32;
 
     config.batch_count = test_batch_count - 1;
     config.batch_wait_between_lines = true;
     cop_start_batch_write(&config);
 
-    for (uint8_t i = 0; i < test_batch_count; i++) {
-        cop_add_batch_double(&config, 0, 0xf000 + (i << 8));
+    for (uint8_t i = 0; i < test_batch_count / 2; i++) {
+        // (other color components too)
+        cop_add_batch_double(&config, 0, 0xf000 | (i/2 << 8));
     }
+    for (uint8_t i = 0; i < test_batch_count / 2; i++) {
+        cop_add_batch_double(&config, 0, 0xf800 - (i/2 << 8));
+    }
+
+    // fade up
+//    for (uint8_t i = 0; i < 16; i++) {
+//        cop_add_batch_double(&config, 0, 0xf000 + (i << 4));
+//    }
+    // fade down
+//    for (uint8_t i = 0; i < 16; i++) {
+//        cop_add_batch_double(&config, 0, 0xf080 - (i << 4));
+//    }
 
     cop_jump(0);
 
