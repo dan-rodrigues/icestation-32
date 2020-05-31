@@ -5,6 +5,7 @@
 #include "vdp.h"
 #include "vdp_regs.h"
 #include "copper.h"
+#include "math_util.h"
 
 int main() {
     vdp_enable_copper(false);
@@ -36,9 +37,13 @@ int main() {
         uint16_t line = 0;
         while (line < screen_height) {
             uint16_t selected_line = line + line_offset;
+            uint16_t bar_offset = selected_line % bar_height;
+            uint16_t visible_bar_height = bar_height - bar_offset;
+            // clip if the bar "runs over the bottom of the screen"
+            visible_bar_height = MIN(screen_height - line, visible_bar_height);
 
-            uint16_t visible_bar_height = bar_height - (selected_line % bar_height);
-
+            // at some point these will have to be broken up
+            // since the horizontal updates have to be woven into this table too
             config.batch_count = visible_bar_height - 1;
             config.batch_wait_between_lines = true;
             cop_start_batch_write(&config);
@@ -46,11 +51,12 @@ int main() {
             uint8_t mask_selected = (selected_line / bar_height) % color_mask_count;
             uint16_t color_mask = color_masks[mask_selected];
 
-            for (uint8_t bar_y = selected_line % bar_height; bar_y < bar_height; bar_y++) {
+            for (uint8_t bar_y = 0; bar_y < visible_bar_height; bar_y++) {
                 uint16_t color = 0;
-                uint8_t y = bar_y % (bar_height / 2);
+                uint8_t bar_y_offset = bar_y + bar_offset;
+                uint8_t y = bar_y_offset % (bar_height / 2);
 
-                if (bar_y < bar_height / 2) {
+                if (bar_y_offset < (bar_height / 2)) {
                     color = 0xf000 | y << 8 | y << 4 | y;
                     color &= color_mask;
                 } else {
