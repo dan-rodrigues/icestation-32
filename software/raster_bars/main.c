@@ -88,11 +88,11 @@ static void draw_layer_mask() {
     top_x = 600;
     top_y = 16;
 
-    mid_x = 500;
+    mid_x = 800;
     mid_y = 100;
 
-    bottom_x = 250;
-    bottom_y = 400;
+    bottom_x = 540;
+    bottom_y = 450;
 
     // top to mid
 
@@ -100,25 +100,27 @@ static void draw_layer_mask() {
     uint32_t x = top_x << 16;
     uint32_t x_m = x;
 
-    int16_t dx = top_x - mid_x;
+    int16_t dx = mid_x - top_x;
     int16_t dy = mid_y - top_y;
 
-    int16_t dx_m = top_x - bottom_x;
+    int16_t dx_m = bottom_x - top_x;
     int16_t dy_m = bottom_y - top_y;
 
     // actually want dx/dy since the y increments per line but x changes variably
+    int32_t delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
+    int32_t delta_x_m = full_divide(ABS(dx_m) * 0x10000, ABS(dy_m));
 
-    // (sign...)
-    int32_t delta_x = full_divide(dx * 0x10000, dy);
-    int32_t delta_x_m = full_divide(dx_m * 0x10000, dy_m);
-
-    if (dx > 0) {
+    if (dx < 0) {
         delta_x = -delta_x;
     }
 
+    if (dx_m < 0) {
+        delta_x_m = -delta_x_m;
+    }
+
     for (uint16_t y = top_y; y < mid_y; y++) {
-        uint16_t e1 = x / 0x10000;
-        uint16_t e2 = x_m / 0x10000 + 2;
+        uint16_t e1 = x / 0x10000 + 1; // !
+        uint16_t e2 = x_m / 0x10000;
 
         if (e1 == e2) {
             continue;
