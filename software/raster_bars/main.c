@@ -88,38 +88,44 @@ static void draw_layer_mask() {
     top_x = 600;
     top_y = 16;
 
-    mid_x = 500 ;
+    mid_x = 500;
     mid_y = 100;
 
     bottom_x = 250;
-    bottom_y = 300;
+    bottom_y = 400;
 
     // top to mid
 
     // must be interpolated to mid_x per line
     uint32_t x = top_x << 16;
+    uint32_t x_m = x;
 
     int16_t dx = top_x - mid_x;
     int16_t dy = mid_y - top_y;
+
+    int16_t dx_m = top_x - bottom_x;
+    int16_t dy_m = bottom_y - top_y;
 
     // actually want dx/dy since the y increments per line but x changes variably
 
     // (sign...)
     int32_t delta_x = full_divide(dx * 0x10000, dy);
+    int32_t delta_x_m = full_divide(dx_m * 0x10000, dy_m);
 
     if (dx > 0) {
         delta_x = -delta_x;
     }
 
     for (uint16_t y = top_y; y < mid_y; y++) {
-        uint16_t left = x >> 16;
+        uint16_t e1 = x / 0x10000;
+        uint16_t e2 = x_m / 0x10000 + 2;
 
-        // constant right for now
-        uint16_t right = top_x + 200;
-
-        if (left == right) {
+        if (e1 == e2) {
             continue;
         }
+
+        uint16_t left = MIN(e1, e2);
+        uint16_t right = MAX(e1, e2);
 
         cop_set_target_x(left);
         cop_wait_target_y(y);
@@ -134,7 +140,10 @@ static void draw_layer_mask() {
 
         // delta update for next line
         x += delta_x;
+        x_m += delta_x_m;
     }
+
+    cop_write(&VDP_LAYER_ENABLE, 0);
 
     // fixed triangle:
 //    for (uint8_t i = 0; i < 200; i++) {
