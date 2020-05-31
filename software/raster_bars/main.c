@@ -26,7 +26,7 @@ int main() {
     const uint8_t bar_height = 32;
 
     uint16_t line_offset = 0;
-    const uint16_t screen_height = 480 + 32; // !
+    const uint16_t screen_height = 480;
 
     while (true) {
         cop_ram_seek(0);
@@ -68,6 +68,11 @@ int main() {
             }
 
             line += visible_bar_height;
+
+            // must wait 1 line or else it'll immediately start processing the *next* line
+            if (line < screen_height) {
+                cop_wait_target_y(line);
+            }
         }
 
         cop_jump(0);
