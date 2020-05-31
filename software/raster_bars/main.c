@@ -38,11 +38,12 @@ int main() {
 
     uint16_t line_offset = 0;
 
-    vdp_wait_frame_ended();
+    draw_layer_mask();
 
     while (true) {
 //        draw_raster_bars(line_offset);
-        draw_layer_mask();
+//        draw_layer_mask();
+
         vdp_enable_copper(true);
 
         vdp_wait_frame_ended();
@@ -76,8 +77,9 @@ uint32_t full_divide(uint32_t dividend, uint32_t divisor) {
     return quotient;
 }
 
-static void draw_triangle_edge(int32_t *x1, int16_t x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
-    int32_t x1_long = *x1 * 0x10000;
+// resolve arg inconssitency
+static int32_t draw_triangle_edge(int32_t x1, int16_t x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
+    int32_t x1_long = x1;
     int32_t x2_long = x2 * 0x10000;
 
     for (uint16_t y = y_base; y < y_end; y++) {
@@ -108,8 +110,9 @@ static void draw_triangle_edge(int32_t *x1, int16_t x2, uint16_t y_base, uint16_
         cop_write(&VDP_LAYER_ENABLE, 0);
     }
 
-    *x1 = x1_long;
+    return x1_long;
 }
+
 
 // triangle mask
 static void draw_layer_mask() {
@@ -131,10 +134,6 @@ static void draw_layer_mask() {
 
     // top to mid
 
-    // must be interpolated to mid_x per line
-    uint32_t x = top_x << 16;
-    uint32_t x_m = x;
-
     int16_t dx = mid_x - top_x;
     int16_t dy = mid_y - top_y;
 
@@ -153,75 +152,25 @@ static void draw_layer_mask() {
         delta_x_m = -delta_x_m;
     }
 
-    int32_t mid_left = top_x;
+    int32_t mid_left = top_x << 16;
 
     // top segment
-    draw_triangle_edge(&mid_left, top_x, top_y, mid_y, delta_x, delta_x_m);
+    mid_left = draw_triangle_edge(mid_left, top_x, top_y, mid_y, delta_x, delta_x_m);
 
-    dx = bottom_x - mid_x;
+    dx = bottom_x - (mid_left / 0x10000);
     dy = bottom_y - mid_y;
 
-    dx_m = bottom_x - mid_x; // !
-    dy_m = bottom_y - mid_y;
+    delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
 
-    // actually want dx/dy since the y increments per line but x changes variably
-//    delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
-//    delta_x_m = full_divide(ABS(dx_m) * 0x10000, ABS(dy_m));
+    if (dx < 0) {
+        delta_x = -delta_x;
+    }
 
     // bottom segment
-    draw_triangle_edge(&mid_left, bottom_x, mid_y, bottom_y, delta_x, delta_x_m);
-
-//    for (uint16_t y = top_y; y < mid_y; y++) {
-//        uint16_t e1 = x / 0x10000 + 0;
-//        uint16_t e2 = x_m / 0x10000;
-//
-//        // delta update for next line
-//        x += delta_x;
-//        x_m += delta_x_m;
-//
-//        uint16_t left = MIN(e1, e2);
-//        uint16_t right = MAX(e1, e2);
-//
-//        if (left >= right) {
-//            continue;
-//        }
-//
-//        cop_set_target_x(left);
-//        cop_wait_target_y(y);
-//
-//        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
-//
-//        // tune delay if needed
-//        if ((right - left) > 3) {
-//            cop_wait_target_x(right);
-//        }
-//
-//        cop_write(&VDP_LAYER_ENABLE, 0);
-//    }
+    // FIXME: merge properly with top segment
+    draw_triangle_edge(mid_left, bottom_x, mid_y, bottom_y, delta_x, delta_x_m);
 
     cop_write(&VDP_LAYER_ENABLE, 0);
-
-    // fixed triangle:
-//    for (uint8_t i = 0; i < 200; i++) {
-//        uint16_t center = 240 + 848 / 2;
-//        uint16_t left = center - i;
-//        uint16_t right = center + i;
-//
-//        if (left == right) {
-//            continue;
-//        }
-//
-//        cop_set_target_x(left);
-//        cop_wait_target_y(i);
-//
-//        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
-//
-//        if ((right - left) > 2) {
-//            cop_wait_target_x(right);
-//        }
-//
-//        cop_write(&VDP_LAYER_ENABLE, 0);
-//    }
 
     cop_jump(0);
 }
