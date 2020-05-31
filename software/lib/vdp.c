@@ -35,7 +35,6 @@ const uint16_t SPRITE_16_WIDE = 1 << 11;
 const uint16_t SPRITE_PRIORITY_SHIFT = 10;
 const uint16_t SPRITE_PAL_SHIFT = 12;
 
-// stdbool...
 void vdp_enable_copper(uint8_t enable) {
     VDP_ENABLE_COPPER = enable;
 }
