@@ -26,7 +26,7 @@ int main() {
     const uint8_t bar_height = 32;
 
     uint16_t line_offset = 0;
-    const uint16_t screen_height = 480;
+    const uint16_t screen_height = 480 + 32; // !
 
     while (true) {
         cop_ram_seek(0);
