@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "vdp.h"
 #include "vdp_regs.h"
@@ -56,38 +57,40 @@ int main() {
         cop_add_batch_double(&config, 0, 0xf440);
     }
 
-    // batch write
+    // bar test
 
-    const uint8_t test_batch_count = 32;
+    static const uint16_t color_masks[] = {
+        0xff00, 0xf0f0, 0xf00f, 0xfff0, 0xf0ff, 0xff0f
+    };
+    const size_t color_mask_count = sizeof(color_masks) / sizeof(uint16_t);
 
     cop_set_target_x(0);
 
-    config.batch_count = test_batch_count - 1;
-    config.batch_wait_between_lines = true;
-    cop_start_batch_write(&config);
+    for (uint8_t i = 0; i < color_mask_count; i++) {
+        uint16_t color_mask = color_masks[i];
 
-    for (uint8_t i = 0; i < 16; i++) {
-        // (other color components too)
-        cop_add_batch_double(&config, 0, 0xf000 | (i << 4));
-    }
-    for (uint8_t i = 0; i < 16; i++) {
-        cop_add_batch_double(&config, 0, 0xff00 - (i << 8));
-    }
+        config.batch_count = 16 - 1;
+        config.batch_wait_between_lines = true;
+        cop_start_batch_write(&config);
 
-    config.batch_count = 16 - 1;
-    config.batch_wait_between_lines = true;
-    cop_start_batch_write(&config);
+        for (uint8_t i = 0; i < 16; i++) {
+            uint16_t color = 0xf000 | i << 8 | i << 4 | i;
+            color &= color_mask;
+            cop_add_batch_double(&config, 0, color);
 
-    for (uint8_t i = 0; i < 16; i++) {
-        cop_add_batch_double(&config, 0, 0xf000 + (i << 0));
-    }
+        }
 
-    config.batch_count = 16 - 1;
-    config.batch_wait_between_lines = true;
-    cop_start_batch_write(&config);
+        config.batch_count = 16 - 1;
+        config.batch_wait_between_lines = true;
+        cop_start_batch_write(&config);
 
-    for (uint8_t i = 0; i < 16; i++) {
-        cop_add_batch_double(&config, 0, 0xf00f - (i << 0));
+        for (uint8_t i = 0; i < 16; i++) {
+            // (other color components too)
+            uint16_t color = 0xffff - (i << 8) - (i << 4) - i;
+            color &= color_mask;
+            cop_add_batch_double(&config, 0, color);
+
+        }
     }
 
     cop_jump(0);
