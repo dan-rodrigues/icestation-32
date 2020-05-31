@@ -76,6 +76,41 @@ uint32_t full_divide(uint32_t dividend, uint32_t divisor) {
     return quotient;
 }
 
+static void draw_triangle_edge(int32_t *x1, int16_t x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
+    int32_t x1_long = *x1 * 0x10000;
+    int32_t x2_long = x2 * 0x10000;
+
+    for (uint16_t y = y_base; y < y_end; y++) {
+        uint16_t e1 = x1_long / 0x10000;
+        uint16_t e2 = x2_long / 0x10000;
+
+        // delta update for next line
+        x1_long += dx_1;
+        x2_long += dx_2;
+
+        uint16_t left = MIN(e1, e2);
+        uint16_t right = MAX(e1, e2);
+
+        if (left >= right) {
+            continue;
+        }
+
+        cop_set_target_x(left);
+        cop_wait_target_y(y);
+
+        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
+
+        // tune delay if needed
+        if ((right - left) > 3) {
+            cop_wait_target_x(right);
+        }
+
+        cop_write(&VDP_LAYER_ENABLE, 0);
+    }
+
+    *x1 = x1_long;
+}
+
 // triangle mask
 static void draw_layer_mask() {
     cop_ram_seek(0);
@@ -118,32 +153,51 @@ static void draw_layer_mask() {
         delta_x_m = -delta_x_m;
     }
 
-    for (uint16_t y = top_y; y < mid_y; y++) {
-        uint16_t e1 = x / 0x10000 + 1; // !
-        uint16_t e2 = x_m / 0x10000;
+    int32_t mid_left = top_x;
 
-        if (e1 == e2) {
-            continue;
-        }
+    // top segment
+    draw_triangle_edge(&mid_left, top_x, top_y, mid_y, delta_x, delta_x_m);
 
-        uint16_t left = MIN(e1, e2);
-        uint16_t right = MAX(e1, e2);
+    dx = bottom_x - mid_x;
+    dy = bottom_y - mid_y;
 
-        cop_set_target_x(left);
-        cop_wait_target_y(y);
+    dx_m = bottom_x - mid_x; // !
+    dy_m = bottom_y - mid_y;
 
-        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
+    // actually want dx/dy since the y increments per line but x changes variably
+//    delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
+//    delta_x_m = full_divide(ABS(dx_m) * 0x10000, ABS(dy_m));
 
-        if ((right - left) > 2) {
-            cop_wait_target_x(right);
-        }
+    // bottom segment
+    draw_triangle_edge(&mid_left, bottom_x, mid_y, bottom_y, delta_x, delta_x_m);
 
-        cop_write(&VDP_LAYER_ENABLE, 0);
-
-        // delta update for next line
-        x += delta_x;
-        x_m += delta_x_m;
-    }
+//    for (uint16_t y = top_y; y < mid_y; y++) {
+//        uint16_t e1 = x / 0x10000 + 0;
+//        uint16_t e2 = x_m / 0x10000;
+//
+//        // delta update for next line
+//        x += delta_x;
+//        x_m += delta_x_m;
+//
+//        uint16_t left = MIN(e1, e2);
+//        uint16_t right = MAX(e1, e2);
+//
+//        if (left >= right) {
+//            continue;
+//        }
+//
+//        cop_set_target_x(left);
+//        cop_wait_target_y(y);
+//
+//        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
+//
+//        // tune delay if needed
+//        if ((right - left) > 3) {
+//            cop_wait_target_x(right);
+//        }
+//
+//        cop_write(&VDP_LAYER_ENABLE, 0);
+//    }
 
     cop_write(&VDP_LAYER_ENABLE, 0);
 
