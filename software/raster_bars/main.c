@@ -53,21 +53,76 @@ int main() {
     return 0;
 }
 
+// plain old shift-and-subtract
+// this can be replaced with newton's method to find reciprocal
+
+uint32_t full_divide(uint32_t dividend, uint32_t divisor) {
+    uint32_t quotient = 0;
+    uint32_t quotientMask = 1 << 31;
+
+    uint64_t extendedDivisor = ((uint64_t)divisor) << 31;
+    uint64_t extendedDividend = dividend;
+
+    while (quotientMask) {
+        if (extendedDivisor <= extendedDividend) {
+            extendedDividend -= extendedDivisor;
+            quotient |= quotientMask;
+        }
+
+        extendedDivisor >>= 1;
+        quotientMask >>= 1;
+    }
+
+    return quotient;
+}
+
 // triangle mask
 static void draw_layer_mask() {
     cop_ram_seek(0);
 
-    for (uint8_t i = 0; i < 200; i++) {
-        uint16_t center = 240 + 848 / 2;
-        uint16_t left = center - i;
-        uint16_t right = center + i;
+    // TODO: variable points
+    uint16_t top_x, top_y;
+    uint16_t mid_x, mid_y;
+    uint16_t bottom_x, bottom_y;
+
+    top_x = 600;
+    top_y = 16;
+
+    mid_x = 500 ;
+    mid_y = 100;
+
+    bottom_x = 250;
+    bottom_y = 300;
+
+    // top to mid
+
+    // must be interpolated to mid_x per line
+    uint32_t x = top_x << 16;
+
+    int16_t dx = top_x - mid_x;
+    int16_t dy = mid_y - top_y;
+
+    // actually want dx/dy since the y increments per line but x changes variably
+
+    // (sign...)
+    int32_t delta_x = full_divide(dx * 0x10000, dy);
+
+    if (dx > 0) {
+        delta_x = -delta_x;
+    }
+
+    for (uint16_t y = top_y; y < mid_y; y++) {
+        uint16_t left = x >> 16;
+
+        // constant right for now
+        uint16_t right = top_x + 200;
 
         if (left == right) {
             continue;
         }
 
         cop_set_target_x(left);
-        cop_wait_target_y(i);
+        cop_wait_target_y(y);
 
         cop_write(&VDP_LAYER_ENABLE, SCROLL0);
 
@@ -76,7 +131,32 @@ static void draw_layer_mask() {
         }
 
         cop_write(&VDP_LAYER_ENABLE, 0);
+
+        // delta update for next line
+        x += delta_x;
     }
+
+    // fixed triangle:
+//    for (uint8_t i = 0; i < 200; i++) {
+//        uint16_t center = 240 + 848 / 2;
+//        uint16_t left = center - i;
+//        uint16_t right = center + i;
+//
+//        if (left == right) {
+//            continue;
+//        }
+//
+//        cop_set_target_x(left);
+//        cop_wait_target_y(i);
+//
+//        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
+//
+//        if ((right - left) > 2) {
+//            cop_wait_target_x(right);
+//        }
+//
+//        cop_write(&VDP_LAYER_ENABLE, 0);
+//    }
 
     cop_jump(0);
 }
