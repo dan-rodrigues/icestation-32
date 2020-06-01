@@ -93,6 +93,9 @@ static void draw_triangle(uint16_t angle) {
     draw_layer_mask(vertices);
 }
 
+// FIXME: span overflow issue
+// not a CPU time problem
+
 static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
     int32_t x1_long = *x1;
     int32_t x2_long = *x2;
@@ -105,10 +108,12 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
         x1_long += dx_1;
         x2_long += dx_2;
 
+        // this check can be brought out of this inner loop
         int16_t left = MIN(e1, e2);
         int16_t right = MAX(e1, e2);
 
         if (left >= right) {
+            cop_set_target_x(0);
             cop_wait_target_y(y);
             continue;
         }
