@@ -53,11 +53,23 @@ int main() {
 //        vdp_enable_layers(0);
 //        draw_raster_bars(line_offset);
 //        draw_layer_mask();
-        draw_triangle(angle);
+
+        // note that glitches do not necessarily occur every 16 frames
+        // angle / 16 shows graphics glitches that even happen at 30hz
+
+        // timing issue?
+
+        if ((angle % 16) == 0) {
+            draw_triangle(angle / 16);
+        }
 
         vdp_enable_copper(true);
 
         vdp_wait_frame_ended();
+        // force waiting to next frame for fast runs
+        const uint16_t final_line_plus = 481;
+
+        while (VDP_CURRENT_RASTER_Y != final_line_plus) {}
 
         line_offset++;
         angle++;
