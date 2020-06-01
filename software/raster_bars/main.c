@@ -106,10 +106,6 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
         int16_t left = MIN(e1, e2);
         int16_t right = MAX(e1, e2);
 
-        if (left >= right) {
-            continue;
-        }
-
         // edge left side
         cop_wait_target_x(left);
         cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
@@ -167,6 +163,10 @@ static void draw_layer_mask(Vertex *vertices) {
     int32_t delta_x;
     int32_t delta_x_m = (ABS(dx_m) * 0x10000) / ABS(dy_m);
 
+    if (dx_m < 0) {
+        delta_x_m = -delta_x_m;
+    }
+
     int32_t x1_long = top.x * 0x10000;
     int32_t x2_long = x1_long;
 
@@ -176,10 +176,6 @@ static void draw_layer_mask(Vertex *vertices) {
 
         if (dx < 0) {
             delta_x = -delta_x;
-        }
-
-        if (dx_m < 0) {
-            delta_x_m = -delta_x_m;
         }
 
         draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, delta_x, delta_x_m);
