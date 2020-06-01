@@ -142,6 +142,7 @@ module vdp_copper(
     // d: data to write
     // y: autoincrement target Y (then automatically continue)
 
+    wire [5:0] op_write_compressed_reg = ram_read_data[5:0];
     wire [15:0] op_write_compressed_data = ram_read_data[10:6];
     wire op_write_compressed_auto_increment_y = ram_read_data[11];
 
@@ -196,7 +197,7 @@ module vdp_copper(
                         pc <= op_jump_target;
                     end
                     OP_WRITE_COMPRESSED: begin
-                        reg_write_address <= op_write_target_reg;
+                        reg_write_address <= op_write_compressed_reg;
                         reg_write_data <= op_write_compressed_data;
                         reg_write_en <= 1;
 

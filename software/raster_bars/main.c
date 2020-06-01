@@ -40,6 +40,8 @@ int main() {
 
 //    draw_layer_mask();
 
+    vdp_wait_frame_ended();
+    
     while (true) {
 //        vdp_enable_layers(0);
 //        draw_raster_bars(line_offset);
@@ -53,29 +55,6 @@ int main() {
     }
 
     return 0;
-}
-
-// plain old shift-and-subtract
-// this can be replaced with newton's method to find reciprocal
-
-uint32_t full_divide(uint32_t dividend, uint32_t divisor) {
-    uint32_t quotient = 0;
-    uint32_t quotientMask = 1 << 31;
-
-    uint64_t extendedDivisor = ((uint64_t)divisor) << 31;
-    uint64_t extendedDividend = dividend;
-
-    while (quotientMask) {
-        if (extendedDivisor <= extendedDividend) {
-            extendedDividend -= extendedDivisor;
-            quotient |= quotientMask;
-        }
-
-        extendedDivisor >>= 1;
-        quotientMask >>= 1;
-    }
-
-    return quotient;
 }
 
 static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
@@ -101,7 +80,6 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
         cop_wait_target_x(left);
         cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
 
-        // tune delay if needed
         if ((right - left) > 2) {
             // ...wait to reach the ride side of the edge...
             cop_wait_target_x(right);
@@ -125,16 +103,16 @@ static void draw_layer_mask() {
     uint16_t mid_x, mid_y;
     uint16_t bottom_x, bottom_y;
 
+    // triangle height dictates memory use, mind the space
+
     top_x = 600;
     top_y = 16;
 
-    mid_x = 610;
-    mid_y = 100;
+    mid_x = 450;
+    mid_y = 250;
 
     bottom_x = 860;
-    bottom_y = 150;
-
-    // the height of the above triangle is import as this is VERY memory intensive
+    bottom_y = 470;
 
     // top to mid
 
@@ -144,9 +122,12 @@ static void draw_layer_mask() {
     int16_t dx_m = bottom_x - top_x;
     int16_t dy_m = bottom_y - top_y;
 
+    // top segment
+    cop_set_target_y(top_y);
+
     // actually want dx/dy since the y increments per line but x changes variably
-    int32_t delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
-    int32_t delta_x_m = full_divide(ABS(dx_m) * 0x10000, ABS(dy_m));
+    int32_t delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+    int32_t delta_x_m = (ABS(dx_m) * 0x10000) / ABS(dy_m);
 
     if (dx < 0) {
         delta_x = -delta_x;
@@ -159,15 +140,12 @@ static void draw_layer_mask() {
     int32_t x1_long = top_x << 16;
     int32_t x2_long = x1_long;
 
-    // top segment
-    cop_set_target_y(top_y);
-
     draw_triangle_edge(&x1_long, &x2_long, top_y, mid_y, delta_x, delta_x_m);
 
     dx = bottom_x - mid_x;
     dy = bottom_y - mid_y;
 
-    delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
+    delta_x = (ABS(dx) * 0x10000) / ABS(dy);
 
     if (dx < 0) {
         delta_x = -delta_x;
