@@ -93,6 +93,24 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
     *x2 = x2_long;
 }
 
+typedef struct {
+    int16_t x;
+    int16_t y;
+} Vertex;
+
+static void sort_vertex_pair(Vertex *v1, Vertex *v2) {
+    if (v2->y < v1->y) {
+        Vertex t = *v1;
+        *v1 = *v2;
+        *v2 = t;
+    }
+}
+
+static void sort_vertices(Vertex *vertices) {
+    sort_vertex_pair(&vertices[0], &vertices[1]);
+    sort_vertex_pair(&vertices[1], &vertices[2]);
+    sort_vertex_pair(&vertices[0], &vertices[1]);
+}
 
 // triangle mask
 static void draw_layer_mask() {
@@ -114,16 +132,33 @@ static void draw_layer_mask() {
     bottom_x = 860;
     bottom_y = 470;
 
+    Vertex vertices[3];
+
+    vertices[1].x = top_x;
+    vertices[1].y = top_y;
+
+    vertices[0].x = mid_x;
+    vertices[0].y = mid_y;
+
+    vertices[2].x = bottom_x;
+    vertices[2].y = bottom_y;
+
+    sort_vertices(vertices);
+
+    Vertex top = vertices[0];
+    Vertex mid = vertices[1];
+    Vertex bottom = vertices[2];
+
     // top to mid
 
-    int16_t dx = mid_x - top_x;
-    int16_t dy = mid_y - top_y;
+    int16_t dx = mid.x - top.x;
+    int16_t dy = mid.y - top.y;
 
-    int16_t dx_m = bottom_x - top_x;
-    int16_t dy_m = bottom_y - top_y;
+    int16_t dx_m = bottom.x - top.x;
+    int16_t dy_m = bottom.y - top.y;
 
     // top segment
-    cop_set_target_y(top_y);
+    cop_set_target_y(top.y);
 
     // actually want dx/dy since the y increments per line but x changes variably
     int32_t delta_x = (ABS(dx) * 0x10000) / ABS(dy);
@@ -137,13 +172,13 @@ static void draw_layer_mask() {
         delta_x_m = -delta_x_m;
     }
 
-    int32_t x1_long = top_x << 16;
+    int32_t x1_long = top.x << 16;
     int32_t x2_long = x1_long;
 
-    draw_triangle_edge(&x1_long, &x2_long, top_y, mid_y, delta_x, delta_x_m);
+    draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, delta_x, delta_x_m);
 
-    dx = bottom_x - mid_x;
-    dy = bottom_y - mid_y;
+    dx = bottom.x - mid.x;
+    dy = bottom.y - mid.y;
 
     bool bottom_segment_visible = (dy != 0);
     if (bottom_segment_visible) {
@@ -154,7 +189,7 @@ static void draw_layer_mask() {
         }
 
         // bottom segment
-        draw_triangle_edge(&x1_long, &x2_long, mid_y, bottom_y, delta_x, delta_x_m);
+        draw_triangle_edge(&x1_long, &x2_long, mid.y, bottom.y, delta_x, delta_x_m);
     }
 
     cop_write(&VDP_LAYER_ENABLE, 0);
