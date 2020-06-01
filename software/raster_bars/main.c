@@ -156,6 +156,7 @@ static void draw_layer_mask(Vertex *vertices) {
     int16_t dx = mid.x - top.x;
     int16_t dy = mid.y - top.y;
 
+    // dy_n will always != 0 if a properly formed triangle is given
     int16_t dx_m = bottom.x - top.x;
     int16_t dy_m = bottom.y - top.y;
 
@@ -163,21 +164,26 @@ static void draw_layer_mask(Vertex *vertices) {
     cop_set_target_y(top.y);
 
     // actually want dx/dy since the y increments per line but x changes variably
-    int32_t delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+    int32_t delta_x;
     int32_t delta_x_m = (ABS(dx_m) * 0x10000) / ABS(dy_m);
 
-    if (dx < 0) {
-        delta_x = -delta_x;
-    }
-
-    if (dx_m < 0) {
-        delta_x_m = -delta_x_m;
-    }
-
-    int32_t x1_long = top.x << 16;
+    int32_t x1_long = top.x * 0x10000;
     int32_t x2_long = x1_long;
 
-    draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, delta_x, delta_x_m);
+    bool top_segment_visible = (dy != 0);
+    if (top_segment_visible) {
+        delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+
+        if (dx < 0) {
+            delta_x = -delta_x;
+        }
+
+        if (dx_m < 0) {
+            delta_x_m = -delta_x_m;
+        }
+
+        draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, delta_x, delta_x_m);
+    }
 
     dx = bottom.x - mid.x;
     dy = bottom.y - mid.y;
