@@ -68,13 +68,13 @@ int main() {
 
 static void draw_triangle(uint16_t angle) {
     angle %= (SIN_PERIOD / 3);
-    
+
     Vertex vertices[3];
 
     for (uint8_t i = 0; i < 3; i++) {
         const int16_t screen_center_x = 848 / 2 + 240;
         const int16_t screen_center_y = 480 / 2;
-        const int16_t radius = 48;
+        const int16_t radius = 96;
 
         uint16_t angle_offset = i * SIN_PERIOD / 3;
         int16_t sin_t = sin(angle + angle_offset);
