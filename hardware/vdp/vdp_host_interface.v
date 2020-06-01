@@ -117,7 +117,7 @@ module vdp_host_interface #(
         end else begin
             if (cop_write_en && host_write_en) begin
                 // this is either a software or hardware bug so flag it accordingly
-                // `stop($display("CPU / VDP copper write conflict");)
+                `stop($display("CPU / VDP copper write conflict");)
             end
 
             // if there was a conflict, prioritize the CPU

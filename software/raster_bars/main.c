@@ -38,11 +38,12 @@ int main() {
 
     uint16_t line_offset = 0;
 
-    draw_layer_mask();
+//    draw_layer_mask();
 
     while (true) {
+//        vdp_enable_layers(0);
 //        draw_raster_bars(line_offset);
-//        draw_layer_mask();
+        draw_layer_mask();
 
         vdp_enable_copper(true);
 
@@ -77,21 +78,20 @@ uint32_t full_divide(uint32_t dividend, uint32_t divisor) {
     return quotient;
 }
 
-// resolve arg inconssitency
-static int32_t draw_triangle_edge(int32_t x1, int16_t x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
-    int32_t x1_long = x1;
-    int32_t x2_long = x2 * 0x10000;
+static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
+    int32_t x1_long = *x1;
+    int32_t x2_long = *x2;
 
     for (uint16_t y = y_base; y < y_end; y++) {
-        uint16_t e1 = x1_long / 0x10000;
-        uint16_t e2 = x2_long / 0x10000;
+        int16_t e1 = x1_long / 0x10000;
+        int16_t e2 = x2_long / 0x10000;
 
         // delta update for next line
         x1_long += dx_1;
         x2_long += dx_2;
 
-        uint16_t left = MIN(e1, e2);
-        uint16_t right = MAX(e1, e2);
+        int16_t left = MIN(e1, e2);
+        int16_t right = MAX(e1, e2);
 
         if (left >= right) {
             continue;
@@ -100,17 +100,18 @@ static int32_t draw_triangle_edge(int32_t x1, int16_t x2, uint16_t y_base, uint1
         cop_set_target_x(left);
         cop_wait_target_y(y);
 
-        cop_write(&VDP_LAYER_ENABLE, SCROLL0);
+        cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0);
 
         // tune delay if needed
-        if ((right - left) > 3) {
+        if ((right - left) > 2) {
             cop_wait_target_x(right);
         }
 
-        cop_write(&VDP_LAYER_ENABLE, 0);
+        cop_write_compressed(&VDP_LAYER_ENABLE, 0);
     }
 
-    return x1_long;
+    *x1 = x1_long;
+    *x2 = x2_long;
 }
 
 
@@ -126,11 +127,13 @@ static void draw_layer_mask() {
     top_x = 600;
     top_y = 16;
 
-    mid_x = 800;
+    mid_x = 610;
     mid_y = 100;
 
-    bottom_x = 540;
-    bottom_y = 450;
+    bottom_x = 860;
+    bottom_y = 150;
+
+    // the height of the above triangle is import as this is VERY memory intensive
 
     // top to mid
 
@@ -152,12 +155,13 @@ static void draw_layer_mask() {
         delta_x_m = -delta_x_m;
     }
 
-    int32_t mid_left = top_x << 16;
+    int32_t x1_long = top_x << 16;
+    int32_t x2_long = x1_long;
 
     // top segment
-    mid_left = draw_triangle_edge(mid_left, top_x, top_y, mid_y, delta_x, delta_x_m);
+    draw_triangle_edge(&x1_long, &x2_long, top_y, mid_y, delta_x, delta_x_m);
 
-    dx = bottom_x - (mid_left / 0x10000);
+    dx = bottom_x - mid_x;
     dy = bottom_y - mid_y;
 
     delta_x = full_divide(ABS(dx) * 0x10000, ABS(dy));
@@ -167,12 +171,14 @@ static void draw_layer_mask() {
     }
 
     // bottom segment
-    // FIXME: merge properly with top segment
-    draw_triangle_edge(mid_left, bottom_x, mid_y, bottom_y, delta_x, delta_x_m);
+    draw_triangle_edge(&x1_long, &x2_long, mid_y, bottom_y, delta_x, delta_x_m);
 
     cop_write(&VDP_LAYER_ENABLE, 0);
 
     cop_jump(0);
+    // FIXME: the op immediately after this one is run because it's already fetched
+    // can either accept this as a "branch delay slot" or build in a wait state
+    cop_set_target_x(0);
 }
 
 static void draw_raster_bars(uint16_t line_offset) {

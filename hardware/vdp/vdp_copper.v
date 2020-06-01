@@ -56,13 +56,15 @@ module vdp_copper(
     reg [1:0] op_current;
 
     localparam OP_SET_TARGET = 2'h0;
-    localparam OP_SIGNAL = 2'h1;
+    localparam OP_WRITE_COMPRESSED = 2'h1;
     localparam OP_WRITE_REG = 2'h2;
     localparam OP_JUMP = 2'h3;
 
     // SET_TARGET / WAIT_TARGET
 
-    // oo--wsvv vvvvvvvv
+    // TODO: vacant bit can be used to do autoincrement y
+
+    // oo-wsvvv vvvvvvvv
     //
     // v: raster x/y value
     // s:
@@ -132,17 +134,18 @@ module vdp_copper(
         endcase
     end
 
+    // REG_WRITE_COMPRESSED
+
+    // oo---ddd ddrrrrrr
+    //
+    // r: target register
+    // d: data to write
+
+    wire [15:0] op_write_compressed_data = ram_read_data[10:6];
+
     // JUMP
 
     wire [10:0] op_jump_target = ram_read_data[10:0];
-
-    // SIGNAL
-
-    // (this will be surfaced for debug use)
-
-    wire [7:0] op_signal_state = ram_read_data[7:0];
-
-    reg [7:0] op_signal_state_r;
 
     // --- FSM ---
 
@@ -190,8 +193,11 @@ module vdp_copper(
                     OP_JUMP: begin
                         pc <= op_jump_target;
                     end
-                    OP_SIGNAL: begin
-                        op_signal_state_r <= op_signal_state;
+                    OP_WRITE_COMPRESSED: begin
+                        reg_write_address <= op_write_target_reg;
+                        reg_write_data <= op_write_compressed_data;
+                        reg_write_en <= 1;
+
                         pc <= pc + 1;
                     end
                 endcase

@@ -16,7 +16,7 @@ static const uint8_t OP_SHIFT = 14;
 // 2bit ops
 typedef enum {
     SET_TARGET = 0,
-    SIGNAL = 1,
+    WRITE_COMPRESSED = 1,
     WRITE_REG = 2,
     JUMP = 3
 } Op;
@@ -60,6 +60,13 @@ void cop_write(VDP_REG reg, uint16_t data) {
 
     cop_start_batch_write(&config);
     cop_add_batch_single(&config, data);
+}
+
+void cop_write_compressed(VDP_REG reg, uint8_t data) {
+    uint16_t op_word = WRITE_COMPRESSED << OP_SHIFT;
+    op_word |= cop_reg(reg);
+    op_word |= data << 6;
+    COP_RAM[cop_pc++] = op_word;
 }
 
 void cop_jump(uint16_t address) {

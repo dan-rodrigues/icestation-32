@@ -29,6 +29,7 @@ void cop_wait_target_x(uint16_t target_x);
 void cop_wait_target_y(uint16_t target_y);
 
 void cop_write(VDP_REG reg, uint16_t data);
+void cop_write_compressed(VDP_REG reg, uint8_t data);
 
 void cop_start_batch_write(COPBatchWriteConfig *config);
 void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data);
