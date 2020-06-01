@@ -67,6 +67,8 @@ int main() {
 }
 
 static void draw_triangle(uint16_t angle) {
+    angle %= (SIN_PERIOD / 3);
+    
     Vertex vertices[3];
 
     for (uint8_t i = 0; i < 3; i++) {
