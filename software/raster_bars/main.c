@@ -109,7 +109,7 @@ static void draw_layer_mask() {
     top_y = 16;
 
     mid_x = 450;
-    mid_y = 250;
+    mid_y = 470;
 
     bottom_x = 860;
     bottom_y = 470;
@@ -145,14 +145,17 @@ static void draw_layer_mask() {
     dx = bottom_x - mid_x;
     dy = bottom_y - mid_y;
 
-    delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+    bool bottom_segment_visible = (dy != 0);
+    if (bottom_segment_visible) {
+        delta_x = (ABS(dx) * 0x10000) / ABS(dy);
 
-    if (dx < 0) {
-        delta_x = -delta_x;
+        if (dx < 0) {
+            delta_x = -delta_x;
+        }
+
+        // bottom segment
+        draw_triangle_edge(&x1_long, &x2_long, mid_y, bottom_y, delta_x, delta_x_m);
     }
-
-    // bottom segment
-    draw_triangle_edge(&x1_long, &x2_long, mid_y, bottom_y, delta_x, delta_x_m);
 
     cop_write(&VDP_LAYER_ENABLE, 0);
 
