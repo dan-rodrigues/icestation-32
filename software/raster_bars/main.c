@@ -9,8 +9,14 @@
 
 static const uint16_t SCREEN_HEIGHT = 480;
 
+typedef struct {
+    int16_t x;
+    int16_t y;
+} Vertex;
+
 static void draw_layer_mask();
 static void draw_raster_bars(uint16_t line_offset);
+static void draw_triangle(uint16_t angle);
 
 int main() {
     vdp_enable_copper(false);
@@ -37,6 +43,7 @@ int main() {
     vdp_set_single_palette_color(1, 0xf088);
 
     uint16_t line_offset = 0;
+    uint16_t angle = 0;
 
 //    draw_layer_mask();
 
@@ -45,16 +52,43 @@ int main() {
     while (true) {
 //        vdp_enable_layers(0);
 //        draw_raster_bars(line_offset);
-        draw_layer_mask();
+//        draw_layer_mask();
+        draw_triangle(angle);
 
         vdp_enable_copper(true);
 
         vdp_wait_frame_ended();
 
         line_offset++;
+        angle++;
     }
 
     return 0;
+}
+
+static void draw_triangle(uint16_t angle) {
+    Vertex vertices[3];
+
+    for (uint8_t i = 0; i < 3; i++) {
+        const int16_t screen_center_x = 848 / 2 + 240;
+        const int16_t screen_center_y = 480 / 2;
+        const int16_t radius = 192;
+
+        uint16_t angle_offset = i * SIN_PERIOD / 3;
+        int16_t sin_t = sin(angle + angle_offset);
+        int16_t cos_t = cos(angle + angle_offset);
+
+        int16_t sprite_x = sys_multiply(cos_t, -radius) / SIN_MAX;
+        int16_t sprite_y = sys_multiply(sin_t, -radius) / SIN_MAX;
+
+        sprite_x += screen_center_x;
+        sprite_y += screen_center_y;
+
+        vertices[i].x = sprite_x;
+        vertices[i].y = sprite_y;
+    }
+
+    draw_layer_mask(vertices);
 }
 
 static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
@@ -93,11 +127,6 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
     *x2 = x2_long;
 }
 
-typedef struct {
-    int16_t x;
-    int16_t y;
-} Vertex;
-
 static void sort_vertex_pair(Vertex *v1, Vertex *v2) {
     if (v2->y < v1->y) {
         Vertex t = *v1;
@@ -113,35 +142,8 @@ static void sort_vertices(Vertex *vertices) {
 }
 
 // triangle mask
-static void draw_layer_mask() {
+static void draw_layer_mask(Vertex *vertices) {
     cop_ram_seek(0);
-
-    // TODO: variable points
-    uint16_t top_x, top_y;
-    uint16_t mid_x, mid_y;
-    uint16_t bottom_x, bottom_y;
-
-    // triangle height dictates memory use, mind the space
-
-    top_x = 600;
-    top_y = 16;
-
-    mid_x = 450;
-    mid_y = 470;
-
-    bottom_x = 860;
-    bottom_y = 470;
-
-    Vertex vertices[3];
-
-    vertices[1].x = top_x;
-    vertices[1].y = top_y;
-
-    vertices[0].x = mid_x;
-    vertices[0].y = mid_y;
-
-    vertices[2].x = bottom_x;
-    vertices[2].y = bottom_y;
 
     sort_vertices(vertices);
 
