@@ -59,17 +59,17 @@ int main() {
 
         // timing issue?
 
-        if ((angle % 16) == 0) {
-            draw_triangle(angle / 16);
-        }
+//        if ((angle % 16) == 0) {
+            draw_triangle(angle);
+//        }
 
         vdp_enable_copper(true);
 
         vdp_wait_frame_ended();
         // force waiting to next frame for fast runs
-        const uint16_t final_line_plus = 481;
+//        const uint16_t final_line_plus = 481;
 
-        while (VDP_CURRENT_RASTER_Y != final_line_plus) {}
+//        while (VDP_CURRENT_RASTER_Y != final_line_plus) {}
 
         line_offset++;
         angle++;
@@ -85,7 +85,7 @@ static void draw_triangle(uint16_t angle) {
 
     for (uint8_t i = 0; i < 3; i++) {
         const int16_t screen_center_x = 848 / 2 + 240;
-        const int16_t screen_center_y = 480 / 2;
+        const int16_t screen_center_y = 480 / 2 + 64;
         const int16_t radius = 128;
 
         uint16_t angle_offset = i * SIN_PERIOD / 3;
