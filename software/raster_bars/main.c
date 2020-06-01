@@ -97,17 +97,18 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
             continue;
         }
 
-        cop_set_target_x(left);
-        cop_wait_target_y(y);
-
-        cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0);
+        // edge left side
+        cop_wait_target_x(left);
+        cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
 
         // tune delay if needed
         if ((right - left) > 2) {
+            // ...wait to reach the ride side of the edge...
             cop_wait_target_x(right);
         }
 
-        cop_write_compressed(&VDP_LAYER_ENABLE, 0);
+        // edge right side
+        cop_write_compressed(&VDP_LAYER_ENABLE, 0, true);
     }
 
     *x1 = x1_long;
@@ -159,6 +160,8 @@ static void draw_layer_mask() {
     int32_t x2_long = x1_long;
 
     // top segment
+    cop_set_target_y(top_y);
+
     draw_triangle_edge(&x1_long, &x2_long, top_y, mid_y, delta_x, delta_x_m);
 
     dx = bottom_x - mid_x;

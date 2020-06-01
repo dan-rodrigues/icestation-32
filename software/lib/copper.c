@@ -34,6 +34,10 @@ void cop_set_target_x(uint16_t target_x) {
     cop_target(target_x, false, false);
 }
 
+void cop_set_target_y(uint16_t target_y) {
+    cop_target(target_y, true, false);
+}
+
 void cop_wait_target_x(uint16_t target_x) {
     cop_target(target_x, false, true);
 }
@@ -62,10 +66,11 @@ void cop_write(VDP_REG reg, uint16_t data) {
     cop_add_batch_single(&config, data);
 }
 
-void cop_write_compressed(VDP_REG reg, uint8_t data) {
+void cop_write_compressed(VDP_REG reg, uint8_t data, bool increment_target_y) {
     uint16_t op_word = WRITE_COMPRESSED << OP_SHIFT;
     op_word |= cop_reg(reg);
     op_word |= data << 6;
+    op_word |= increment_target_y ? 1 << 11 : 0;
     COP_RAM[cop_pc++] = op_word;
 }
 
