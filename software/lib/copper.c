@@ -49,7 +49,7 @@ static void cop_target(uint16_t target, bool is_y, bool wait) {
     uint16_t op_word = SET_TARGET << OP_SHIFT;
     op_word |= is_y ? 1 << 11 : 0;
     op_word |= wait ? 1 << 12 : 0;
-    op_word |= target;
+    op_word |= target & 0x7ff;
     COP_RAM[cop_pc++] = op_word;
 }
 
@@ -68,7 +68,7 @@ void cop_write(VDP_REG reg, uint16_t data) {
 void cop_write_compressed(VDP_REG reg, uint8_t data, bool increment_target_y) {
     uint16_t op_word = WRITE_COMPRESSED << OP_SHIFT;
     op_word |= cop_reg(reg);
-    op_word |= data << 6;
+    op_word |= (data & 0x3f) << 6;
     op_word |= increment_target_y ? 1 << 11 : 0;
     COP_RAM[cop_pc++] = op_word;
 }
@@ -77,7 +77,7 @@ void cop_jump(uint16_t address) {
     assert(address < COP_RAM_SIZE);
 
     uint16_t op_word = JUMP << OP_SHIFT;
-    op_word |= address;
+    op_word |= address & 0x7ff;
     COP_RAM[cop_pc++] = op_word;
 }
 

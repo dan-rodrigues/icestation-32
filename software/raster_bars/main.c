@@ -45,7 +45,7 @@ int main() {
     uint16_t line_offset = 0;
     uint16_t angle = SIN_PERIOD / 4;
 
-    int16_t scale = 0;
+    int16_t scale = 0x200; // 0x100;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -96,11 +96,11 @@ static void draw_triangle(uint16_t angle, int16_t scale) {
     draw_transformed_triangle(vertices);
 }
 
-static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx1, int32_t dx2) {
+static void draw_triangle_edge(int32_t *x1, int32_t *x2, int16_t y_base, int16_t y_end, int32_t x1_delta, int32_t x2_delta) {
     bool needs_swap;
 
     if (*x1 == *x2) {
-        needs_swap = dx1 > dx2;
+        needs_swap = x1_delta > x2_delta;
     } else {
         needs_swap = *x1 > *x2;
     }
@@ -111,27 +111,26 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
     if (!needs_swap) {
         left = *x1;
         right = *x2;
-        delta_left = dx1;
-        delta_right = dx2;
+        delta_left = x1_delta;
+        delta_right = x2_delta;
     } else {
         left = *x2;
         right = *x1;
-        delta_left = dx2;
-        delta_right = dx1;
+        delta_left = x2_delta;
+        delta_right = x1_delta;
     }
 
-    for (uint16_t y = y_base; y < y_end; y++) {
+    for (int16_t y = y_base; y < y_end && y < 480; y++) {
         left += delta_left;
         right += delta_right;
 
-        int16_t edge_left = left / EDGE_Q_1;
-        int16_t edge_right = right / EDGE_Q_1;
-
-        if (edge_left >= edge_right) {
-            cop_set_target_x(0);
-            cop_wait_target_y(y);
+        if (y < 0) {
+            // this row is off the top of the screen
             continue;
         }
+
+        int16_t edge_left = left / EDGE_Q_1;
+        int16_t edge_right = right / EDGE_Q_1;
         
         // edge left side...
         cop_wait_target_x(edge_left);
@@ -140,6 +139,8 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
         if ((edge_right - edge_left) > 2) {
             // ...wait to reach the ride side of the edge...
             cop_wait_target_x(edge_right);
+        } else if ((edge_right - edge_left) > 1) {
+            cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
         }
 
         // ...edge right side
@@ -189,10 +190,12 @@ static void draw_transformed_triangle(Vertex *vertices) {
         return;
     }
 
-    cop_set_target_y(top.y);
+    if (top.y > 0) {
+        cop_set_target_y(top.y);
+    }
 
     // note it's dx/dy rather than dy/dx
-    // the triangle edges are drawn by stepping through each vertical line and adding dx/dy
+    // the triangle edges are drawn by stepping through each vertical line, then doing x += (dx/dy)
 
     int32_t x1_delta;
     int32_t x2_delta = (ABS(dx2) * EDGE_Q_1) / ABS(dy2);
