@@ -100,42 +100,57 @@ static void draw_triangle(uint16_t angle, int16_t scale) {
 }
 
 static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
-    int32_t x1_long = *x1;
-    int32_t x2_long = *x2;
+    bool needs_swap;
+
+    if (*x1 == *x2) {
+        needs_swap = dx_1 > dx_2;
+    } else {
+        needs_swap = *x1 > *x2;
+    }
+
+    int32_t left, right;
+    int32_t delta_left, delta_right;
+
+    if (!needs_swap) {
+        left = *x1;
+        right = *x2;
+        delta_left = dx_1;
+        delta_right = dx_2;
+    } else {
+        left = *x2;
+        right = *x1;
+        delta_left = dx_2;
+        delta_right = dx_1;
+    }
 
     for (uint16_t y = y_base; y < y_end; y++) {
-        int16_t e1 = x1_long / 0x10000;
-        int16_t e2 = x2_long / 0x10000;
+        left += delta_left;
+        right += delta_right;
 
-        // delta update for next line
-        x1_long += dx_1;
-        x2_long += dx_2;
+        int16_t edge_left = left / 0x10000;
+        int16_t edge_right = right / 0x10000;
 
-        // this check can be brought out of this inner loop
-        int16_t left = MIN(e1, e2);
-        int16_t right = MAX(e1, e2);
-
-        if (left >= right) {
+        if (edge_left >= edge_right) {
             cop_set_target_x(0);
             cop_wait_target_y(y);
             continue;
         }
         
-        // edge left side
-        cop_wait_target_x(left);
+        // edge left side...
+        cop_wait_target_x(edge_left);
         cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
 
-        if ((right - left) > 2) {
+        if ((edge_right - edge_left) > 2) {
             // ...wait to reach the ride side of the edge...
-            cop_wait_target_x(right);
+            cop_wait_target_x(edge_right);
         }
 
-        // edge right side
+        // ...edge right side
         cop_write_compressed(&VDP_LAYER_ENABLE, 0, true);
     }
 
-    *x1 = x1_long;
-    *x2 = x2_long;
+    *x1 = needs_swap ? right : left;
+    *x2 = needs_swap ? left : right;
 }
 
 static void sort_vertex_pair(Vertex *v1, Vertex *v2) {

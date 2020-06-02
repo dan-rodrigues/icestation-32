@@ -4,7 +4,7 @@
 
 #include "assert.h"
 
-// volatile is strictly correct here considering a coprocessor is reading this
+// volatile is strictly correct here considering a separate coprocessor is reading this
 // in practice it might not matter by the time the function returns
 static volatile uint16_t * const COP_RAM = (uint16_t *)0x50000;
 static const size_t COP_RAM_SIZE = 0x1000 / sizeof(uint16_t);
@@ -13,7 +13,6 @@ static uint16_t cop_pc = 0;
 
 static const uint8_t OP_SHIFT = 14;
 
-// 2bit ops
 typedef enum {
     SET_TARGET = 0,
     WRITE_COMPRESSED = 1,
