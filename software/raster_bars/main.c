@@ -60,7 +60,7 @@ int main() {
 
         if (angle % 8 == 0) {
             scale += 1;
-            scale &= 0x1ff;
+            scale &= 0x3ff;
         }
 
     }
@@ -131,14 +131,25 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, int16_t y_base, int16_t
 
         int16_t edge_left = left / EDGE_Q_1;
         int16_t edge_right = right / EDGE_Q_1;
-        
+
+        const int16_t screen_max_x = 848 + 240 - 8;
+
         // edge left side...
-        cop_wait_target_x(edge_left);
+        if (edge_left < 0) {
+            cop_wait_target_x(0);
+        } else {
+            cop_wait_target_x(edge_left);
+        }
+
         cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
 
         if ((edge_right - edge_left) > 2) {
-            // ...wait to reach the ride side of the edge...
-            cop_wait_target_x(edge_right);
+            if (edge_right > screen_max_x) {
+                cop_wait_target_x(screen_max_x);
+            } else {
+                // ...wait to reach the ride side of the edge...
+                cop_wait_target_x(edge_right);
+            }
         } else if ((edge_right - edge_left) > 1) {
             cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
         }
