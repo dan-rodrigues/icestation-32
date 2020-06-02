@@ -7,6 +7,8 @@
 #include "copper.h"
 #include "math_util.h"
 
+static const int32_t EDGE_Q_1 = 0x10000;
+
 static const int16_t SCALE_Q_1 = 0x0100;
 
 typedef struct {
@@ -43,7 +45,7 @@ int main() {
     uint16_t line_offset = 0;
     uint16_t angle = SIN_PERIOD / 4;
 
-    int16_t scale = SCALE_Q_1;
+    int16_t scale = 0;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -55,14 +57,18 @@ int main() {
 
         line_offset++;
         angle++;
+
+        if (angle % 8 == 0) {
+            scale += 1;
+            scale &= 0x1ff;
+        }
+
     }
 
     return 0;
 }
 
 static void draw_triangle(uint16_t angle, int16_t scale) {
-    angle %= (SIN_PERIOD / 3);
-
     const int16_t screen_center_x = 848 / 2 + 240;
     const int16_t screen_center_y = 480 / 2;
     const int16_t radius = 240 - 1;
@@ -118,8 +124,8 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16
         left += delta_left;
         right += delta_right;
 
-        int16_t edge_left = left / 0x10000;
-        int16_t edge_right = right / 0x10000;
+        int16_t edge_left = left / EDGE_Q_1;
+        int16_t edge_right = right / EDGE_Q_1;
 
         if (edge_left >= edge_right) {
             cop_set_target_x(0);
@@ -172,13 +178,13 @@ static void draw_transformed_triangle(Vertex *vertices) {
 
     // top segment
 
-    int16_t dx = mid.x - top.x;
-    int16_t dy = mid.y - top.y;
+    int16_t dx1 = mid.x - top.x;
+    int16_t dy1 = mid.y - top.y;
 
-    int16_t dx_m = bottom.x - top.x;
-    int16_t dy_m = bottom.y - top.y;
+    int16_t dx2 = bottom.x - top.x;
+    int16_t dy2 = bottom.y - top.y;
 
-    if (dy_m == 0) {
+    if (dy2 == 0) {
         // this is a zero height triangle so nothing to do
         return;
     }
@@ -188,41 +194,46 @@ static void draw_transformed_triangle(Vertex *vertices) {
     // note it's dx/dy rather than dy/dx
     // the triangle edges are drawn by stepping through each vertical line and adding dx/dy
 
-    int32_t delta_x;
-    int32_t delta_x_m = (ABS(dx_m) * 0x10000) / ABS(dy_m);
+    int32_t x1_delta;
+    int32_t x2_delta = (ABS(dx2) * EDGE_Q_1) / ABS(dy2);
 
-    if (dx_m < 0) {
-        delta_x_m = -delta_x_m;
+    if (dx2 < 0) {
+        x2_delta = -x2_delta;
     }
 
-    int32_t x1_long = top.x * 0x10000;
+    int32_t x1_long = top.x * EDGE_Q_1;
     int32_t x2_long = x1_long;
 
-    bool top_segment_visible = (dy != 0);
+    bool top_segment_visible = (dy1 != 0);
     if (top_segment_visible) {
-        delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+        x1_delta = (ABS(dx1) * EDGE_Q_1) / ABS(dy1);
 
-        if (dx < 0) {
-            delta_x = -delta_x;
+        if (dx1 < 0) {
+            x1_delta = -x1_delta;
         }
 
-        draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, delta_x, delta_x_m);
+        draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, x1_delta, x2_delta);
     }
 
     // bottom segment
 
-    dx = bottom.x - mid.x;
-    dy = bottom.y - mid.y;
+    dx1 = bottom.x - mid.x;
+    dy1 = bottom.y - mid.y;
 
-    bool bottom_segment_visible = (dy != 0);
+    if (!top_segment_visible) {
+        x1_long = mid.x * EDGE_Q_1;
+        x2_long = top.x * EDGE_Q_1;
+    }
+
+    bool bottom_segment_visible = (dy1 != 0);
     if (bottom_segment_visible) {
-        delta_x = (ABS(dx) * 0x10000) / ABS(dy);
+        x1_delta = (ABS(dx1) * EDGE_Q_1) / ABS(dy1);
 
-        if (dx < 0) {
-            delta_x = -delta_x;
+        if (dx1 < 0) {
+            x1_delta = -x1_delta;
         }
 
-        draw_triangle_edge(&x1_long, &x2_long, mid.y, bottom.y, delta_x, delta_x_m);
+        draw_triangle_edge(&x1_long, &x2_long, mid.y, bottom.y, x1_delta, x2_delta);
     }
 
     cop_write(&VDP_LAYER_ENABLE, 0);
