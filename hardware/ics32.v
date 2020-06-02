@@ -184,6 +184,16 @@ module ics32 #(
         cop_ram_read_data <= cop_ram[cop_ram_read_address];
     end
 
+    // temporary contention check
+
+    always @(posedge vdp_clk) begin
+        if (cop_ram_write_en) begin
+            if (cop_ram_read_address == cop_ram_write_address && cop_ram_read_address > 2) begin
+                $display("copper contention, pc > 2");
+            end
+        end
+    end
+
     // --- 1x <-> 2x clock sync (if required) ---
 
     wire [23:0] cpu_address;

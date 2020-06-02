@@ -9,6 +9,8 @@
 
 static const uint16_t SCREEN_HEIGHT = 480;
 
+static const int16_t SCALE_Q_1 = 0x0100;
+
 typedef struct {
     int16_t x;
     int16_t y;
@@ -16,12 +18,11 @@ typedef struct {
 
 static void draw_layer_mask();
 static void draw_raster_bars(uint16_t line_offset);
-static void draw_triangle(uint16_t angle);
+static void draw_triangle(uint16_t angle, int16_t scale);
 
 int main() {
     vdp_enable_copper(false);
 
-    // TODO: opaque layer for masking
     vdp_enable_layers(SCROLL0);
     vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
@@ -43,33 +44,23 @@ int main() {
     vdp_set_single_palette_color(1, 0xf088);
 
     uint16_t line_offset = 0;
-    uint16_t angle = 0;
+    uint16_t angle = SIN_PERIOD / 4;
+
+    int16_t scale = SCALE_Q_1;
 
 //    draw_layer_mask();
-
-    vdp_wait_frame_ended();
     
     while (true) {
 //        vdp_enable_layers(0);
 //        draw_raster_bars(line_offset);
 //        draw_layer_mask();
 
-        // note that glitches do not necessarily occur every 16 frames
-        // angle / 16 shows graphics glitches that even happen at 30hz
+        draw_triangle(angle, scale);
 
-        // timing issue?
-
-//        if ((angle % 16) == 0) {
-            draw_triangle(angle);
-//        }
-
-        vdp_enable_copper(true);
-
+        // this wait must happen before enabling the copper
+        // there is risk of contention with register writes otherwise
         vdp_wait_frame_ended();
-        // force waiting to next frame for fast runs
-//        const uint16_t final_line_plus = 481;
-
-//        while (VDP_CURRENT_RASTER_Y != final_line_plus) {}
+        vdp_enable_copper(true);
 
         line_offset++;
         angle++;
@@ -78,35 +69,35 @@ int main() {
     return 0;
 }
 
-static void draw_triangle(uint16_t angle) {
+static void draw_triangle(uint16_t angle, int16_t scale) {
     angle %= (SIN_PERIOD / 3);
+
+    const int16_t screen_center_x = 848 / 2 + 240;
+    const int16_t screen_center_y = 480 / 2;
+    const int16_t radius = 240 - 1;
 
     Vertex vertices[3];
 
     for (uint8_t i = 0; i < 3; i++) {
-        const int16_t screen_center_x = 848 / 2 + 240;
-        const int16_t screen_center_y = 480 / 2 + 64;
-        const int16_t radius = 128;
-
         uint16_t angle_offset = i * SIN_PERIOD / 3;
         int16_t sin_t = sin(angle + angle_offset);
         int16_t cos_t = cos(angle + angle_offset);
 
-        int16_t sprite_x = sys_multiply(cos_t, -radius) / SIN_MAX;
-        int16_t sprite_y = sys_multiply(sin_t, -radius) / SIN_MAX;
+        int16_t vertex_x = sys_multiply(cos_t, -radius) / SIN_MAX;
+        int16_t vertex_y = sys_multiply(sin_t, -radius) / SIN_MAX;
 
-        sprite_x += screen_center_x;
-        sprite_y += screen_center_y;
+        vertex_x = sys_multiply(vertex_x, scale) / SCALE_Q_1;
+        vertex_y = sys_multiply(vertex_y, scale) / SCALE_Q_1;
 
-        vertices[i].x = sprite_x;
-        vertices[i].y = sprite_y;
+        vertex_x += screen_center_x;
+        vertex_y += screen_center_y;
+
+        vertices[i].x = vertex_x;
+        vertices[i].y = vertex_y;
     }
 
     draw_layer_mask(vertices);
 }
-
-// FIXME: span overflow issue
-// not a CPU time problem
 
 static void draw_triangle_edge(int32_t *x1, int32_t *x2, uint16_t y_base, uint16_t y_end, int32_t dx_1, int32_t dx_2) {
     int32_t x1_long = *x1;
@@ -164,6 +155,9 @@ static void sort_vertices(Vertex *vertices) {
 // triangle mask
 static void draw_layer_mask(Vertex *vertices) {
     cop_ram_seek(0);
+
+    // adding this so copper doesn't advance past this point BEFORE cpu writes it
+    cop_wait_target_y(0);
 
     sort_vertices(vertices);
 
