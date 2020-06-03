@@ -13,3 +13,7 @@ void assert(bool assertion) {
         __asm__("ebreak");
     }
 }
+
+void fatal_error() {
+    assert(false);
+}

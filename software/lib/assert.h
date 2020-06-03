@@ -10,5 +10,6 @@
 #include <stdbool.h>
 
 void assert(bool assertion);
+void fatal_error();
 
 #endif /* assert_h */

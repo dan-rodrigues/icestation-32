@@ -7,6 +7,7 @@
 #include "vdp.h"
 
 #include "vdp_regs.h"
+#include "assert.h"
 
 // exported constants
 
@@ -171,4 +172,16 @@ void vdp_wait_frame_ended() {
 
     while (VDP_CURRENT_RASTER_Y != (final_line - 1)) {}
     while (VDP_CURRENT_RASTER_Y != final_line) {}
+}
+
+bool vdp_layer_is_odd(VDPLayer layer) {
+    switch (layer) {
+    case SCROLL0: case SCROLL2:
+        return false;
+    case SCROLL1: case SCROLL3:
+        return true;
+    default:
+        fatal_error();
+        return false;
+    }
 }

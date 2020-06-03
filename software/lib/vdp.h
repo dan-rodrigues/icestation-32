@@ -8,6 +8,7 @@
 #define vdp_h
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef volatile uint16_t *const VDP_REG;
 
@@ -48,7 +49,7 @@ extern const uint16_t SPRITE_PAL_SHIFT;
 // x_block
 extern const uint16_t SPRITE_X_FLIP;
 
-// MARK: VDP read functions
+// MARK: Read functions
 
 static const VDP_REG VDP_CURRENT_RASTER_BASE = VDP_BASE + 0x00;
 
@@ -57,7 +58,7 @@ static const VDP_REG VDP_CURRENT_RASTER_BASE = VDP_BASE + 0x00;
 
 void vdp_wait_frame_ended();
 
-// MARK: VDP write functions
+// MARK: Write functions
 
 void vdp_enable_copper(uint8_t enable);
 
@@ -96,5 +97,9 @@ void vdp_set_target_raster_y(uint16_t y);
 
 void vdp_set_affine_matrix(int16_t a, int16_t b, int16_t c, int16_t d);
 void vdp_set_affine_pretranslate(int16_t x, int16_t y);
+
+// MARK: Convenience
+
+bool vdp_layer_is_odd(VDPLayer layer);
 
 #endif /* vdp_h */
