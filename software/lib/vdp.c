@@ -36,6 +36,16 @@ const uint16_t SPRITE_16_WIDE = 1 << 11;
 const uint16_t SPRITE_PRIORITY_SHIFT = 10;
 const uint16_t SPRITE_PAL_SHIFT = 12;
 
+// MARK: Metrics
+
+const uint16_t SCREEN_ACTIVE_WIDTH = 848;
+const uint16_t SCREEN_ACTIVE_HEIGHT = 480;
+const uint16_t SCREEN_OFFSCREEN_X = 240;
+
+const uint16_t RASTER_X_MAX = SCREEN_ACTIVE_WIDTH + SCREEN_OFFSCREEN_X - 1;
+
+// MARK: Functions
+
 void vdp_enable_copper(uint8_t enable) {
     VDP_ENABLE_COPPER = enable;
 }

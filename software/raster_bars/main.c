@@ -9,14 +9,7 @@
 #include "font.h"
 #include "vdp_print.h"
 
-static const uint16_t SCREEN_HEIGHT = 480;
-static const uint16_t SCREEN_WIDTH = 848;
-
-static const uint16_t RASTER_X_OFFSCREEN = 240;
-static const uint16_t RASTER_X_MAX = SCREEN_WIDTH + RASTER_X_OFFSCREEN - 1;
-
 static const int32_t EDGE_Q_1 = 0x10000;
-
 static const int16_t SCALE_Q_1 = 0x0100;
 
 typedef struct {
@@ -44,6 +37,7 @@ static const uint16_t MAP_BASE = 0x1000;
 
 static State state;
 
+static int16_t angle;
 static int16_t scale;
 static uint8_t alpha;
 static uint16_t state_counter;
@@ -51,6 +45,7 @@ static uint16_t state_counter;
 static void enter_state(State new_state) {
     switch (new_state) {
         case ST_IDLE:
+            angle = SIN_PERIOD / 2;
             scale = 2;
             alpha = 0;
             break;
@@ -77,7 +72,7 @@ static void update_current_state() {
 
         } break;
         case ST_ZOOM_IN: {
-            const int16_t target_scale = 0x480;
+            const int16_t target_scale = 0x3f0;
 
             if (scale > 0x20 && alpha != 0xf && state_counter % 4 == 0) {
                 alpha++;
@@ -101,11 +96,14 @@ static void update_current_state() {
 
             if (scale > 0) {
                 scale -= 2;
+            } else {
+                enter_state(ST_IDLE);
             }
         } break;
     }
 
     state_counter++;
+    angle++;
 }
 
 int main() {
@@ -160,15 +158,11 @@ int main() {
     vdp_fill_vram(0x2000, opaque_tile);
 
     // TEMP: font test
-    vdp_set_vram_increment(2);
-
-    const char * const title = "icestation-32 horizontal raster effects demo";
+    const char * const title = "You're watching an icestation-32 horizontal raster effects demonstration";
     const char * const subtitle = "Brought to you by vdp_copper.v";
 
-    print(title, 48, 30, 0, SCROLL0, MAP_BASE);
-    print(subtitle, 48, 30 + 1, 0, SCROLL0, MAP_BASE);
-
-    vdp_set_vram_increment(1);
+    vp_print(title, vp_center_string_x(title), 30, 0, SCROLL0, MAP_BASE);
+    vp_print(subtitle, vp_center_string_x(subtitle), 30 + 1, 0, SCROLL0, MAP_BASE);
 
     // palette for checkerboard bright color
     vdp_set_single_palette_color(0x11, 0xfaaa);
@@ -178,7 +172,6 @@ int main() {
     uint32_t frame_counter = 0;
 
     uint16_t line_offset = 0;
-    uint16_t angle = SIN_PERIOD / 4;
     uint16_t scroll = 0;
 
     enter_state(ST_IDLE);
@@ -213,7 +206,6 @@ int main() {
 
         frame_counter++;
         line_offset++;
-        angle++;
 
         if (frame_counter % 2) {
             scroll++;
@@ -297,7 +289,7 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
     }
 
     if (segment_needs_drawing) {
-        y_end = MIN(y_end, SCREEN_HEIGHT);
+        y_end = MIN(y_end, SCREEN_ACTIVE_HEIGHT);
 
         for (int16_t y = y_base; y < y_end; y++) {
             left += delta_left;
@@ -307,7 +299,7 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
             int16_t edge_right = right / EDGE_Q_1;
 
             const uint8_t line_start_slack = 16;
-            const uint16_t left_bound = RASTER_X_OFFSCREEN - line_start_slack;
+            const uint16_t left_bound = SCREEN_OFFSCREEN_X - line_start_slack;
 
             if (edge_left < left_bound) {
                 // edge left side...

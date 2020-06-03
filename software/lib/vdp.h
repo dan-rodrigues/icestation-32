@@ -26,6 +26,16 @@ typedef enum {
 
 extern const VDPLayer VDP_ALL_LAYERS;
 
+// MARK: Screen metrics
+
+extern const uint16_t SCREEN_ACTIVE_WIDTH;
+extern const uint16_t SCREEN_ACTIVE_HEIGHT;
+extern const uint16_t SCREEN_OFFSCREEN_X;
+
+extern const uint16_t RASTER_X_MAX;
+
+// MARK: Attributes
+
 // scrolling layer map attribute bits
 
 extern const uint16_t SCROLL_MAP_X_FLIP_SHIFT;
