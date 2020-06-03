@@ -23,6 +23,13 @@ typedef struct {
     int16_t y;
 } Vertex;
 
+typedef enum {
+    ST_IDLE,
+    ST_ZOOM_IN,
+    ST_HOLD,
+    ST_ZOOM_OUT
+} State;
+
 static void draw_transformed_triangle(Vertex *vertices);
 static void draw_triangle(uint16_t angle, int16_t scale);
 
@@ -59,6 +66,73 @@ static void print(char *string, uint8_t x, uint8_t y, uint8_t palette, VDPLayer 
         string++;
         x++;
     }
+}
+
+// state context
+
+static State state;
+
+static int16_t scale;
+static uint8_t alpha;
+static uint16_t state_counter;
+
+static void enter_state(State new_state) {
+    switch (new_state) {
+        case ST_IDLE:
+            break;
+        case ST_ZOOM_IN:
+            scale = 0;
+            alpha = 0;
+            break;
+        case ST_HOLD:
+            break;
+        case ST_ZOOM_OUT:
+            break;
+    }
+
+    state_counter = 0;
+    state = new_state;
+}
+
+static void update_current_state() {
+    switch (state) {
+        case ST_IDLE: {
+            const uint16_t idle_frames = 120;
+
+            if (state_counter > idle_frames) {
+                enter_state(ST_ZOOM_IN);
+            }
+
+        } break;
+        case ST_ZOOM_IN: {
+            const int16_t target_scale = 0x500;
+
+            if (alpha != 0xf && state_counter % 4 == 0) {
+                alpha++;
+            }
+
+            if (scale >= target_scale) {
+                enter_state(ST_HOLD);
+            }
+
+            scale += 2;
+        } break;
+        case ST_HOLD: {
+            enter_state(ST_ZOOM_OUT);
+        } break;
+        case ST_ZOOM_OUT: {
+            if (scale < 0x100 && alpha != 0 && state_counter % 4 == 0) {
+                alpha--;
+            }
+
+            if (scale > 0) {
+                scale -= 2;
+            }
+
+        } break;
+    }
+
+    state_counter++;
 }
 
 int main() {
@@ -114,12 +188,8 @@ int main() {
 
     // TEMP: font test
     vdp_set_vram_increment(2);
-    print("TEST TEST TEST TEST TEST TEST", 0, 30, 0, SCROLL0, MAP_BASE);
+    print("TEST TEST TEST TEST TEST TEST", 32, 30, 0, SCROLL0, MAP_BASE);
     vdp_set_vram_increment(1);
-
-    // palette for polygon / text layer (bg and fg)
-    vdp_set_single_palette_color(0x01, 0xfa70);
-    vdp_set_single_palette_color(0x02, 0xffff);
 
     // palette for checkerboard bright color
     vdp_set_single_palette_color(0x11, 0xfaaa);
@@ -132,26 +202,39 @@ int main() {
     uint16_t angle = SIN_PERIOD / 4;
     uint16_t scroll = 0;
 
-    int16_t scale = 0; //0xc00; // 0x100;
-    
+    enter_state(ST_IDLE);
+
     while (true) {
         draw_triangle(angle, scale);
 
         // this wait must happen before enabling the copper
-        // there is risk of contention with register writes otherwise
+        // there is risk of contention with VDP register writes otherwise
         vdp_wait_frame_ended();
+
+        // start the copper, which will idle due to a raster-wait
+        // this gives the CPU a "head start" in creating the copper program
         vdp_enable_copper(true);
+
+        update_current_state();
+
+        // polygon color updates
+
+        uint16_t polygon_bg_color = 0xfa70;
+        uint16_t polygon_fg_color = 0xffff;
+
+        uint8_t polygon_bg_palette_id = 0x01;
+        uint8_t polygon_fg_palette_id = 0x02;
+
+        uint16_t color = (polygon_bg_color & 0x0fff) | alpha << 12;
+        vdp_set_single_palette_color(polygon_bg_palette_id, color);
+        color = (polygon_fg_color & 0x0fff) | alpha << 12;
+        vdp_set_single_palette_color(polygon_fg_palette_id, color);
 
         vdp_set_layer_scroll(1, scroll, scroll);
 
         frame_counter++;
         line_offset++;
         angle++;
-
-        if (frame_counter % 1 == 0) {
-            scale += 1;
-//            scale &= 0x3ff;
-        }
 
         if (frame_counter % 2) {
             scroll++;

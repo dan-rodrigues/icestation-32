@@ -13,7 +13,7 @@ static VDP_REG VDP_HSCROLL_BASE = VDP_BASE + 0x14;
 static VDP_REG VDP_VSCROLL_BASE = VDP_BASE + 0x18;
 static VDP_REG VDP_SCROLL_MAP_ADDRESS_BASE = VDP_BASE + 0x1c;
 
-#define VDP_ENABLE_COPPER (*((volatile uint16_t *) VDP_BASE + 8))
+#define VDP_ENABLE_COPPER (*((VDP_REG) VDP_BASE + 8))
 
 #define VDP_LAYER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 0))
 #define VDP_ALPHA_OVER_ENABLE (*((VDP_REG) VDP_RENDER_CTRL_BASE + 1))
@@ -30,15 +30,15 @@ static VDP_REG VDP_SCROLL_MAP_ADDRESS_BASE = VDP_BASE + 0x1c;
 #define VDP_AFFINE_PRETRANSLATE_X (*((VDP_REG) VDP_VSCROLL_BASE + 2))
 #define VDP_AFFINE_PRETRANSLATE_Y (*((VDP_REG) VDP_VSCROLL_BASE + 3))
 
-#define VDP_SPRITE_TILE_BASE (*((volatile uint16_t *) VDP_BASE + 7))
+#define VDP_SPRITE_TILE_BASE (*((VDP_REG) VDP_BASE + 7))
 #define VDP_SPRITE_BLOCK_ADDRESS (*((VDP_REG) VDP_BASE + 0))
 #define VDP_SPRITE_DATA (*((VDP_REG) VDP_BASE + 1))
 
-#define VDP_PALETTE_ADDRESS (*((volatile uint16_t *) VDP_BASE + 2))
-#define VDP_PALETTE_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 3))
+#define VDP_PALETTE_ADDRESS (*((VDP_REG) VDP_BASE + 2))
+#define VDP_PALETTE_WRITE_DATA (*((VDP_REG) VDP_BASE + 3))
 
-#define VDP_VRAM_ADDRESS (*((volatile uint16_t *) VDP_BASE + 4))
-#define VDP_VRAM_WRITE_DATA (*((volatile uint16_t *) VDP_BASE + 5))
-#define VDP_ADDRESS_INCREMENT (*((volatile uint16_t *) VDP_BASE + 6))
+#define VDP_VRAM_ADDRESS (*((VDP_REG) VDP_BASE + 4))
+#define VDP_VRAM_WRITE_DATA (*((VDP_REG) VDP_BASE + 5))
+#define VDP_ADDRESS_INCREMENT (*((VDP_REG) VDP_BASE + 6))
 
 #endif /* vdp_regs_h */
