@@ -10,7 +10,9 @@
 
 static const uint16_t SCREEN_HEIGHT = 480;
 static const uint16_t SCREEN_WIDTH = 848;
-static const uint16_t RASTER_X_MAX = SCREEN_WIDTH + 240 - 1;
+
+static const uint16_t RASTER_X_OFFSCREEN = 240;
+static const uint16_t RASTER_X_MAX = SCREEN_WIDTH + RASTER_X_OFFSCREEN - 1;
 
 static const int32_t EDGE_Q_1 = 0x10000;
 
@@ -146,9 +148,9 @@ int main() {
         line_offset++;
         angle++;
 
-        if (frame_counter % 8 == 0) {
+        if (frame_counter % 4 == 0) {
             scale += 1;
-            scale &= 0x3ff;
+//            scale &= 0x3ff;
         }
 
         if (frame_counter % 2) {
@@ -229,9 +231,12 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
         int16_t edge_left = left / EDGE_Q_1;
         int16_t edge_right = right / EDGE_Q_1;
 
-        // edge left side...
-        if (edge_left < 0) {
-            cop_wait_target_x(0);
+        const uint8_t line_start_slack = 16;
+        const uint16_t left_bound = RASTER_X_OFFSCREEN - line_start_slack;
+
+        if (edge_left < left_bound) {
+            // edge left side...
+            cop_wait_target_x(left_bound);
         } else {
             cop_wait_target_x(edge_left);
         }
@@ -239,8 +244,8 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
         cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
 
         if ((edge_right - edge_left) > 2) {
-            const uint8_t copper_eol_slack = 3;
-            const int16_t right_bound = RASTER_X_MAX - copper_eol_slack;
+            const uint8_t line_end_slack = 3;
+            const int16_t right_bound = RASTER_X_MAX - line_end_slack;
 
             if (edge_right > right_bound) {
                 cop_wait_target_x(right_bound);
@@ -248,9 +253,7 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
                 // ...wait to reach the ride side of the edge...
                 cop_wait_target_x(edge_right);
             }
-        }/* else if ((edge_right - edge_left) > 1) {
-            cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
-        }*/
+        }
 
         // ...edge right side
         cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS, true);
@@ -307,22 +310,14 @@ static void draw_transformed_triangle(Vertex *vertices) {
     // the triangle edges are drawn by stepping through each vertical line, then doing x += (dx/dy)
 
     int32_t x1_delta;
-    int32_t x2_delta = (ABS(dx2) * EDGE_Q_1) / ABS(dy2);
-
-    if (dx2 < 0) {
-        x2_delta = -x2_delta;
-    }
+    int32_t x2_delta = (dx2 * EDGE_Q_1) / ABS(dy2);
 
     int32_t x1_long = top.x * EDGE_Q_1;
     int32_t x2_long = x1_long;
 
     bool top_segment_visible = (dy1 != 0);
     if (top_segment_visible) {
-        x1_delta = (ABS(dx1) * EDGE_Q_1) / ABS(dy1);
-
-        if (dx1 < 0) {
-            x1_delta = -x1_delta;
-        }
+        x1_delta = (dx1 * EDGE_Q_1) / ABS(dy1);
 
         draw_triangle_segment(&x1_long, &x2_long, top.y, mid.y, x1_delta, x2_delta);
     }
@@ -339,11 +334,7 @@ static void draw_transformed_triangle(Vertex *vertices) {
 
     bool bottom_segment_visible = (dy1 != 0);
     if (bottom_segment_visible) {
-        x1_delta = (ABS(dx1) * EDGE_Q_1) / ABS(dy1);
-
-        if (dx1 < 0) {
-            x1_delta = -x1_delta;
-        }
+        x1_delta = (dx1 * EDGE_Q_1) / ABS(dy1);
 
         draw_triangle_segment(&x1_long, &x2_long, mid.y, bottom.y, x1_delta, x2_delta);
     }
