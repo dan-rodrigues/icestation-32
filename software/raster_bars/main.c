@@ -132,7 +132,7 @@ int main() {
     uint16_t angle = SIN_PERIOD / 4;
     uint16_t scroll = 0;
 
-    int16_t scale = 0x100; // 0x100;
+    int16_t scale = 0x800; // 0x100;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -215,48 +215,62 @@ static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int1
 
     // clip segment to fit the screen height if needed
 
-    if (y_base < 0) {
+    bool segment_needs_drawing = true;
+
+    if (y_base < 0 && y_end > 0) {
+        // onscreen edge, but partially offscreen
         left += -y_base * delta_left;
         right += -y_base * delta_right;
 
         y_base = 0;
+    } else if (y_base < 0 && y_end < 0) {
+        // entirely offscreen edge, nothing to draw
+        // advance deltas and bail out
+        int16_t segment_height = y_end - y_base;
+
+        left += segment_height * delta_left;
+        right += segment_height * delta_right;
+
+        segment_needs_drawing = false;
     }
 
-    y_end = MIN(y_end, SCREEN_HEIGHT);
+    if (segment_needs_drawing) {
+        y_end = MIN(y_end, SCREEN_HEIGHT);
 
-    for (int16_t y = y_base; y < y_end; y++) {
-        left += delta_left;
-        right += delta_right;
+        for (int16_t y = y_base; y < y_end; y++) {
+            left += delta_left;
+            right += delta_right;
 
-        int16_t edge_left = left / EDGE_Q_1;
-        int16_t edge_right = right / EDGE_Q_1;
+            int16_t edge_left = left / EDGE_Q_1;
+            int16_t edge_right = right / EDGE_Q_1;
 
-        const uint8_t line_start_slack = 16;
-        const uint16_t left_bound = RASTER_X_OFFSCREEN - line_start_slack;
+            const uint8_t line_start_slack = 16;
+            const uint16_t left_bound = RASTER_X_OFFSCREEN - line_start_slack;
 
-        if (edge_left < left_bound) {
-            // edge left side...
-            cop_wait_target_x(left_bound);
-        } else {
-            cop_wait_target_x(edge_left);
-        }
-
-        cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
-
-        if ((edge_right - edge_left) > 2) {
-            const uint8_t line_end_slack = 3;
-            const int16_t right_bound = RASTER_X_MAX - line_end_slack;
-
-            if (edge_right > right_bound) {
-                cop_wait_target_x(right_bound);
+            if (edge_left < left_bound) {
+                // edge left side...
+                cop_wait_target_x(left_bound);
             } else {
-                // ...wait to reach the ride side of the edge...
-                cop_wait_target_x(edge_right);
+                cop_wait_target_x(edge_left);
             }
-        }
 
-        // ...edge right side
-        cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS, true);
+            cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
+
+            if ((edge_right - edge_left) > 2) {
+                const uint8_t line_end_slack = 3;
+                const int16_t right_bound = RASTER_X_MAX - line_end_slack;
+
+                if (edge_right > right_bound) {
+                    cop_wait_target_x(right_bound);
+                } else {
+                    // ...wait to reach the ride side of the edge...
+                    cop_wait_target_x(edge_right);
+                }
+            }
+
+            // ...edge right side
+            cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS, true);
+        }
     }
 
     *x1 = needs_swap ? right : left;
@@ -303,6 +317,7 @@ static void draw_transformed_triangle(Vertex *vertices) {
     }
 
     if (top.y > 0) {
+        // offset the triangle vertically if there is empty space above it
         cop_set_target_y(top.y);
     }
 
