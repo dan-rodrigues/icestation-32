@@ -7,6 +7,7 @@
 #include "copper.h"
 #include "math_util.h"
 #include "font.h"
+#include "vdp_print.h"
 
 static const uint16_t SCREEN_HEIGHT = 480;
 static const uint16_t SCREEN_WIDTH = 848;
@@ -39,35 +40,6 @@ static VDPLayer POLYGON_HIDDEN_LAYERS = SCROLL1;
 static const uint16_t TILE_BASE = 0x0000;
 static const uint16_t MAP_BASE = 0x1000;
 
-// todo
-static void print_seek(uint8_t x, uint8_t y, VDPLayer layer, uint16_t vram_base) {
-    bool second_page = (x % 128) >= 64;
-    x %= 64;
-
-    uint16_t address = y * 64 + x;
-    address += (second_page ? 0x1000 : 0);
-    address *= 2;
-
-    address += (vdp_layer_is_odd(layer) ? 1 : 0);
-    vdp_seek_vram(vram_base + address);
-}
-
-static void print(char *string, uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t vram_base) {
-    while (*string) {
-        // this is needed after each character to handle the map page crossing
-        // the number of characters to print before a page crossing could optimise this
-        print_seek(x, y, layer, vram_base);
-
-        uint16_t map = *string & 0xff;
-        map |= palette << SCROLL_MAP_PAL_SHIFT;
-
-        vdp_write_vram(map);
-
-        string++;
-        x++;
-    }
-}
-
 // state context
 
 static State state;
@@ -79,10 +51,10 @@ static uint16_t state_counter;
 static void enter_state(State new_state) {
     switch (new_state) {
         case ST_IDLE:
+            scale = 2;
+            alpha = 0;
             break;
         case ST_ZOOM_IN:
-            scale = 0;
-            alpha = 0;
             break;
         case ST_HOLD:
             break;
@@ -97,7 +69,7 @@ static void enter_state(State new_state) {
 static void update_current_state() {
     switch (state) {
         case ST_IDLE: {
-            const uint16_t idle_frames = 120;
+            const uint16_t idle_frames = 180;
 
             if (state_counter > idle_frames) {
                 enter_state(ST_ZOOM_IN);
@@ -105,9 +77,9 @@ static void update_current_state() {
 
         } break;
         case ST_ZOOM_IN: {
-            const int16_t target_scale = 0x500;
+            const int16_t target_scale = 0x480;
 
-            if (alpha != 0xf && state_counter % 4 == 0) {
+            if (scale > 0x20 && alpha != 0xf && state_counter % 4 == 0) {
                 alpha++;
             }
 
@@ -118,7 +90,9 @@ static void update_current_state() {
             scale += 2;
         } break;
         case ST_HOLD: {
-            enter_state(ST_ZOOM_OUT);
+            if (state_counter > 60) {
+                enter_state(ST_ZOOM_OUT);
+            }
         } break;
         case ST_ZOOM_OUT: {
             if (scale < 0x100 && alpha != 0 && state_counter % 4 == 0) {
@@ -128,7 +102,6 @@ static void update_current_state() {
             if (scale > 0) {
                 scale -= 2;
             }
-
         } break;
     }
 
@@ -188,7 +161,13 @@ int main() {
 
     // TEMP: font test
     vdp_set_vram_increment(2);
-    print("TEST TEST TEST TEST TEST TEST", 32, 30, 0, SCROLL0, MAP_BASE);
+
+    const char * const title = "icestation-32 horizontal raster effects demo";
+    const char * const subtitle = "Brought to you by vdp_copper.v";
+
+    print(title, 48, 30, 0, SCROLL0, MAP_BASE);
+    print(subtitle, 48, 30 + 1, 0, SCROLL0, MAP_BASE);
+
     vdp_set_vram_increment(1);
 
     // palette for checkerboard bright color
