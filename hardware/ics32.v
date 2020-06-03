@@ -186,11 +186,11 @@ module ics32 #(
 
     // temporary contention check
 
+    wire cop_ram_has_contention =  cop_ram_write_en && cop_ram_read_address == cop_ram_write_address && cop_ram_read_address > 3;
+
     always @(posedge vdp_clk) begin
-        if (cop_ram_write_en) begin
-            if (cop_ram_read_address == cop_ram_write_address && cop_ram_read_address > 2) begin
-                $display("copper contention, pc > 2");
-            end
+        if (cop_ram_has_contention) begin
+            $display("copper contention, pc > 2");
         end
     end
 

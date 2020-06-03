@@ -7,6 +7,10 @@
 #include "copper.h"
 #include "math_util.h"
 
+static const uint16_t SCREEN_HEIGHT = 480;
+static const uint16_t SCREEN_WIDTH = 848;
+static const uint16_t RASTER_X_MAX = SCREEN_WIDTH + 240 - 1;
+
 static const int32_t EDGE_Q_1 = 0x10000;
 
 static const int16_t SCALE_Q_1 = 0x0100;
@@ -19,33 +23,72 @@ typedef struct {
 static void draw_transformed_triangle(Vertex *vertices);
 static void draw_triangle(uint16_t angle, int16_t scale);
 
+static VDPLayer POLYGON_VISIBLE_LAYERS = SCROLL0 | SCROLL1;
+static VDPLayer POLYGON_HIDDEN_LAYERS = SCROLL1;
+
+static const uint16_t MAP_BASE = 0x1000;
+
 int main() {
     vdp_enable_copper(false);
 
-    vdp_enable_layers(SCROLL0);
-    vdp_set_wide_map_layers(0);
+    vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
+
+    // the polygon layer (showing the text) is a full wdith 1024x512 layer
+    // the scrolling background layer is a tiled 512x512 layer
+    vdp_set_wide_map_layers(SCROLL0);
+
+    // TODO: alpha on for polygpn
     vdp_set_alpha_over_layers(0);
 
-    // opaque tile for foreground
+    // TODO: checkerboard on scroll1
+    vdp_seek_vram(MAP_BASE + 1);
+    vdp_set_vram_increment(2);
+
+    const uint8_t checkerboard_dimension = 4;
+    const uint16_t opaque_tile = 0; //' ';
+
+    for (uint8_t y = 0; y < 64; y++) {
+        uint8_t y_even = (y / checkerboard_dimension) & 1;
+
+        for (uint8_t x = 0; x < 64; x++) {
+            const uint8_t light_palette = 1;
+            const uint8_t dark_palette = 2;
+
+            uint8_t x_even = (x / checkerboard_dimension) & 1;
+            bool is_dark = y_even ^ x_even;
+
+            uint8_t palette = is_dark ? dark_palette : light_palette;
+            uint16_t map_word = opaque_tile | palette << SCROLL_MAP_PAL_SHIFT;
+            vdp_write_vram(map_word);
+        }
+    }
+
+    // opaque tile for layers
     vdp_set_layer_tile_base(0, 0x0000);
+    vdp_set_layer_tile_base(1, 0x0000);
     vdp_set_vram_increment(1);
     vdp_seek_vram(0);
     vdp_fill_vram(0x20 / 2, 0x1111);
 
     // set all map tiles to use opaque tile
-    vdp_set_layer_map_base(0, 0x1000);
+    vdp_set_layer_map_base(0, MAP_BASE);
+    vdp_set_layer_map_base(1, MAP_BASE);
     vdp_set_vram_increment(2);
-    vdp_seek_vram(0x1000);
+    vdp_seek_vram(MAP_BASE);
     // tile 00 for entire map
-    vdp_fill_vram(0x1000, 0x0000);
+//    vdp_fill_vram(0x1000, 0x0000);
 
     // palette for opaque color
-    vdp_set_single_palette_color(1, 0xf088);
+    vdp_set_single_palette_color(0x01, 0xf088);
+    // palette for checkerboard bright color
+    vdp_set_single_palette_color(0x11, 0xfaaa);
+    // palette for checkerboard dark color
+    vdp_set_single_palette_color(0x21, 0xf000);
 
     uint16_t line_offset = 0;
     uint16_t angle = SIN_PERIOD / 4;
 
-    int16_t scale = 0x200; // 0x100;
+    int16_t scale = 0x100; // 0x100;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -96,7 +139,7 @@ static void draw_triangle(uint16_t angle, int16_t scale) {
     draw_transformed_triangle(vertices);
 }
 
-static void draw_triangle_edge(int32_t *x1, int32_t *x2, int16_t y_base, int16_t y_end, int32_t x1_delta, int32_t x2_delta) {
+static void draw_triangle_segment(int32_t *x1, int32_t *x2, int16_t y_base, int16_t y_end, int32_t x1_delta, int32_t x2_delta) {
     bool needs_swap;
 
     if (*x1 == *x2) {
@@ -120,19 +163,23 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, int16_t y_base, int16_t
         delta_right = x1_delta;
     }
 
-    for (int16_t y = y_base; y < y_end && y < 480; y++) {
+    // clip segment to fit the screen height if needed
+
+    if (y_base < 0) {
+        left += -y_base * delta_left;
+        right += -y_base * delta_right;
+
+        y_base = 0;
+    }
+
+    y_end = MIN(y_end, SCREEN_HEIGHT);
+
+    for (int16_t y = y_base; y < y_end; y++) {
         left += delta_left;
         right += delta_right;
 
-        if (y < 0) {
-            // this row is off the top of the screen
-            continue;
-        }
-
         int16_t edge_left = left / EDGE_Q_1;
         int16_t edge_right = right / EDGE_Q_1;
-
-        const int16_t screen_max_x = 848 + 240 - 8;
 
         // edge left side...
         if (edge_left < 0) {
@@ -141,21 +188,24 @@ static void draw_triangle_edge(int32_t *x1, int32_t *x2, int16_t y_base, int16_t
             cop_wait_target_x(edge_left);
         }
 
-        cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
+        cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
 
         if ((edge_right - edge_left) > 2) {
-            if (edge_right > screen_max_x) {
-                cop_wait_target_x(screen_max_x);
+            const uint8_t copper_eol_slack = 3;
+            const int16_t right_bound = RASTER_X_MAX - copper_eol_slack;
+
+            if (edge_right > right_bound) {
+                cop_wait_target_x(right_bound);
             } else {
                 // ...wait to reach the ride side of the edge...
                 cop_wait_target_x(edge_right);
             }
         } else if ((edge_right - edge_left) > 1) {
-            cop_write_compressed(&VDP_LAYER_ENABLE, SCROLL0, false);
+            cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_VISIBLE_LAYERS, false);
         }
 
         // ...edge right side
-        cop_write_compressed(&VDP_LAYER_ENABLE, 0, true);
+        cop_write_compressed(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS, true);
     }
 
     *x1 = needs_swap ? right : left;
@@ -226,7 +276,7 @@ static void draw_transformed_triangle(Vertex *vertices) {
             x1_delta = -x1_delta;
         }
 
-        draw_triangle_edge(&x1_long, &x2_long, top.y, mid.y, x1_delta, x2_delta);
+        draw_triangle_segment(&x1_long, &x2_long, top.y, mid.y, x1_delta, x2_delta);
     }
 
     // bottom segment
@@ -247,10 +297,10 @@ static void draw_transformed_triangle(Vertex *vertices) {
             x1_delta = -x1_delta;
         }
 
-        draw_triangle_edge(&x1_long, &x2_long, mid.y, bottom.y, x1_delta, x2_delta);
+        draw_triangle_segment(&x1_long, &x2_long, mid.y, bottom.y, x1_delta, x2_delta);
     }
 
-    cop_write(&VDP_LAYER_ENABLE, 0);
+    cop_write(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS);
 
     cop_jump(0);
     // branch delay slot, which could be eliminated by spending more LCs in the copper
