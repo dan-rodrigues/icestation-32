@@ -132,7 +132,7 @@ int main() {
     uint16_t angle = SIN_PERIOD / 4;
     uint16_t scroll = 0;
 
-    int16_t scale = 0x800; // 0x100;
+    int16_t scale = 0; //0xc00; // 0x100;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -148,7 +148,7 @@ int main() {
         line_offset++;
         angle++;
 
-        if (frame_counter % 4 == 0) {
+        if (frame_counter % 1 == 0) {
             scale += 1;
 //            scale &= 0x3ff;
         }
