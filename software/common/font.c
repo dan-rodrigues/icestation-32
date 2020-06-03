@@ -14,6 +14,10 @@
 // this converts the 1bpp font tiles to the required 4bpp color format
 
 void upload_font(uint16_t vram_base) {
+    upload_font_remapped(vram_base, 0, 1);
+}
+
+void upload_font_remapped(uint16_t vram_base, uint8_t transparent, uint8_t opaque) {
     const uint16_t char_total = 128;
 
     vdp_seek_vram(vram_base);
@@ -26,7 +30,7 @@ void upload_font(uint16_t vram_base) {
 
             for (uint8_t pixel = 0; pixel < 8; pixel++) {
                 rendered_line <<= 4;
-                rendered_line |= (monochrome_line & 0x01);
+                rendered_line |= (monochrome_line & 0x01) ? opaque : transparent;
 
                 monochrome_line >>= 1;
             }

@@ -6,6 +6,7 @@
 #include "vdp_regs.h"
 #include "copper.h"
 #include "math_util.h"
+#include "font.h"
 
 static const uint16_t SCREEN_HEIGHT = 480;
 static const uint16_t SCREEN_WIDTH = 848;
@@ -26,12 +27,40 @@ static void draw_triangle(uint16_t angle, int16_t scale);
 static VDPLayer POLYGON_VISIBLE_LAYERS = SCROLL0 | SCROLL1;
 static VDPLayer POLYGON_HIDDEN_LAYERS = SCROLL1;
 
+static const uint16_t TILE_BASE = 0x0000;
 static const uint16_t MAP_BASE = 0x1000;
+
+const char *const hello_string = "Hello world!";
+const uint8_t palette_id = 0x0;
+const uint8_t flip_x = false;
+const uint8_t flip_y = false;
+
+const char *string = hello_string;
+
+// todo
+static void print(char *string, uint8_t palette) {
+    while (*string) {
+        uint16_t map = *string & 0xff;
+        map |= palette << SCROLL_MAP_PAL_SHIFT;
+
+        vdp_write_vram(map);
+
+        string++;
+    }
+}
 
 int main() {
     vdp_enable_copper(false);
 
     vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
+
+    // tiles (8x8 font, common to both layers)
+    vdp_set_layer_tile_base(0, TILE_BASE);
+    vdp_set_layer_tile_base(1, TILE_BASE);
+
+    const uint8_t background_index = 1;
+    const uint8_t foreground_index = 2;
+    upload_font_remapped(TILE_BASE, background_index, foreground_index);
 
     // the polygon layer (showing the text) is a full wdith 1024x512 layer
     // the scrolling background layer is a tiled 512x512 layer
@@ -41,11 +70,13 @@ int main() {
     vdp_set_alpha_over_layers(0);
 
     // TODO: checkerboard on scroll1
+    vdp_set_layer_map_base(1, MAP_BASE);
+
     vdp_seek_vram(MAP_BASE + 1);
     vdp_set_vram_increment(2);
 
     const uint8_t checkerboard_dimension = 4;
-    const uint16_t opaque_tile = 0; //' ';
+    const uint16_t opaque_tile = ' ';
 
     for (uint8_t y = 0; y < 64; y++) {
         uint8_t y_even = (y / checkerboard_dimension) & 1;
@@ -63,32 +94,35 @@ int main() {
         }
     }
 
-    // opaque tile for layers
-    vdp_set_layer_tile_base(0, 0x0000);
-    vdp_set_layer_tile_base(1, 0x0000);
-    vdp_set_vram_increment(1);
-    vdp_seek_vram(0);
-    vdp_fill_vram(0x20 / 2, 0x1111);
-
     // set all map tiles to use opaque tile
     vdp_set_layer_map_base(0, MAP_BASE);
-    vdp_set_layer_map_base(1, MAP_BASE);
     vdp_set_vram_increment(2);
-    vdp_seek_vram(MAP_BASE);
-    // tile 00 for entire map
-//    vdp_fill_vram(0x1000, 0x0000);
+    vdp_seek_vram(MAP_BASE + 0);
+    vdp_fill_vram(0x2000, opaque_tile);
 
-    // palette for opaque color
-    vdp_set_single_palette_color(0x01, 0xf088);
+    // TODO: test string write
+    // confirm font actually appears as expected
+    vdp_set_vram_increment(2);
+    vdp_seek_vram(MAP_BASE + (128 * 30 + 40) * 2);
+    print("Test!", 0);
+    vdp_set_vram_increment(1);
+
+    // palette for polygon / text layer (bg and fg)
+    vdp_set_single_palette_color(0x01, 0xfa90);
+    vdp_set_single_palette_color(0x02, 0xffff);
+
     // palette for checkerboard bright color
     vdp_set_single_palette_color(0x11, 0xfaaa);
     // palette for checkerboard dark color
     vdp_set_single_palette_color(0x21, 0xf000);
 
+    uint32_t frame_counter = 0;
+
     uint16_t line_offset = 0;
     uint16_t angle = SIN_PERIOD / 4;
+    uint16_t scroll = 0;
 
-    int16_t scale = 0x100; // 0x100;
+    int16_t scale = 0x0100; // 0x100;
     
     while (true) {
         draw_triangle(angle, scale);
@@ -98,14 +132,20 @@ int main() {
         vdp_wait_frame_ended();
         vdp_enable_copper(true);
 
+        vdp_set_layer_scroll(1, scroll, scroll);
+
+        frame_counter++;
         line_offset++;
         angle++;
 
-        if (angle % 8 == 0) {
+        if (frame_counter % 8 == 0) {
             scale += 1;
             scale &= 0x3ff;
         }
 
+        if (frame_counter % 2) {
+            scroll++;
+        }
     }
 
     return 0;

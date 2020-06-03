@@ -3,7 +3,7 @@ CROSS = riscv-none-embed-
 COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 SIM_DIR = $(COMMON_DIR)../../simulator/
 
-CFLAGS = -Wall -Os -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
+CFLAGS = -Wall -O3 -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
 LDS = ../common/sections.lds
