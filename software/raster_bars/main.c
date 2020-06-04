@@ -45,9 +45,9 @@ static uint16_t state_counter;
 static void enter_state(State new_state) {
     switch (new_state) {
         case ST_IDLE:
-            angle = 0; //  SIN_PERIOD / 2;
-            scale = 0x300; //2;
-            alpha = 0xf; //0;
+            angle = SIN_PERIOD / 2;
+            scale = 0x02; //2;
+            alpha = 0;
             break;
         case ST_ZOOM_IN:
             break;
@@ -74,7 +74,7 @@ static void update_current_state() {
         case ST_ZOOM_IN: {
             const int16_t target_scale = 0x3f0;
 
-            if (scale > 0x20 && alpha != 0xf && state_counter % 4 == 0) {
+            if (scale > 0x10 && alpha != 0xf && state_counter % 4 == 0) {
                 alpha++;
             }
 
@@ -90,7 +90,7 @@ static void update_current_state() {
             }
         } break;
         case ST_ZOOM_OUT: {
-            if (scale < 0x100 && alpha != 0 && state_counter % 4 == 0) {
+            if (scale < 0xc0 && alpha != 0 && state_counter % 4 == 0) {
                 alpha--;
             }
 
@@ -110,7 +110,6 @@ int main() {
     vdp_enable_copper(false);
     vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
 
-    // must be called before the printf() variants are used
     vp_print_init();
 
     // tiles (8x8 font, common to both layers)
@@ -122,13 +121,11 @@ int main() {
     upload_font_remapped(TILE_BASE, background_index, foreground_index);
 
     // the polygon layer (showing the text) is a full wdith 1024x512 layer
-    // the scrolling background layer is a tiled 512x512 layer
     vdp_set_wide_map_layers(SCROLL0);
     // this layer is also alpha blending onto the checkboard background
     vdp_set_alpha_over_layers(SCROLL0);
 
-    // checkerboard background
-
+    // checkerboard background (512x512, tiled repeatedly)
     vdp_set_layer_map_base(1, MAP_BASE);
     vdp_seek_vram(MAP_BASE + 1);
     vdp_set_vram_increment(2);
@@ -153,7 +150,6 @@ int main() {
     }
 
     // initialise all map tiles to the empty opaque tile (space character)
-
     vdp_set_layer_map_base(0, MAP_BASE);
     vdp_set_vram_increment(2);
     vdp_seek_vram(MAP_BASE + 0);
@@ -169,7 +165,7 @@ int main() {
     // checkerboard scrolling background
 
     const uint8_t checkerboard_bright_palette_id = 0x11;
-    const uint16_t checkerboard_bright_color = 0xfccc;
+    const uint16_t checkerboard_bright_color = 0xfaaa;
     vdp_set_single_palette_color(checkerboard_bright_palette_id, checkerboard_bright_color);
 
     const uint8_t checkerboard_dark_palette_id = 0x21;
@@ -199,7 +195,8 @@ int main() {
         const uint8_t metrics_x = 32;
         const uint8_t metrics_y = 36;
 
-        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM bytes used: %d", cop_ram_get_write_index());
+        uint16_t bytes_used = cop_ram_get_write_index() * 2;
+        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM used: %d", bytes_used);
 
 //        vp_printf(metrics_x, metrics_y + 2, 0, SCROLL0, MAP_BASE, "OP_WRITE: %d", scroll);
 //        vp_printf(metrics_x, metrics_y + 3, 0, SCROLL0, MAP_BASE, "OP_WRITE_COMPRESSED: %d", frame_counter);
@@ -362,11 +359,10 @@ static void sort_vertices(Vertex *vertices) {
 static void draw_transformed_triangle(Vertex *vertices) {
     cop_ram_seek(0);
 
-    // wait for raster (0, 0)
+    // wait for raster (0, 0) to give the CPU a head start in writing this program
     cop_set_target_x(0);
     cop_wait_target_y(0);
-
-    // ...
+    // copper prefetches the next word while it waits, so make it wait for one more op to avoid contention
     cop_wait_target_x(2);
 
     // the copper at this point can be enabled as it will wait for raster using the above ops
