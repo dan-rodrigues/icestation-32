@@ -10,7 +10,8 @@
  	pll.v \
  	bus_arbiter.v \
  	reset_generator.v \
- 	cpu_peripheral_sync.v
+ 	cpu_peripheral_sync.v \
+ 	cop_ram.v
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \

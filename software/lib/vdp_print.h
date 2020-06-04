@@ -1,11 +1,20 @@
+// vdp_print.h
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef vdp_print_h
 #define vdp_print_h
 
 #include <stdint.h>
+#include <stdarg.h>
 
 #include "vdp.h"
 
-void vp_print(const char *string, uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t vram_base);
+void vp_print_init(void);
+
+void vp_printf(uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t vram_base, const char *fmt, ...);
 
 uint8_t vp_center_string_x(const char *string);
 

@@ -33,7 +33,7 @@ static VDPLayer POLYGON_HIDDEN_LAYERS = SCROLL1;
 static const uint16_t TILE_BASE = 0x0000;
 static const uint16_t MAP_BASE = 0x1000;
 
-// state context
+// current state context
 
 static State state;
 
@@ -45,9 +45,9 @@ static uint16_t state_counter;
 static void enter_state(State new_state) {
     switch (new_state) {
         case ST_IDLE:
-            angle = SIN_PERIOD / 2;
-            scale = 2;
-            alpha = 0;
+            angle = 0; //  SIN_PERIOD / 2;
+            scale = 0x300; //2;
+            alpha = 0xf; //0;
             break;
         case ST_ZOOM_IN:
             break;
@@ -108,8 +108,10 @@ static void update_current_state() {
 
 int main() {
     vdp_enable_copper(false);
-
     vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
+
+    // must be called before the printf() variants are used
+    vp_print_init();
 
     // tiles (8x8 font, common to both layers)
     vdp_set_layer_tile_base(0, TILE_BASE);
@@ -157,48 +159,60 @@ int main() {
     vdp_seek_vram(MAP_BASE + 0);
     vdp_fill_vram(0x2000, opaque_tile);
 
-    // TEMP: font test
+    // print titles
     const char * const title = "You're watching an icestation-32 horizontal raster effects demonstration";
     const char * const subtitle = "Brought to you by vdp_copper.v";
 
-    vp_print(title, vp_center_string_x(title), 30, 0, SCROLL0, MAP_BASE);
-    vp_print(subtitle, vp_center_string_x(subtitle), 30 + 1, 0, SCROLL0, MAP_BASE);
+    vp_printf(vp_center_string_x(title), 30, 0, SCROLL0, MAP_BASE, title);
+    vp_printf(vp_center_string_x(subtitle), 30 + 1, 0, SCROLL0, MAP_BASE, subtitle);
 
-    // palette for checkerboard bright color
-    vdp_set_single_palette_color(0x11, 0xfaaa);
-    // palette for checkerboard dark color
-    vdp_set_single_palette_color(0x21, 0xf000);
+    // checkerboard scrolling background
+
+    const uint8_t checkerboard_bright_palette_id = 0x11;
+    const uint16_t checkerboard_bright_color = 0xfccc;
+    vdp_set_single_palette_color(checkerboard_bright_palette_id, checkerboard_bright_color);
+
+    const uint8_t checkerboard_dark_palette_id = 0x21;
+    const uint16_t checkerboard_dark_color = 0xf000;
+    vdp_set_single_palette_color(checkerboard_dark_palette_id, checkerboard_dark_color);
 
     uint32_t frame_counter = 0;
-
     uint16_t line_offset = 0;
     uint16_t scroll = 0;
 
     enter_state(ST_IDLE);
 
+    vdp_wait_frame_ended();
+
     while (true) {
         draw_triangle(angle, scale);
 
-        // this wait must happen before enabling the copper
+        // this wait must happen before changing copper enable state
         // there is risk of contention with VDP register writes otherwise
         vdp_wait_frame_ended();
-
-        // start the copper, which will idle due to a raster-wait
-        // this gives the CPU a "head start" in creating the copper program
-        vdp_enable_copper(true);
+        vdp_enable_copper(false);
 
         update_current_state();
 
-        // polygon color updates
+        // TODO: printf metrics here
 
-        uint16_t polygon_bg_color = 0xfa70;
-        uint16_t polygon_fg_color = 0xffff;
+        const uint8_t metrics_x = 32;
+        const uint8_t metrics_y = 36;
 
-        uint8_t polygon_bg_palette_id = 0x01;
-        uint8_t polygon_fg_palette_id = 0x02;
+        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM bytes used: %d", cop_ram_get_write_index());
 
+//        vp_printf(metrics_x, metrics_y + 2, 0, SCROLL0, MAP_BASE, "OP_WRITE: %d", scroll);
+//        vp_printf(metrics_x, metrics_y + 3, 0, SCROLL0, MAP_BASE, "OP_WRITE_COMPRESSED: %d", frame_counter);
+
+        // polygon/text color updates
+
+        const uint8_t polygon_bg_palette_id = 0x01;
+        const uint16_t polygon_bg_color = 0xfa70;
         uint16_t color = (polygon_bg_color & 0x0fff) | alpha << 12;
         vdp_set_single_palette_color(polygon_bg_palette_id, color);
+
+        const uint8_t polygon_fg_palette_id = 0x02;
+        const uint16_t polygon_fg_color = 0xffff;
         color = (polygon_fg_color & 0x0fff) | alpha << 12;
         vdp_set_single_palette_color(polygon_fg_palette_id, color);
 
@@ -348,8 +362,17 @@ static void sort_vertices(Vertex *vertices) {
 static void draw_transformed_triangle(Vertex *vertices) {
     cop_ram_seek(0);
 
-    // this "pauses" the copper until the active frame actually starts at raster_y=0
+    // wait for raster (0, 0)
+    cop_set_target_x(0);
     cop_wait_target_y(0);
+
+    // ...
+    cop_wait_target_x(2);
+
+    // the copper at this point can be enabled as it will wait for raster using the above ops
+    // the rest of the RAM is now available to be written without contention
+    // this is fine so long as the copper PC (read pointer) doesn't "catch up" to the CPU write pointer
+    vdp_enable_copper(true);
 
     sort_vertices(vertices);
 
@@ -379,14 +402,14 @@ static void draw_transformed_triangle(Vertex *vertices) {
     // the triangle edges are drawn by stepping through each vertical line, then doing x += (dx/dy)
 
     int32_t x1_delta;
-    int32_t x2_delta = (dx2 * EDGE_Q_1) / ABS(dy2);
+    int32_t x2_delta = (dx2 * EDGE_Q_1) / dy2;
 
     int32_t x1_long = top.x * EDGE_Q_1;
     int32_t x2_long = x1_long;
 
     bool top_segment_visible = (dy1 != 0);
     if (top_segment_visible) {
-        x1_delta = (dx1 * EDGE_Q_1) / ABS(dy1);
+        x1_delta = (dx1 * EDGE_Q_1) / dy1;
 
         draw_triangle_segment(&x1_long, &x2_long, top.y, mid.y, x1_delta, x2_delta);
     }
@@ -403,7 +426,7 @@ static void draw_transformed_triangle(Vertex *vertices) {
 
     bool bottom_segment_visible = (dy1 != 0);
     if (bottom_segment_visible) {
-        x1_delta = (dx1 * EDGE_Q_1) / ABS(dy1);
+        x1_delta = (dx1 * EDGE_Q_1) / dy1;
 
         draw_triangle_segment(&x1_long, &x2_long, mid.y, bottom.y, x1_delta, x2_delta);
     }
@@ -411,6 +434,4 @@ static void draw_transformed_triangle(Vertex *vertices) {
     cop_write(&VDP_LAYER_ENABLE, POLYGON_HIDDEN_LAYERS);
 
     cop_jump(0);
-    // branch delay slot, which could be eliminated by spending more LCs in the copper
-    cop_set_target_x(0);
 }

@@ -1,3 +1,9 @@
+// copper.c
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "copper.h"
 
 #include <stddef.h>
@@ -27,6 +33,10 @@ void cop_ram_seek(uint16_t address) {
     assert(address < COP_RAM_SIZE);
 
     cop_pc = address;
+}
+
+uint16_t cop_ram_get_write_index(void) {
+    return cop_pc;
 }
 
 void cop_set_target_x(uint16_t target_x) {
@@ -123,10 +133,6 @@ void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t da
     COP_RAM[cop_pc++] = data3;
 
     config->batches_written++;
-}
-
-void cop_signal(uint8_t data) {
-    COP_RAM[cop_pc++] = data;
 }
 
 static uint8_t cop_reg(VDP_REG reg) {

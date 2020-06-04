@@ -61,6 +61,7 @@ module vdp #(
 
     // Copper RAM interface
 
+    output cop_ram_read_en,
     output reg [10:0] cop_ram_read_address,
     input [15:0] cop_ram_read_data
 );
@@ -180,6 +181,7 @@ module vdp #(
         .raster_x(raster_x),
         .raster_y(raster_y),
 
+        .ram_read_en(cop_ram_read_en),
         .ram_read_address(cop_ram_read_address),
         .ram_read_data(cop_ram_read_data),
 

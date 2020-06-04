@@ -7,7 +7,8 @@ SOURCES = \
 	../lib/math_util.c \
 	../common/vectors.S \
 	../common/start.S \
-	../common/font.c
+	../common/font.c \
+	../common/tinyprintf.c
 
 HEADERS = \
 	../lib/vdp.h \
@@ -15,6 +16,9 @@ HEADERS = \
 	../lib/math_util.h \
 	../lib/assert.h \
 	../lib/copper.h \
-	../common/font.h
+	../common/font.h \
+	../common/tinyprintf.h
+
+OPT_LEVEL := -O3
 
 include ../common/common.mk

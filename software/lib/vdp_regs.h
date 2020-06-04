@@ -1,3 +1,9 @@
+// vdp_regs.h
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef vdp_regs_h
 #define vdp_regs_h
 

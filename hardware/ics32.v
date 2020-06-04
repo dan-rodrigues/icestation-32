@@ -166,33 +166,25 @@ module ics32 #(
     wire active_display;
     assign vga_de = active_display;
 
-    // TODO: copper ram relocate
-
-    reg [15:0] cop_ram [0:2047];
+    // --- Copper RAM ---
 
     wire [10:0] cop_ram_write_address = {cpu_address[11:2], cpu_wstrb[2]};
+    wire [15:0] cop_ram_read_data;
 
-    // todo: vdp read
     wire [10:0] cop_ram_read_address;
-    reg [15:0] cop_ram_read_data;
+    wire cop_ram_read_en;
+    
+    cop_ram cop_ram(
+        .clk(vdp_clk),
 
-    always @(posedge vdp_clk) begin
-        if (cop_ram_write_en) begin
-            cop_ram[cop_ram_write_address] <= cpu_write_data[15:0];
-        end
+        .write_address(cop_ram_write_address),
+        .write_data(cpu_write_data[15:0]),
+        .write_en(cop_ram_write_en),
 
-        cop_ram_read_data <= cop_ram[cop_ram_read_address];
-    end
-
-    // temporary contention check
-
-    wire cop_ram_has_contention =  cop_ram_write_en && cop_ram_read_address == cop_ram_write_address && cop_ram_read_address > 3;
-
-    always @(posedge vdp_clk) begin
-        if (cop_ram_has_contention) begin
-            $display("copper contention, pc > 2");
-        end
-    end
+        .read_address(cop_ram_read_address),
+        .read_data(cop_ram_read_data),
+        .read_en(cop_ram_read_en)
+    );
 
     // --- 1x <-> 2x clock sync (if required) ---
 
@@ -297,6 +289,7 @@ module ics32 #(
         .vram_write_data_odd(vram_write_data_odd),
         .vram_read_data_odd(vram_read_data_odd),
 
+        .cop_ram_read_en(cop_ram_read_en),
         .cop_ram_read_address(cop_ram_read_address),
         .cop_ram_read_data(cop_ram_read_data)
     );

@@ -22,6 +22,7 @@ module vdp_copper(
     // RAM interface
 
     output reg [10:0] ram_read_address,
+    output ram_read_en,
     input [15:0] ram_read_data,
 
     // Register interface
@@ -37,7 +38,8 @@ module vdp_copper(
 
     assign ram_read_address = pc;
 
-    // wire [10:0] pc_nx;
+    wire operating = !reset && enable;
+    assign ram_read_en = operating;
 
     // --- Raster tracking ---
 
@@ -50,7 +52,7 @@ module vdp_copper(
 
     // oo------ --------
     // o: 2bit op
-    // -: op defined fields
+    // remaining fields are op-defined
 
     wire [1:0] op = ram_read_data[15:14];
     reg [1:0] op_current;
@@ -61,8 +63,6 @@ module vdp_copper(
     localparam OP_JUMP = 2'h3;
 
     // SET_TARGET / WAIT_TARGET
-
-    // TODO: vacant bit can be used to do autoincrement y
 
     // oo-wsvvv vvvvvvvv
     //
@@ -88,10 +88,7 @@ module vdp_copper(
     //      0: reg[0], repeat
     //      1: reg[0], reg[1], repeat
     //      2: reg[0], reg[1], reg[2], reg[3], repeat
-    //      ...
     // y: autoincrement target Y and wait between batches
-
-    // op fields
 
     wire [5:0] op_write_target_reg = ram_read_data[5:0];
     wire [4:0] op_write_batch_count = ram_read_data[10:6];
@@ -152,21 +149,26 @@ module vdp_copper(
 
     // --- FSM ---
 
-    localparam STATE_OP_FETCH = 0;
+    localparam STATE_OP_DECODE = 0;
     localparam STATE_DATA_FETCH = 1;
     localparam STATE_RASTER_WAITING = 2;
+    localparam STATE_OP_PREFETCH = 3;
 
     reg [1:0] state;
 
     always @(posedge clk) begin
-        if (reset || !enable) begin
+        if (!operating) begin
             pc <= PC_RESET;
+
             reg_write_en <= 0;
-            state <= STATE_OP_FETCH;
+
+            target_x <= 0;
+            target_y <= 0;
+            state <= STATE_OP_PREFETCH;
         end else begin
             reg_write_en <= 0;
 
-            if (state == STATE_OP_FETCH) begin
+            if (state == STATE_OP_DECODE) begin
                 case (op)
                     OP_SET_TARGET: begin
                         if (op_target_select) begin
@@ -178,7 +180,7 @@ module vdp_copper(
                         if (op_target_wait) begin
                             state <= STATE_RASTER_WAITING;
                         end else begin
-                            state <= STATE_OP_FETCH;
+                            state <= STATE_OP_DECODE;
                             pc <= pc + 1;
                         end
                     end
@@ -195,6 +197,7 @@ module vdp_copper(
                     end
                     OP_JUMP: begin
                         pc <= op_jump_target;
+                        state <= STATE_OP_PREFETCH;
                     end
                     OP_WRITE_COMPRESSED: begin
                         reg_write_address <= op_write_compressed_reg;
@@ -219,7 +222,7 @@ module vdp_copper(
 
                 if (op_write_batch_complete) begin
                     if (op_write_batch_count_r == 0) begin
-                        state <= STATE_OP_FETCH;
+                        state <= STATE_OP_DECODE;
                         pc <= pc + 1;
                     end else begin
                         op_write_batch_count_r <= op_write_batch_count_r - 1;
@@ -239,11 +242,13 @@ module vdp_copper(
                     if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
                         state <= STATE_DATA_FETCH;
                     end else begin
-                        state <= STATE_OP_FETCH;
+                        state <= STATE_OP_DECODE;
                     end
 
                     pc <= pc + 1;
                 end
+            end else if (state == STATE_OP_PREFETCH) begin
+                state <= STATE_OP_DECODE;
             end
         end
     end
