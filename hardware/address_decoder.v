@@ -62,7 +62,7 @@ module address_decoder #(
         end
     endgenerate
 
-    // this doesn't need to be exposed but is here foe consistency
+    // this doesn't need to be exposed but is here for consistency
     reg cop_ram_en;
 
     always @* begin

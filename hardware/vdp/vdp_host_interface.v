@@ -28,7 +28,7 @@ module vdp_host_interface #(
     input host_write_en,
     input [15:0] host_write_data,
     
-    // ..from copper (make above names consistent too)
+    // ..from copper
 
     input cop_write_en,
     input [5:0] cop_write_address,
