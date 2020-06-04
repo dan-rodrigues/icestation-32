@@ -1,3 +1,9 @@
+// main.c
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -42,11 +48,144 @@ static int16_t scale;
 static uint8_t alpha;
 static uint16_t state_counter;
 
+static void enter_state(State new_state);
+static void update_current_state(void);
+
+int main() {
+    vdp_enable_copper(false);
+    vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
+
+    vp_print_init();
+
+    // tiles (8x8 font, common to both layers)
+    vdp_set_layer_tile_base(0, TILE_BASE);
+    vdp_set_layer_tile_base(1, TILE_BASE);
+
+    const uint8_t background_index = 1;
+    const uint8_t foreground_index = 2;
+    upload_font_remapped(TILE_BASE, background_index, foreground_index);
+
+    // the polygon layer (also showing the text) is a full wdith 1024x512 layer
+    vdp_set_wide_map_layers(SCROLL0);
+    // this layer is also alpha blended onto the checkboard background
+    vdp_set_alpha_over_layers(SCROLL0);
+
+    // checkerboard background (512x512, tiled repeatedly)
+    vdp_set_layer_map_base(1, MAP_BASE);
+    vdp_seek_vram(MAP_BASE + 1);
+    vdp_set_vram_increment(2);
+
+    const uint8_t checkerboard_dimension = 4;
+    const uint16_t opaque_tile = ' ';
+
+    for (uint8_t y = 0; y < 64; y++) {
+        uint8_t y_even = (y / checkerboard_dimension) & 1;
+
+        for (uint8_t x = 0; x < 64; x++) {
+            const uint8_t light_palette = 1;
+            const uint8_t dark_palette = 2;
+
+            uint8_t x_even = (x / checkerboard_dimension) & 1;
+            bool is_dark = y_even ^ x_even;
+
+            uint8_t palette = is_dark ? dark_palette : light_palette;
+            uint16_t map_word = opaque_tile | palette << SCROLL_MAP_PAL_SHIFT;
+            vdp_write_vram(map_word);
+        }
+    }
+
+    // initialize all map tiles to the empty opaque tile (space character)
+
+    vdp_set_layer_map_base(0, MAP_BASE);
+    vdp_set_vram_increment(2);
+    vdp_seek_vram(MAP_BASE + 0);
+    vdp_fill_vram(0x2000, opaque_tile);
+
+    // print info
+
+    const uint8_t context_y = 24;
+
+    const char *const title = "You're watching an icestation-32 horizontal raster effects demonstration";
+    const char *const subtitle = "Brought to you by vdp_copper.v";
+
+    const char *const context_1 = "This text and orange background are on a static, opaque layer.";
+    const char *const context_2 = "The copper coprocessor shows / hides this layer with raster effects.";
+    const char *const context_3 = "The copper program does raster-synced writes with sequences of WAIT and WRITE instructions.";
+
+    vp_printf(vp_center_string_x(title), context_y, 0, SCROLL0, MAP_BASE, title);
+    vp_printf(vp_center_string_x(subtitle), context_y + 1, 0, SCROLL0, MAP_BASE, subtitle);
+
+    vp_printf(vp_center_string_x(context_1), context_y + 4, 3, SCROLL0, MAP_BASE, context_1);
+    vp_printf(vp_center_string_x(context_2), context_y + 6, 0, SCROLL0, MAP_BASE, context_2);
+    vp_printf(vp_center_string_x(context_3), context_y + 8, 0, SCROLL0, MAP_BASE, context_3);
+
+    // checkerboard scrolling background palette
+
+    const uint8_t checkerboard_bright_palette_id = 0x11;
+    const uint16_t checkerboard_bright_color = 0xfaaa;
+    vdp_set_single_palette_color(checkerboard_bright_palette_id, checkerboard_bright_color);
+
+    const uint8_t checkerboard_dark_palette_id = 0x21;
+    const uint16_t checkerboard_dark_color = 0xf000;
+    vdp_set_single_palette_color(checkerboard_dark_palette_id, checkerboard_dark_color);
+
+    uint32_t frame_counter = 0;
+    uint16_t line_offset = 0;
+    uint16_t scroll = 0;
+
+    enter_state(ST_IDLE);
+
+    vdp_wait_frame_ended();
+
+    while (true) {
+        // write copper program for this frame
+        draw_triangle(angle, scale);
+
+        // this wait must happen before changing copper enable state
+        // there is risk of contention with VDP register writes otherwise
+        vdp_wait_frame_ended();
+        vdp_enable_copper(false);
+
+        update_current_state();
+
+        // metrics
+
+        const uint8_t metrics_x = 39;
+        const uint8_t metrics_y = 39;
+
+        uint16_t bytes_used = cop_ram_get_write_index() * 2;
+        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM usage: %d bytes", bytes_used);
+
+        // polygon/text color updates
+
+        const uint8_t polygon_bg_palette_id = 0x01;
+        const uint16_t polygon_bg_color = 0xfa70;
+        uint16_t color = (polygon_bg_color & 0x0fff) | alpha << 12;
+        vdp_set_single_palette_color(polygon_bg_palette_id, color);
+
+        const uint8_t polygon_fg_palette_id = 0x02;
+        const uint16_t polygon_fg_color = 0xffff;
+        color = (polygon_fg_color & 0x0fff) | alpha << 12;
+        vdp_set_single_palette_color(polygon_fg_palette_id, color);
+
+        vdp_set_layer_scroll(1, scroll, scroll);
+
+        frame_counter++;
+        line_offset++;
+
+        if (frame_counter % 2) {
+            scroll++;
+        }
+    }
+
+    return 0;
+}
+
 static void enter_state(State new_state) {
     switch (new_state) {
         case ST_IDLE:
             angle = SIN_PERIOD / 2;
-            scale = 0x02; //2;
+            scale = 2;
             alpha = 0;
             break;
         case ST_ZOOM_IN:
@@ -104,126 +243,6 @@ static void update_current_state() {
 
     state_counter++;
     angle++;
-}
-
-int main() {
-    vdp_enable_copper(false);
-    vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
-
-    vp_print_init();
-
-    // tiles (8x8 font, common to both layers)
-    vdp_set_layer_tile_base(0, TILE_BASE);
-    vdp_set_layer_tile_base(1, TILE_BASE);
-
-    const uint8_t background_index = 1;
-    const uint8_t foreground_index = 2;
-    upload_font_remapped(TILE_BASE, background_index, foreground_index);
-
-    // the polygon layer (showing the text) is a full wdith 1024x512 layer
-    vdp_set_wide_map_layers(SCROLL0);
-    // this layer is also alpha blending onto the checkboard background
-    vdp_set_alpha_over_layers(SCROLL0);
-
-    // checkerboard background (512x512, tiled repeatedly)
-    vdp_set_layer_map_base(1, MAP_BASE);
-    vdp_seek_vram(MAP_BASE + 1);
-    vdp_set_vram_increment(2);
-
-    const uint8_t checkerboard_dimension = 4;
-    const uint16_t opaque_tile = ' ';
-
-    for (uint8_t y = 0; y < 64; y++) {
-        uint8_t y_even = (y / checkerboard_dimension) & 1;
-
-        for (uint8_t x = 0; x < 64; x++) {
-            const uint8_t light_palette = 1;
-            const uint8_t dark_palette = 2;
-
-            uint8_t x_even = (x / checkerboard_dimension) & 1;
-            bool is_dark = y_even ^ x_even;
-
-            uint8_t palette = is_dark ? dark_palette : light_palette;
-            uint16_t map_word = opaque_tile | palette << SCROLL_MAP_PAL_SHIFT;
-            vdp_write_vram(map_word);
-        }
-    }
-
-    // initialise all map tiles to the empty opaque tile (space character)
-    vdp_set_layer_map_base(0, MAP_BASE);
-    vdp_set_vram_increment(2);
-    vdp_seek_vram(MAP_BASE + 0);
-    vdp_fill_vram(0x2000, opaque_tile);
-
-    // print titles
-    const char * const title = "You're watching an icestation-32 horizontal raster effects demonstration";
-    const char * const subtitle = "Brought to you by vdp_copper.v";
-
-    vp_printf(vp_center_string_x(title), 30, 0, SCROLL0, MAP_BASE, title);
-    vp_printf(vp_center_string_x(subtitle), 30 + 1, 0, SCROLL0, MAP_BASE, subtitle);
-
-    // checkerboard scrolling background
-
-    const uint8_t checkerboard_bright_palette_id = 0x11;
-    const uint16_t checkerboard_bright_color = 0xfaaa;
-    vdp_set_single_palette_color(checkerboard_bright_palette_id, checkerboard_bright_color);
-
-    const uint8_t checkerboard_dark_palette_id = 0x21;
-    const uint16_t checkerboard_dark_color = 0xf000;
-    vdp_set_single_palette_color(checkerboard_dark_palette_id, checkerboard_dark_color);
-
-    uint32_t frame_counter = 0;
-    uint16_t line_offset = 0;
-    uint16_t scroll = 0;
-
-    enter_state(ST_IDLE);
-
-    vdp_wait_frame_ended();
-
-    while (true) {
-        draw_triangle(angle, scale);
-
-        // this wait must happen before changing copper enable state
-        // there is risk of contention with VDP register writes otherwise
-        vdp_wait_frame_ended();
-        vdp_enable_copper(false);
-
-        update_current_state();
-
-        // TODO: printf metrics here
-
-        const uint8_t metrics_x = 32;
-        const uint8_t metrics_y = 36;
-
-        uint16_t bytes_used = cop_ram_get_write_index() * 2;
-        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM used: %d", bytes_used);
-
-//        vp_printf(metrics_x, metrics_y + 2, 0, SCROLL0, MAP_BASE, "OP_WRITE: %d", scroll);
-//        vp_printf(metrics_x, metrics_y + 3, 0, SCROLL0, MAP_BASE, "OP_WRITE_COMPRESSED: %d", frame_counter);
-
-        // polygon/text color updates
-
-        const uint8_t polygon_bg_palette_id = 0x01;
-        const uint16_t polygon_bg_color = 0xfa70;
-        uint16_t color = (polygon_bg_color & 0x0fff) | alpha << 12;
-        vdp_set_single_palette_color(polygon_bg_palette_id, color);
-
-        const uint8_t polygon_fg_palette_id = 0x02;
-        const uint16_t polygon_fg_color = 0xffff;
-        color = (polygon_fg_color & 0x0fff) | alpha << 12;
-        vdp_set_single_palette_color(polygon_fg_palette_id, color);
-
-        vdp_set_layer_scroll(1, scroll, scroll);
-
-        frame_counter++;
-        line_offset++;
-
-        if (frame_counter % 2) {
-            scroll++;
-        }
-    }
-
-    return 0;
 }
 
 static void draw_triangle(uint16_t angle, int16_t scale) {

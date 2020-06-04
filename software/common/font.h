@@ -1,4 +1,4 @@
-// font.c
+// font.h
 //
 // Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
