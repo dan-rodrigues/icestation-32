@@ -16,31 +16,35 @@
 static const uint16_t TILE_BASE = 0x0000;
 static const uint16_t MAP_BASE = 0x1000;
 
+static const uint8_t BAR_PALETTE_ID = 0;
+static const uint8_t BAR_COLOR_ID = 1;
+
 static void draw_raster_bars(uint16_t line_offset, uint16_t angle);
 
 int main() {
     vdp_enable_copper(false);
-    // can eventually enable scroll0 for the checkerboard
-    vdp_enable_layers(0);
+    vdp_enable_layers(SCROLL0 | SCROLL1);
+    vdp_set_alpha_over_layers(SCROLL0);
+    vdp_set_wide_map_layers(0);
 
-    // TODO: can eventually alpha blend onto the checkerboard
+    // one opaque tile to use for all graphics in demo
 
-    // tiles (8x8 font, common to both layers)
-//    vdp_set_layer_tile_base(0, TILE_BASE);
+    const uint16_t opaque_tile = 0;
+
+    vdp_set_layer_tile_base(0, TILE_BASE);
     vdp_set_layer_tile_base(1, TILE_BASE);
 
-    // the polygon layer (also showing the text) is a full wdith 1024x512 layer
-    vdp_set_wide_map_layers(SCROLL0);
-    // this layer is also alpha blended onto the checkboard background
-    vdp_set_alpha_over_layers(SCROLL0);
+    vdp_seek_vram(TILE_BASE);
+    vdp_set_vram_increment(1);
+    vdp_fill_vram(0x10, 0x1111);
 
     // checkerboard background (512x512, tiled repeatedly)
+
     vdp_set_layer_map_base(1, MAP_BASE);
     vdp_seek_vram(MAP_BASE + 1);
     vdp_set_vram_increment(2);
 
     const uint8_t checkerboard_dimension = 4;
-    const uint16_t opaque_tile = ' ';
 
     for (uint8_t y = 0; y < 64; y++) {
         uint8_t y_even = (y / checkerboard_dimension) & 1;
@@ -58,14 +62,16 @@ int main() {
         }
     }
 
+    vdp_set_layer_scroll(1, 0, 0);
+
     // initialize all map tiles to the empty opaque tile (space character)
 
     vdp_set_layer_map_base(0, MAP_BASE);
     vdp_set_vram_increment(2);
     vdp_seek_vram(MAP_BASE + 0);
-    vdp_fill_vram(0x2000, opaque_tile);
+    vdp_fill_vram(0x2000, opaque_tile | BAR_PALETTE_ID << SCROLL_MAP_PAL_SHIFT);
 
-    // checkerboard scrolling background palette
+    // checkerboard background palette
 
     const uint8_t checkerboard_bright_palette_id = 0x11;
     const uint16_t checkerboard_bright_color = 0xfaaa;
@@ -75,29 +81,19 @@ int main() {
     const uint16_t checkerboard_dark_color = 0xf000;
     vdp_set_single_palette_color(checkerboard_dark_palette_id, checkerboard_dark_color);
 
-    uint32_t frame_counter = 0;
     uint16_t line_offset = 0;
-    uint16_t scroll = 0;
     uint16_t angle = 0;
 
     vdp_wait_frame_ended();
 
     while (true) {
-        // this wait must happen before changing copper enable state
-        // there is risk of contention with VDP register writes otherwise
-
         draw_raster_bars(line_offset, angle);
 
         vdp_wait_frame_ended();
         vdp_enable_copper(false);
 
-        frame_counter++;
         line_offset++;
         angle++;
-
-        if (frame_counter % 2) {
-            scroll++;
-        }
     }
 
     return 0;
@@ -147,14 +143,16 @@ static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
         uint8_t y = bar_offset % (bar_height / 2);
 
         if (bar_offset < (bar_height / 2)) {
-            color = 0xf000 | y << 8 | y << 4 | y;
+            uint8_t alpha = y;
+            color = alpha << 12 | y << 8 | y << 4 | y;
             color &= color_mask;
         } else {
-            color = 0xffff - (y << 8) - (y << 4) - y;
+            uint8_t alpha = ~y & 0xf;
+            color = (0x0fff | alpha << 12) - (y << 8) - (y << 4) - y;
             color &= color_mask;
         }
 
-        cop_add_batch_double(&config, 0, color);
+        cop_add_batch_double(&config, BAR_COLOR_ID, color);
 
         line++;
         cop_wait_target_y(line);
