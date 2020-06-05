@@ -11,6 +11,7 @@ module cpu_ram(
 
     input [13:0] address,
     input cs,
+    input write_en,
     input [3:0] wstrb,
     input [31:0] write_data,
 
@@ -22,8 +23,6 @@ module cpu_ram(
         wstrb[1], wstrb[1],
         wstrb[0], wstrb[0]
     };
-
-    wire write_en = |mask_write_en;
 
     SB_SPRAM256KA cpu_ram_0 (
         .ADDRESS(address),

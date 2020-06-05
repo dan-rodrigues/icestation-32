@@ -25,7 +25,8 @@ module bus_arbiter #(
     // address decoder inputs
     input vdp_en,
     input flash_read_en,
-    input cpu_ram_en,
+    input cpu_ram_en_decoded,
+    input cpu_ram_write_en_decoded,
     input dsp_en,
     input status_en,
     input pad_en,
@@ -50,7 +51,8 @@ module bus_arbiter #(
     output [31:0] cpu_ram_write_data,
     output [15:0] cpu_ram_address,
     output [3:0] cpu_ram_wstrb,
-    output cpu_ram_cs
+    output cpu_ram_cs,
+    output cpu_ram_write_en
 );
     assign cpu_ram_wstrb = dma_busy ? dma_wstrb : {
         cpu_wstrb[3],
@@ -59,7 +61,8 @@ module bus_arbiter #(
         cpu_wstrb[0]
     };
 
-    assign cpu_ram_cs = dma_busy ? 1'b1 : cpu_ram_en;
+    assign cpu_ram_write_en = dma_busy ? 1'b1 : cpu_ram_write_en_decoded;
+    assign cpu_ram_cs = dma_busy ? 1'b1 : cpu_ram_en_decoded;
 
     assign cpu_ram_write_data = dma_busy ? dma_write_data : cpu_write_data;
     assign cpu_ram_address = dma_busy ? dma_address : cpu_address[15:2];
@@ -70,10 +73,10 @@ module bus_arbiter #(
         // using !cpu_mem_ready only works if the CPU clk is full speed
         // (refactor this that cpu_mem_ready check is the only point of difference)
         if (!SUPPORT_2X_CLK) begin
-            assign cpu_ram_ready = cpu_ram_en && !cpu_mem_ready;
+            assign cpu_ram_ready = cpu_ram_en_decoded && !cpu_mem_ready;
             assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en) && !cpu_mem_ready;
         end else begin
-            assign cpu_ram_ready = cpu_ram_en;
+            assign cpu_ram_ready = cpu_ram_en_decoded;
             assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en);
         end
     endgenerate

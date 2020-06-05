@@ -127,7 +127,7 @@ module ics32 #(
     // --- Address deccoder ---
 
     wire vdp_en, vdp_write_en;
-    wire cpu_ram_en;
+    wire cpu_ram_en_decoded, cpu_ram_write_en_decoded;
     wire status_en, status_write_en;
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
@@ -150,7 +150,8 @@ module ics32 #(
         .status_en(status_en),
         .status_write_en(status_write_en),
 
-        .cpu_ram_en(cpu_ram_en),
+        .cpu_ram_en(cpu_ram_en_decoded),
+        .cpu_ram_write_en(cpu_ram_write_en_decoded),
 
         .dsp_en(dsp_en),
         .dsp_write_en(dsp_write_en),
@@ -314,6 +315,7 @@ module ics32 #(
         .clk(vdp_clk),
 
         .address(cpu_ram_address),
+        .write_en(cpu_ram_write_en),
         .cs(cpu_ram_cs),
         .wstrb(cpu_ram_wstrb),
         .write_data(cpu_ram_data_in),
@@ -365,6 +367,7 @@ module ics32 #(
     wire [14:0] cpu_ram_address;
     wire [3:0] cpu_ram_wstrb;
     wire cpu_ram_cs;
+    wire cpu_ram_write_en;
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU)
@@ -382,7 +385,8 @@ module ics32 #(
         .dma_address(dma_write_address),
         .dma_wstrb(dma_wstrb),
 
-        .cpu_ram_en(cpu_ram_en),
+        .cpu_ram_en_decoded(cpu_ram_en_decoded),
+        .cpu_ram_write_en_decoded(cpu_ram_write_en_decoded),
         .vdp_en(vdp_en),
         .flash_read_en(flash_read_en),
         .dsp_en(dsp_en),
@@ -407,7 +411,8 @@ module ics32 #(
         .cpu_ram_write_data(cpu_ram_data_in),
         .cpu_ram_address(cpu_ram_address),
         .cpu_ram_wstrb(cpu_ram_wstrb),
-        .cpu_ram_cs(cpu_ram_cs)
+        .cpu_ram_cs(cpu_ram_cs),
+        .cpu_ram_write_en(cpu_ram_write_en)
     );
 
     // --- CPU ---

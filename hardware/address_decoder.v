@@ -22,6 +22,7 @@ module address_decoder #(
     output reg vdp_write_en,
 
     output reg cpu_ram_en,
+    output reg cpu_ram_write_en,
 
     output reg status_en,
     output reg status_write_en,
@@ -67,6 +68,7 @@ module address_decoder #(
 
     always @* begin
         cpu_ram_en = 0;
+        cpu_ram_write_en = 0;
         flash_read_en = 0;
         status_en = 0;
         status_write_en = 0;
@@ -97,6 +99,7 @@ module address_decoder #(
                 endcase    
             end
 
+            cpu_ram_write_en = cpu_ram_en && cpu_wstrb_s;
             vdp_write_en = vdp_en && cpu_wstrb_s;
             status_write_en = status_en && cpu_wstrb_s;
             dsp_write_en = dsp_en && cpu_wstrb_s;
