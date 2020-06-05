@@ -108,7 +108,8 @@ static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
 
     COPBatchWriteConfig config = {
         .mode = CWM_DOUBLE,
-        .reg = &VDP_PALETTE_ADDRESS
+        .reg = &VDP_PALETTE_ADDRESS,
+        .batch_wait_between_lines = true
     };
 
     cop_ram_seek(0);
@@ -133,7 +134,6 @@ static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
         uint16_t bar_offset = selected_line % bar_height;
 
         config.batch_count = 1;
-        config.batch_wait_between_lines = true;
         cop_start_batch_write(&config);
 
         uint8_t mask_selected = (selected_line / bar_height) % color_mask_count;

@@ -22,6 +22,12 @@ The copper is implemented in vdp_copper.v and has 4kbyte of instruction memory.
 
 ![Platformer demo](screenshots/copper-polygon.png)
 
+## `copper_bars/`
+
+Copper coprocessor demo using vertical raster effects only. This is a simpler demo than the above polygon demo and displays squished and strecthed "raster bars" by altering a single color each line. The bar layer itself is as a single-colored opaque layer. The apparent movement and alpha blending is done with raster effects.
+
+![Platformer demo](screenshots/copper-bars-squish.png)
+
 ## `platformer/`
 
 Controllable character sprite that can walk and jump with simple physics on a static playfield. This uses the gamepad interface which is currently mocked using the 3 buttons on the iCEBreaker.
