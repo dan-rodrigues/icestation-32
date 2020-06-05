@@ -13,12 +13,10 @@
 #include "copper.h"
 #include "math_util.h"
 
-static const int16_t SCALE_Q_1 = 0x0100;
-
 static const uint16_t TILE_BASE = 0x0000;
 static const uint16_t MAP_BASE = 0x1000;
 
-static void draw_raster_bars(uint16_t line_offset);
+static void draw_raster_bars(uint16_t line_offset, uint16_t angle);
 
 int main() {
     vdp_enable_copper(false);
@@ -80,19 +78,22 @@ int main() {
     uint32_t frame_counter = 0;
     uint16_t line_offset = 0;
     uint16_t scroll = 0;
+    uint16_t angle = 0;
 
     vdp_wait_frame_ended();
 
     while (true) {
         // this wait must happen before changing copper enable state
         // there is risk of contention with VDP register writes otherwise
-        draw_raster_bars(line_offset);
+
+        draw_raster_bars(line_offset, angle);
 
         vdp_wait_frame_ended();
         vdp_enable_copper(false);
 
         frame_counter++;
         line_offset++;
+        angle++;
 
         if (frame_counter % 2) {
             scroll++;
@@ -102,7 +103,7 @@ int main() {
     return 0;
 }
 
-static void draw_raster_bars(uint16_t line_offset) {
+static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
     static const uint16_t color_masks[] = {
         0xff00, 0xf0f0, 0xf00f, 0xffff, 0xfff0, 0xf0ff, 0xff0f, 0xffff
     };
@@ -123,44 +124,40 @@ static void draw_raster_bars(uint16_t line_offset) {
     vdp_enable_copper(true);
 
     uint16_t line = 0;
-    while (line < SCREEN_ACTIVE_HEIGHT) {
-        uint16_t selected_line = line + line_offset;
-        uint16_t bar_offset = selected_line % bar_height;
-        uint16_t visible_bar_height = bar_height - bar_offset;
-        // clip if the bar "runs over the bottom of the screen"
-        visible_bar_height = MIN(SCREEN_ACTIVE_HEIGHT - line, visible_bar_height);
 
-        // at some point these will have to be broken up
-        // since the horizontal updates have to be woven into this table too
-        config.batch_count = visible_bar_height - 1;
+    while (line < SCREEN_ACTIVE_HEIGHT) {
+        const uint16_t angle_delta = 6;
+        const int16_t offset_scale = 0x18;
+
+        int16_t sint = sin(angle);
+        angle += angle_delta;
+        int16_t offset = sys_multiply(sint, offset_scale) / SIN_MAX;
+
+        uint16_t selected_line = line + line_offset + offset;
+        uint16_t bar_offset = selected_line % bar_height;
+
+        config.batch_count = 1 - 1;
         config.batch_wait_between_lines = true;
         cop_start_batch_write(&config);
 
         uint8_t mask_selected = (selected_line / bar_height) % color_mask_count;
         uint16_t color_mask = color_masks[mask_selected];
 
-        for (uint8_t bar_y = 0; bar_y < visible_bar_height; bar_y++) {
-            uint16_t color = 0;
-            uint8_t bar_y_offset = bar_y + bar_offset;
-            uint8_t y = bar_y_offset % (bar_height / 2);
+        uint16_t color = 0;
+        uint8_t y = bar_offset % (bar_height / 2);
 
-            if (bar_y_offset < (bar_height / 2)) {
-                color = 0xf000 | y << 8 | y << 4 | y;
-                color &= color_mask;
-            } else {
-                color = 0xffff - (y << 8) - (y << 4) - y;
-                color &= color_mask;
-            }
-
-            cop_add_batch_double(&config, 0, color);
+        if (bar_offset < (bar_height / 2)) {
+            color = 0xf000 | y << 8 | y << 4 | y;
+            color &= color_mask;
+        } else {
+            color = 0xffff - (y << 8) - (y << 4) - y;
+            color &= color_mask;
         }
 
-        line += visible_bar_height;
+        cop_add_batch_double(&config, 0, color);
 
-        // must wait 1 line or else it'll immediately start processing the *next* line
-        if (line < SCREEN_ACTIVE_HEIGHT) {
-            cop_wait_target_y(line);
-        }
+        line++;
+        cop_wait_target_y(line);
     }
 
     cop_jump(0);
