@@ -22,13 +22,14 @@ static void draw_raster_bars(uint16_t line_offset);
 
 int main() {
     vdp_enable_copper(false);
+    // can eventually enable scroll0 for the checkerboard
     vdp_enable_layers(0);
 
     // TODO: can eventually alpha blend onto the checkerboard
 
     // tiles (8x8 font, common to both layers)
 //    vdp_set_layer_tile_base(0, TILE_BASE);
-//    vdp_set_layer_tile_base(1, TILE_BASE);
+    vdp_set_layer_tile_base(1, TILE_BASE);
 
     // the polygon layer (also showing the text) is a full wdith 1024x512 layer
     vdp_set_wide_map_layers(SCROLL0);
