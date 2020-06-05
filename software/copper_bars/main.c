@@ -136,7 +136,7 @@ static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
         uint16_t selected_line = line + line_offset + offset;
         uint16_t bar_offset = selected_line % bar_height;
 
-        config.batch_count = 1 - 1;
+        config.batch_count = 1;
         config.batch_wait_between_lines = true;
         cop_start_batch_write(&config);
 

@@ -67,7 +67,7 @@ void cop_write(VDP_REG reg, uint16_t data) {
     COPBatchWriteConfig config = {
         .mode = CWM_SINGLE,
         .reg = reg,
-        .batch_count = 0,
+        .batch_count = 1,
         .batch_wait_between_lines = false
     };
 
@@ -94,9 +94,12 @@ void cop_jump(uint16_t address) {
 // batch writes
 
 void cop_start_batch_write(COPBatchWriteConfig *config) {
+    assert(config->batch_count > 0);
+    assert(config->batch_count <= 32);
+
     uint16_t op_word = WRITE_REG << OP_SHIFT;
     op_word |= cop_reg(config->reg);
-    op_word |= config->batch_count << 6;
+    op_word |= (config->batch_count - 1) << 6;
     op_word |= config->batch_wait_between_lines ? 1 << 11 : 0;
     op_word |= config->mode << 12;
     COP_RAM[cop_pc++] = op_word;
@@ -105,7 +108,7 @@ void cop_start_batch_write(COPBatchWriteConfig *config) {
 }
 
 void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data) {
-    assert(config->batches_written <= config->batch_count);
+    assert(config->batches_written < config->batch_count);
     assert(config->mode == CWM_SINGLE);
 
     COP_RAM[cop_pc++] = data;
@@ -114,7 +117,7 @@ void cop_add_batch_single(COPBatchWriteConfig *config, uint16_t data) {
 }
 
 void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1) {
-    assert(config->batches_written <= config->batch_count);
+    assert(config->batches_written < config->batch_count);
     assert(config->mode == CWM_DOUBLE);
 
     COP_RAM[cop_pc++] = data0;
@@ -124,7 +127,7 @@ void cop_add_batch_double(COPBatchWriteConfig *config, uint16_t data0, uint16_t 
 }
 
 void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t data1, uint16_t data2, uint16_t data3) {
-    assert(config->batches_written <= config->batch_count);
+    assert(config->batches_written < config->batch_count);
     assert(config->mode == CWM_QUAD);
 
     COP_RAM[cop_pc++] = data0;
