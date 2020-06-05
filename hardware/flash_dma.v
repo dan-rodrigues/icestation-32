@@ -40,11 +40,11 @@ module flash_dma #(
     output flash_mosi,
     input flash_miso
 );
-    localparam FLASH_USER_BASE = 24'h200000;
+    localparam FLASH_USER_BASE = 24'h100000;
 
     // IPL parameters
 
-    localparam FLASH_LOAD_BASE = 24'h200000;
+    localparam FLASH_LOAD_BASE = 24'h100000;
     localparam FLASH_LOAD_LENGTH = 16'he800;
     localparam FLASH_WRITE_BASE = 16'h0000;
 
