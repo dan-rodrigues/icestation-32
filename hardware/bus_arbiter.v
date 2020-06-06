@@ -23,6 +23,7 @@ module bus_arbiter #(
     input [3:0] dma_wstrb,
 
     // address decoder inputs
+    input bootloader_en,
     input vdp_en,
     input flash_read_en,
     input cpu_ram_en_decoded,
@@ -37,6 +38,7 @@ module bus_arbiter #(
     input vdp_ready,
 
     // data inputs from read sources
+    input [31:0] bootloader_read_data,
     input [31:0] cpu_ram_read_data,
     input [31:0] flash_read_data,
     input [15:0] vdp_read_data,
@@ -74,10 +76,10 @@ module bus_arbiter #(
         // (refactor this that cpu_mem_ready check is the only point of difference)
         if (!SUPPORT_2X_CLK) begin
             assign cpu_ram_ready = cpu_ram_en_decoded && !cpu_mem_ready;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en) && !cpu_mem_ready;
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en) && !cpu_mem_ready;
         end else begin
             assign cpu_ram_ready = cpu_ram_en_decoded;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en);
+            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en);
         end
     endgenerate
 
@@ -111,6 +113,8 @@ module bus_arbiter #(
             cpu_ram_read_data_ps = dsp_read_data;
         end else if (pad_en) begin
             cpu_ram_read_data_ps[1:0] = pad_read_data;
+        end else if (bootloader_en) begin
+            cpu_ram_read_data_ps = bootloader_read_data;
         end
     end
 

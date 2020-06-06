@@ -38,6 +38,16 @@ module ics32 #(
 );
     localparam ENABLE_FAST_CPU = !ENABLE_WIDESCREEN || FORCE_FAST_CPU;
 
+    // --- Bootloader --- TODO
+
+    reg [31:0] bootloader [0:255];
+
+    reg [31:0] bootloader_read_data;
+
+    always @(posedge vdp_clk) begin
+        bootloader_read_data <= bootloader[cpu_address[7:2]];
+    end
+
     // --- LEDs ---
 
     reg [1:0] status;
@@ -126,6 +136,7 @@ module ics32 #(
 
     // --- Address deccoder ---
 
+    wire bootloader_en;
     wire vdp_en, vdp_write_en;
     wire cpu_ram_en_decoded, cpu_ram_write_en_decoded;
     wire status_en, status_write_en;
@@ -144,6 +155,7 @@ module ics32 #(
         .cpu_mem_valid(cpu_mem_valid),
         .cpu_wstrb(cpu_wstrb),
 
+        .bootloader_en(bootloader_en),
         .vdp_en(vdp_en),
         .vdp_write_en(vdp_write_en),
 
@@ -385,6 +397,7 @@ module ics32 #(
         .dma_address(dma_write_address),
         .dma_wstrb(dma_wstrb),
 
+        .bootloader_en(bootloader_en),
         .cpu_ram_en_decoded(cpu_ram_en_decoded),
         .cpu_ram_write_en_decoded(cpu_ram_write_en_decoded),
         .vdp_en(vdp_en),
@@ -404,6 +417,7 @@ module ics32 #(
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
         .pad_read_data(pad_read_data),
+        .bootloader_read_data(bootloader_read_data),
 
         .cpu_mem_ready(cpu_mem_ready),
         .cpu_read_data(cpu_read_data),

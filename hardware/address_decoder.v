@@ -18,6 +18,8 @@ module address_decoder #(
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
 
+    output reg bootloader_en,
+
     output reg vdp_en,
     output reg vdp_write_en,
 
@@ -67,6 +69,7 @@ module address_decoder #(
     reg cop_ram_en;
 
     always @* begin
+        bootloader_en = 0;
         cpu_ram_en = 0;
         cpu_ram_write_en = 0;
         flash_read_en = 0;
@@ -92,8 +95,8 @@ module address_decoder #(
                     3: dsp_en = 1;
                     4: pad_en = 1;
                     5: cop_ram_en = 1;
-                    // (BRAM / bootloader read...)
-                    6, 7: begin
+                    6: bootloader_en = 1;
+                    7: begin
                         `stop($display("unexepcted address: %x", cpu_address_s))
                     end
                 endcase    
