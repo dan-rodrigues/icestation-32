@@ -106,11 +106,7 @@ module bus_arbiter #(
         if (flash_read_en_r) begin
             cpu_ram_read_data_ps = flash_read_data;
         end else if (vdp_en) begin
-            // FIXME: no read to double the data bus here
-            // so long as the read addresses are 32bit aligned
-            // cpu_read_data = {{16{1'bx}}, vdp_read_data};
-
-            cpu_ram_read_data_ps = {2{vdp_read_data}};
+            cpu_ram_read_data_ps[15:0] = vdp_read_data;
         end else if (dsp_en) begin
             cpu_ram_read_data_ps = dsp_read_data;
         end else if (pad_en) begin
