@@ -6,24 +6,23 @@ PACKAGE = sg48
 
 YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
 
-BOOT = ../firmware/boot.bin
-BOOT_HEX = boot.hex
+BOOT_DIR = ../firmware/
+BOOT_HEX = $(BOOT_DIR)boot.hex
 
 include sources.mk
 
-all: $(PROJ).bit
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(PROJ).bit
 
-# FIXME
-$(BOOT):
-	$(MAKE) -C ../firmware
+pre-build:
+	@$(MAKE) -C $(BOOT_DIR)
 
-$(BOOT_HEX): $(BOOT)
-	./bin2hex.sh $(BOOT) > $(BOOT_HEX)
+###
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
-	yosys -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
+	yosys -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"' -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
 
-count: $(SOURCES)
+count: $(SOURCES) $(BOOT_HEX)
 	yosys -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -noflatten' $(SOURCES)
 
 %.asc: $(PIN_DEF) %.json
@@ -39,4 +38,5 @@ clean:
 	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bit $(PROJ).json
 
 .SECONDARY:
-.PHONY: all prog clean count
+.PHONY: main-build prog clean count
+

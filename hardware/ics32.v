@@ -10,7 +10,12 @@ module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
     parameter FORCE_FAST_CPU = 0,
     parameter integer RESET_DURATION = 1 << 10,
-    parameter ENABLE_IPL = 1
+    parameter ENABLE_IPL = 1, // !
+`ifdef BOOTLOADER
+    parameter BOOTLOADER_PATH = `BOOTLOADER
+`else
+    parameter BOOTLOADER_PATH = "boot.hex"
+`endif
 ) (
     input clk_12m,
 
@@ -45,7 +50,7 @@ module ics32 #(
     reg [31:0] bootloader_read_data;
 
     initial begin
-        $readmemh("/Users/dan.rodrigues/hw/ics-published/hardware/boot.hex", bootloader);
+        $readmemh(BOOTLOADER_PATH, bootloader);
     end
 
     always @(posedge vdp_clk) begin

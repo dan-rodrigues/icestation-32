@@ -6,23 +6,29 @@ COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 
 OPT_LEVEL := -Os
 
-CFLAGS = -Wall $(OPT_LEVEL) -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
+CFLAGS = -Wall $(OPT_LEVEL) -flto -march=rv32i -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
+ELF = boot.elf
 BIN = boot.bin
+HEX = boot.hex
+
 LDS = boot.lds
 
+$(HEX): $(BIN)
+	./bin2hex.sh $(BIN) > $(HEX)
+	
 $(BIN): boot.elf
-	$(CROSS)objcopy -O binary boot.elf $(BIN)
+	$(CROSS)objcopy -O binary $(ELF) $(BIN)
 
 dasm: boot.elf
-	$(CROSS)objdump -d $(DFLAGS) boot.elf > dasm
+	$(CROSS)objdump -d $(DFLAGS) $(ELF) > dasm
 
 boot.elf: $(SOURCES)
-	$(CROSS)gcc $(CFLAGS) -T $(LDS) -o boot.elf $(SOURCES) -lgcc
+	$(CROSS)gcc $(CFLAGS) -T $(LDS) -o $(ELF) $(SOURCES) -lgcc
 
 clean:
-	rm -f boot.elf $(BIN)
+	rm -f $(ELF) $(BIN) $(HEX)
 
 .PHONY: clean
 
