@@ -44,6 +44,10 @@ module ics32 #(
 
     reg [31:0] bootloader_read_data;
 
+    initial begin
+        $readmemh("/Users/dan.rodrigues/hw/ics-published/hardware/boot.hex", bootloader);
+    end
+
     always @(posedge vdp_clk) begin
         bootloader_read_data <= bootloader[cpu_address[7:2]];
     end
@@ -392,11 +396,6 @@ module ics32 #(
         .cpu_write_data(cpu_write_data),
         .cpu_wstrb(cpu_wstrb),
 
-        .dma_busy(dma_busy),
-        .dma_write_data(dma_write_data),
-        .dma_address(dma_write_address),
-        .dma_wstrb(dma_wstrb),
-
         .bootloader_en(bootloader_en),
         .cpu_ram_en_decoded(cpu_ram_en_decoded),
         .cpu_ram_write_en_decoded(cpu_ram_write_en_decoded),
@@ -450,7 +449,8 @@ module ics32 #(
         // MMIO DSP is used instead of the included PCPI implementation
         .ENABLE_FAST_MUL(0),
 
-        .PROGADDR_RESET(32'h0),
+        // .PROGADDR_RESET(32'h0),
+        .PROGADDR_RESET(32'h60000),
         // SP defined by software
         // .STACKADDR(32'h0001_0000),
         
@@ -493,11 +493,6 @@ module ics32 #(
 
     // --- Flash interface ---
 
-    wire [31:0] dma_write_data;
-    wire [3:0] dma_wstrb;
-    wire [31:0] dma_write_address;
-    wire dma_busy;
-
     wire flash_read_ready;
     wire [31:0] flash_read_data;
 
@@ -511,11 +506,6 @@ module ics32 #(
         .read_data(flash_read_data),
         .read_en(flash_read_en),
         .read_ready(flash_read_ready),
-
-        .write_address(dma_write_address),
-        .write_data(dma_write_data),
-        .dma_busy(dma_busy),
-        .wstrb(dma_wstrb),
 
         .flash_sck(flash_sck),
         .flash_csn(flash_csn),

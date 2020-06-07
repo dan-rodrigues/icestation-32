@@ -24,16 +24,6 @@ module flash_dma #(
     // separate to the above; this is intended to stall the CPU
     output reg read_ready,
 
-    // IPL DMA - writing to RAM for now but eventually anything else (shared bus)
-    output reg [31:0] write_address,
-    output [31:0] write_data,
-
-    // mimic picorv32 wstrb
-    output reg [3:0] wstrb,
-
-    // only used for IPL on startup to take control of bus
-    output reg dma_busy,
-
     // SPI flash
     output flash_sck,
     output flash_csn,
@@ -89,102 +79,15 @@ module flash_dma #(
         end
     end
 
-    // --- IPL DMA reader ---
-
-    reg [23:0] flash_read_index;
-
-    reg flash_loading;
-
-    reg flash_write_data_ready;
-    reg flash_write_ready_next;
-
-    reg [13:0] flash_read_counter;
-    reg [13:0] flash_read_length;
-
-    wire flash_input_valid = flash_ready && flash_loading;
-    wire flash_end_reached = flash_read_counter == flash_read_length;
-
-    // this reads an arbitrary number of bytes from flash controller
-    // then signals availability to the RAM writer below
-    always @(posedge clk) begin
-        if (reset) begin
-            if (ENABLE_IPL) begin
-                flash_read_index <= FLASH_LOAD_BASE;
-                flash_read_length <= FLASH_LOAD_LENGTH / 4;
-
-                flash_read_counter <= 0;
-                flash_loading <= 1;
-                flash_write_data_ready <= 0;
-            end else begin
-                flash_read_index <= 0;
-                flash_read_length <= 0;
-                flash_loading <= 0;
-            end
-        end else begin
-            flash_write_data_ready <= 0;
-
-            if (flash_input_valid && flash_write_ready_next) begin
-                if (!flash_end_reached) begin
-                    flash_read_counter <= flash_read_counter + 1;
-                    flash_write_data_ready <= 1;
-                end else begin
-                    flash_loading <= 0;
-                end
-            end
-        end
-    end
-
-    // --- IPL DMA writer ---
-
-    // this is probably getting removed in favour of just using 2x BRAM to store a bootloader
-    // then this doesn't need to be here and the SPRAM data / address selection can be removed
-    // there is a tradeoff as extra LUTs are needed on the CPU rdata but it does provide extra scratchpad 
-
-    always @(posedge clk) begin
-        if (reset) begin
-            if (ENABLE_IPL) begin
-                wstrb <= 0;
-                flash_write_ready_next <= 1'b1;
-                write_address <= FLASH_WRITE_BASE[15:2];
-
-                dma_busy <= 1;
-            end else begin
-                // it's assumed that the simulator will handle IPL
-                dma_busy <= 0;
-            end
-        end else begin
-            wstrb <= 0;
-            flash_write_ready_next <= 1;
-
-            // post-increment address after each write
-            if (wstrb[0]) begin
-                write_address <= write_address + 1;
-            end
-
-            if (flash_write_data_ready) begin
-                flash_write_ready_next <= 0;
-                wstrb <= 4'b1111;
-            end
-
-            if (!flash_loading) begin
-                // IPL is done so hand over control to CPU
-                dma_busy <= 0;
-            end
-        end
-    end
-
     // --- Flash memory (16Mbyte - 1Mbyte) ---
 
     reg [23:0] flash_address;
     reg flash_valid;
     reg flash_continue;
 
-    wire flash_source_dma = dma_busy;
-
     always @* begin
-        flash_address = flash_source_dma ? flash_read_index : cpu_read_address;
-        flash_valid = flash_source_dma ? flash_loading : cpu_needs_read;
-        flash_continue = flash_source_dma;
+        flash_address = cpu_read_address;
+        flash_valid = cpu_needs_read;
     end
 
     wire flash_ready;
@@ -192,14 +95,13 @@ module flash_dma #(
     wire [31:0] flash_data_out;
 
     // the flash controller will hold rdata for a while as it reads the next 8bits from flash
-    assign write_data = flash_data_out;
     assign read_data = flash_data_out;
 
     icosoc_flashmem flash(
         .clk(clk),
         .resetn(!reset),
 
-        .continue_reading(flash_continue),
+        .continue_reading(0),
         .valid(flash_valid),
         .ready(flash_ready),
         .addr(flash_address),

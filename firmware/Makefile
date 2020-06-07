@@ -18,11 +18,11 @@ $(BIN): boot.elf
 dasm: boot.elf
 	$(CROSS)objdump -d $(DFLAGS) boot.elf > dasm
 
-boot.elf: $(HEADERS) $(SOURCES)
+boot.elf: $(SOURCES)
 	$(CROSS)gcc $(CFLAGS) -T $(LDS) -o boot.elf $(SOURCES) -lgcc
 
 clean:
-	rm -f boot.elf boot.hex $(BIN)
+	rm -f boot.elf $(BIN)
 
-.PHONY: clean sim
+.PHONY: clean
 

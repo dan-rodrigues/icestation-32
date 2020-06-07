@@ -15,12 +15,6 @@ module bus_arbiter #(
     input [3:0] cpu_wstrb,
     input [15:0] cpu_address,
     input [31:0] cpu_write_data,
-    
-    // DMA inputs
-    input [15:0] dma_address,
-    input [31:0] dma_write_data,
-    input dma_busy,
-    input [3:0] dma_wstrb,
 
     // address decoder inputs
     input bootloader_en,
@@ -56,18 +50,18 @@ module bus_arbiter #(
     output cpu_ram_cs,
     output cpu_ram_write_en
 );
-    assign cpu_ram_wstrb = dma_busy ? dma_wstrb : {
+    assign cpu_ram_wstrb = {
         cpu_wstrb[3],
         cpu_wstrb[2],
         cpu_wstrb[1],
         cpu_wstrb[0]
     };
 
-    assign cpu_ram_write_en = dma_busy ? 1'b1 : cpu_ram_write_en_decoded;
-    assign cpu_ram_cs = dma_busy ? 1'b1 : cpu_ram_en_decoded;
+    assign cpu_ram_write_en = cpu_ram_write_en_decoded;
+    assign cpu_ram_cs = cpu_ram_en_decoded;
 
-    assign cpu_ram_write_data = dma_busy ? dma_write_data : cpu_write_data;
-    assign cpu_ram_address = dma_busy ? dma_address : cpu_address[15:2];
+    assign cpu_ram_write_data = cpu_write_data;
+    assign cpu_ram_address = cpu_address[15:2];
 
     wire cpu_ram_ready, peripheral_ready;
 
@@ -84,11 +78,7 @@ module bus_arbiter #(
     endgenerate
 
     always @(posedge clk) begin
-        if (dma_busy) begin
-            cpu_mem_ready <= 0;
-        end else begin
-            cpu_mem_ready <= cpu_ram_ready || flash_read_ready || peripheral_ready;
-        end
+        cpu_mem_ready <= cpu_ram_ready || flash_read_ready || peripheral_ready;
     end
 
     // needs registering due to timing

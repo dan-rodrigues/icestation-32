@@ -6,11 +6,21 @@ PACKAGE = sg48
 
 YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
 
+BOOT = ../firmware/boot.bin
+BOOT_HEX = boot.hex
+
 include sources.mk
 
 all: $(PROJ).bit
 
-$(PROJ).json: $(SOURCES)
+# FIXME
+$(BOOT):
+	$(MAKE) -C ../firmware
+
+$(BOOT_HEX): $(BOOT)
+	./bin2hex.sh $(BOOT) > $(BOOT_HEX)
+
+$(PROJ).json: $(SOURCES) $(BOOT_HEX)
 	yosys -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
 
 count: $(SOURCES)
