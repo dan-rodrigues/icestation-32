@@ -10,7 +10,7 @@ module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
     parameter FORCE_FAST_CPU = 0,
     parameter integer RESET_DURATION = 1 << 10,
-    parameter ENABLE_IPL = 1, // !
+    parameter ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
 `else
@@ -431,7 +431,7 @@ module ics32 #(
     // verilator lint_save
     // verilator lint_off PINMISSING
 
-    localparam CPU_RESET_PC = ENABLE_IPL ? 32'h60000 : 32'h00000;
+    localparam CPU_RESET_PC = ENABLE_BOOTLOADER ? 32'h60000 : 32'h00000;
 
     picorv32 #(
         .ENABLE_TRACE(0),

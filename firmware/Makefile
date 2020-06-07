@@ -4,9 +4,7 @@ SOURCES = boot.S
 
 COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 
-OPT_LEVEL := -Os
-
-CFLAGS = -Wall $(OPT_LEVEL) -flto -march=rv32i -ffreestanding -nostdlib
+CFLAGS = -Wall -flto -march=rv32i -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
 ELF = boot.elf
@@ -25,7 +23,7 @@ dasm: boot.elf
 	$(CROSS)objdump -d $(DFLAGS) $(ELF) > dasm
 
 boot.elf: $(SOURCES)
-	$(CROSS)gcc $(CFLAGS) -T $(LDS) -o $(ELF) $(SOURCES) -lgcc
+	$(CROSS)gcc $(CFLAGS) -T $(LDS) -o $(ELF) $(SOURCES)
 
 clean:
 	rm -f $(ELF) $(BIN) $(HEX)
