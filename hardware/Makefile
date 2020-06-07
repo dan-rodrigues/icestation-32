@@ -4,10 +4,11 @@ PIN_DEF = icebreaker.pcf
 DEVICE = up5k
 PACKAGE = sg48
 
-YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
-
 BOOT_DIR = ../firmware/
 BOOT_HEX = $(BOOT_DIR)boot.hex
+
+YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
+YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
 
 include sources.mk
 
@@ -20,10 +21,10 @@ pre-build:
 ###
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
-	yosys -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"' -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
+	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
 
 count: $(SOURCES) $(BOOT_HEX)
-	yosys -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -noflatten' $(SOURCES)
+	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -noflatten' $(SOURCES)
 
 %.asc: $(PIN_DEF) %.json
 	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --placer heap --pcf $< --asc $@ --pre-pack timing.py --seed 0
