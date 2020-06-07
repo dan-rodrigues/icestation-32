@@ -53,8 +53,8 @@ module ics32 #(
         $readmemh(BOOTLOADER_PATH, bootloader);
     end
 
-    always @(posedge vdp_clk) begin
-        bootloader_read_data <= bootloader[cpu_address[7:2]];
+    always @(posedge cpu_clk) begin
+        bootloader_read_data <= bootloader[cpu_address_1x[7:2]];
     end
 
     // --- LEDs ---
@@ -145,9 +145,7 @@ module ics32 #(
 
     // --- Address deccoder ---
 
-    wire bootloader_en;
     wire vdp_en, vdp_write_en;
-    wire cpu_ram_en_decoded, cpu_ram_write_en_decoded;
     wire status_en, status_write_en;
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
@@ -164,15 +162,11 @@ module ics32 #(
         .cpu_mem_valid(cpu_mem_valid),
         .cpu_wstrb(cpu_wstrb),
 
-        .bootloader_en(bootloader_en),
         .vdp_en(vdp_en),
         .vdp_write_en(vdp_write_en),
 
         .status_en(status_en),
         .status_write_en(status_write_en),
-
-        .cpu_ram_en(cpu_ram_en_decoded),
-        .cpu_ram_write_en(cpu_ram_write_en_decoded),
 
         .dsp_en(dsp_en),
         .dsp_write_en(dsp_write_en),
@@ -208,14 +202,77 @@ module ics32 #(
         .read_en(cop_ram_read_en)
     );
 
-    // --- 1x <-> 2x clock sync (if required) ---
+    // --- CPU 1x memory decoder / arbiter ---
 
     wire [23:0] cpu_address;
     wire cpu_mem_valid;
     wire [3:0] cpu_wstrb;
     wire [31:0] cpu_write_data;
 
-    localparam CPU_NEEDS_SYNC = ENABLE_WIDESCREEN;
+    wire bootloader_en;
+    wire cpu_ram_en, cpu_ram_write_en;
+
+    address_decoder decoder_1x(
+        .clk(cpu_clk),
+        .reset(reset_1x),
+
+        .cpu_address(cpu_address_1x),
+        .cpu_mem_valid(cpu_mem_valid_1x),
+        .cpu_wstrb(cpu_wstrb_1x),
+
+        .cpu_ram_en(cpu_ram_en),
+        .cpu_ram_write_en(cpu_ram_write_en),
+
+        .bootloader_en(bootloader_en)
+    );
+
+    wire [31:0] cpu_read_data_1x_arbiter;
+    wire cpu_mem_ready_1x_arbiter;
+
+    bus_arbiter #(
+        .SUPPORT_2X_CLK(0)
+    ) bus_arbiter_1x (
+        .clk(cpu_clk),
+
+        // inputs
+
+        .cpu_address(cpu_address_1x),
+        .cpu_write_data(cpu_write_data_1x),
+        .cpu_wstrb(cpu_wstrb_1x),
+
+        .bootloader_en(bootloader_en),
+        .cpu_ram_en(cpu_ram_en),
+        .vdp_en(0),
+        .flash_read_en(0),
+        .dsp_en(0),
+        .status_en(0),
+        .pad_en(0),
+        .cop_en(0),
+
+        .flash_read_ready(0),
+        .vdp_ready(0),
+
+        .bootloader_read_data(bootloader_read_data),
+        .cpu_ram_read_data(cpu_ram_read_data),
+        .flash_read_data(0),
+        .dsp_read_data(0),
+        .vdp_read_data(0),
+        .pad_read_data(0),
+
+        // outputs
+
+        .cpu_mem_ready(cpu_mem_ready_1x_arbiter),
+        .cpu_read_data(cpu_read_data_1x_arbiter)
+    );
+
+    // --- 1x <-> 2x clock sync (if required) ---
+
+    wire cpu_access_1x = bootloader_en || cpu_ram_en;
+    assign cpu_read_data_1x = cpu_access_1x ? cpu_read_data_1x_arbiter : cpu_read_data_2x_sync;
+    assign cpu_mem_ready_1x = cpu_access_1x ? cpu_mem_ready_1x_arbiter : cpu_mem_ready_2x_sync;
+
+    wire [31:0] cpu_read_data_2x_sync;
+    wire cpu_mem_ready_2x_sync;
 
     generate
         if (!ENABLE_FAST_CPU) begin
@@ -234,8 +291,8 @@ module ics32 #(
                 .cpu_read_data(cpu_read_data),
 
                 // 1x outputs (back to CPU)
-                .cpu_read_data_1x(cpu_read_data_1x),
-                .cpu_mem_ready_1x(cpu_mem_ready_1x),
+                .cpu_read_data_1x(cpu_read_data_2x_sync),
+                .cpu_mem_ready_1x(cpu_mem_ready_2x_sync),
 
                 // 2x outputs
                 .cpu_wstrb_2x(cpu_wstrb),
@@ -327,18 +384,18 @@ module ics32 #(
 
     // --- CPU RAM ---
 
-    wire [31:0] cpu_ram_data_out;
+    wire [31:0] cpu_ram_read_data;
 
     cpu_ram cpu_ram(
-        .clk(vdp_clk),
+        .clk(cpu_clk),
 
-        .address(cpu_address[15:2]),
-        .write_en(cpu_ram_write_en_decoded),
-        .cs(cpu_ram_en_decoded),
-        .wstrb(cpu_wstrb),
-        .write_data(cpu_write_data),
+        .address(cpu_address_1x[15:2]),
+        .write_en(cpu_ram_write_en),
+        .cs(cpu_ram_en),
+        .wstrb(cpu_wstrb_1x),
+        .write_data(cpu_write_data_1x),
 
-        .read_data(cpu_ram_data_out)
+        .read_data(cpu_ram_read_data)
     );
 
     // --- Gamepad reading --- (TODO, 3 buttons on breakout board for now)
@@ -392,9 +449,8 @@ module ics32 #(
         .cpu_write_data(cpu_write_data),
         .cpu_wstrb(cpu_wstrb),
 
-        .bootloader_en(bootloader_en),
-        .cpu_ram_en_decoded(cpu_ram_en_decoded),
-        .cpu_ram_write_en_decoded(cpu_ram_write_en_decoded),
+        .bootloader_en(0),
+        .cpu_ram_en(0),
         .vdp_en(vdp_en),
         .flash_read_en(flash_read_en),
         .dsp_en(dsp_en),
@@ -405,14 +461,14 @@ module ics32 #(
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
 
-        // outputs
-
-        .cpu_ram_read_data(cpu_ram_data_out),
+        .cpu_ram_read_data(0),
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
         .pad_read_data(pad_read_data),
-        .bootloader_read_data(bootloader_read_data),
+        .bootloader_read_data(0),
+
+        // outputs
 
         .cpu_mem_ready(cpu_mem_ready),
         .cpu_read_data(cpu_read_data)

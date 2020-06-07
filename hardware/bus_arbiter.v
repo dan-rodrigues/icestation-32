@@ -20,8 +20,7 @@ module bus_arbiter #(
     input bootloader_en,
     input vdp_en,
     input flash_read_en,
-    input cpu_ram_en_decoded,
-    input cpu_ram_write_en_decoded,
+    input cpu_ram_en,
     input dsp_en,
     input status_en,
     input pad_en,
@@ -49,10 +48,10 @@ module bus_arbiter #(
         // using !cpu_mem_ready only works if the CPU clk is full speed
         // (refactor this that cpu_mem_ready check is the only point of difference)
         if (!SUPPORT_2X_CLK) begin
-            assign cpu_ram_ready = cpu_ram_en_decoded && !cpu_mem_ready;
+            assign cpu_ram_ready = cpu_ram_en && !cpu_mem_ready;
             assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en) && !cpu_mem_ready;
         end else begin
-            assign cpu_ram_ready = cpu_ram_en_decoded;
+            assign cpu_ram_ready = cpu_ram_en;
             assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en);
         end
     endgenerate
