@@ -44,8 +44,6 @@ module vdp #(
     output line_ended,
     output frame_ended,
     output active_frame_ended,
-
-    output reg target_raster_hit,
     
     // VRAM interface
 
@@ -290,8 +288,6 @@ module vdp #(
                     0: layer_enable <= register_write_data[5:0];
                     1: layer_enable_alpha_over <= register_write_data[7:0];
                     2: scroll_use_wide_map <= register_write_data[3:0];
-                    3: target_raster_x <= register_write_data[10:0];
-                    4: target_raster_y <= register_write_data[9:0];
                     default: begin
                         `stop($display("unimplemented register: %x", register_write_address);)
                     end
@@ -329,20 +325,6 @@ module vdp #(
                 sprite_metadata_block_select_nx = 3'b001;
             end
         end
-    end
-
-    // --- Raster count target ---
-
-    reg [10:0] target_raster_x;
-    reg [9:0] target_raster_y;
-
-    wire target_raster_x_hit = target_raster_x == raster_x;
-    wire target_raster_y_hit = target_raster_y == raster_y;
-
-    wire target_raster_hit_nx = target_raster_x_hit && target_raster_y_hit;
-
-    always @(posedge clk) begin
-        target_raster_hit <= target_raster_hit_nx;
     end
 
     // --- Affine layer register mapping ---

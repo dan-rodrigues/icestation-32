@@ -157,14 +157,6 @@ void vdp_set_wide_map_layers(VDPLayer layers) {
     VDP_SCROLL_WIDE_MAP_ENABLE = layers;
 }
 
-void vdp_set_target_raster_x(uint16_t x) {
-    VDP_TARGET_RASTER_X = x;
-}
-
-void vdp_set_target_raster_y(uint16_t y) {
-    VDP_TARGET_RASTER_Y = y;
-}
-
 void vdp_set_affine_matrix(int16_t a, int16_t b, int16_t c, int16_t d) {
     VDP_MATRIX_A = a;
     VDP_MATRIX_B = b;

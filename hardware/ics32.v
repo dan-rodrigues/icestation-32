@@ -257,13 +257,11 @@ module ics32 #(
     // --- VDP ---
 
     wire vdp_active_frame_ended;
-    wire vdp_target_raster_hit;
 
     wire [6:0] vdp_write_address = {cpu_address[15:2], cpu_wstrb[2]};
 
     wire vdp_read_en = vdp_en && !vdp_write_en;
 
-    // FIXME: this isn't actually used???
     wire [15:0] vdp_read_data;
     wire vdp_ready;
 
@@ -298,7 +296,6 @@ module ics32 #(
         .b(vga_b),
 
         .active_display(active_display),
-        .target_raster_hit(vdp_target_raster_hit),
         .active_frame_ended(vdp_active_frame_ended),
         
         .vram_address_even(vram_address_even),
