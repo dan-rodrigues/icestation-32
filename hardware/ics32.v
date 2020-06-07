@@ -335,11 +335,11 @@ module ics32 #(
     cpu_ram cpu_ram(
         .clk(vdp_clk),
 
-        .address(cpu_ram_address),
-        .write_en(cpu_ram_write_en),
-        .cs(cpu_ram_cs),
-        .wstrb(cpu_ram_wstrb),
-        .write_data(cpu_ram_data_in),
+        .address(cpu_address[15:2]),
+        .write_en(cpu_ram_write_en_decoded),
+        .cs(cpu_ram_en_decoded),
+        .wstrb(cpu_wstrb),
+        .write_data(cpu_write_data),
 
         .read_data(cpu_ram_data_out)
     );
@@ -384,12 +384,6 @@ module ics32 #(
     wire [31:0] cpu_read_data;
     wire cpu_mem_ready;
 
-    wire [31:0] cpu_ram_data_in;
-    wire [14:0] cpu_ram_address;
-    wire [3:0] cpu_ram_wstrb;
-    wire cpu_ram_cs;
-    wire cpu_ram_write_en;
-
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU)
     ) bus_arbiter (
@@ -424,13 +418,7 @@ module ics32 #(
         .bootloader_read_data(bootloader_read_data),
 
         .cpu_mem_ready(cpu_mem_ready),
-        .cpu_read_data(cpu_read_data),
-
-        .cpu_ram_write_data(cpu_ram_data_in),
-        .cpu_ram_address(cpu_ram_address),
-        .cpu_ram_wstrb(cpu_ram_wstrb),
-        .cpu_ram_cs(cpu_ram_cs),
-        .cpu_ram_write_en(cpu_ram_write_en)
+        .cpu_read_data(cpu_read_data)
     );
 
     // --- CPU ---
@@ -446,6 +434,8 @@ module ics32 #(
     // verilator lint_save
     // verilator lint_off PINMISSING
 
+    localparam CPU_RESET_PC = ENABLE_IPL ? 32'h60000 : 32'h00000;
+
     picorv32 #(
         .ENABLE_TRACE(0),
         // register file gets inferred as BRAMs so using rv32e has little practical gain
@@ -454,8 +444,7 @@ module ics32 #(
         // MMIO DSP is used instead of the included PCPI implementation
         .ENABLE_FAST_MUL(0),
 
-        // .PROGADDR_RESET(32'h0),
-        .PROGADDR_RESET(32'h60000),
+        .PROGADDR_RESET(CPU_RESET_PC),
         // SP defined by software
         // .STACKADDR(32'h0001_0000),
         
@@ -501,9 +490,7 @@ module ics32 #(
     wire flash_read_ready;
     wire [31:0] flash_read_data;
 
-    flash_dma #(
-        .ENABLE_IPL(ENABLE_IPL)
-    ) dma (
+    flash_dma flash_dma(
         .clk(vdp_clk),
         .reset(vdp_reset),
 

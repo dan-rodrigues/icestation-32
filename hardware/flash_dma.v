@@ -11,9 +11,7 @@
 // this is being minimised when the BRAM-based software IPL is added
 // that would make this hardware IPL redundant
 
-module flash_dma #(
-    parameter ENABLE_IPL = 1
-) (
+module flash_dma (
     input clk,
     input reset,
 
@@ -31,12 +29,6 @@ module flash_dma #(
     input flash_miso
 );
     localparam FLASH_USER_BASE = 24'h100000;
-
-    // IPL parameters
-
-    localparam FLASH_LOAD_BASE = 24'h100000;
-    localparam FLASH_LOAD_LENGTH = 16'he800;
-    localparam FLASH_WRITE_BASE = 16'h0000;
 
     // --- CPU random access of flash memory ---
 
@@ -81,17 +73,7 @@ module flash_dma #(
 
     // --- Flash memory (16Mbyte - 1Mbyte) ---
 
-    reg [23:0] flash_address;
-    reg flash_valid;
-    reg flash_continue;
-
-    always @* begin
-        flash_address = cpu_read_address;
-        flash_valid = cpu_needs_read;
-    end
-
     wire flash_ready;
-
     wire [31:0] flash_data_out;
 
     // the flash controller will hold rdata for a while as it reads the next 8bits from flash
@@ -102,9 +84,9 @@ module flash_dma #(
         .resetn(!reset),
 
         .continue_reading(0),
-        .valid(flash_valid),
+        .valid(cpu_needs_read),
         .ready(flash_ready),
-        .addr(flash_address),
+        .addr(cpu_read_address),
         .rdata(flash_data_out),
         
         .spi_cs(flash_csn),

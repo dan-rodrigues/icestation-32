@@ -41,30 +41,10 @@ module bus_arbiter #(
 
     // CPU outputs
     output reg cpu_mem_ready,
-    output [31:0] cpu_read_data,
-
-    // RAM outputs
-    output [31:0] cpu_ram_write_data,
-    output [15:0] cpu_ram_address,
-    output [3:0] cpu_ram_wstrb,
-    output cpu_ram_cs,
-    output cpu_ram_write_en
+    output [31:0] cpu_read_data
 );
-    assign cpu_ram_wstrb = {
-        cpu_wstrb[3],
-        cpu_wstrb[2],
-        cpu_wstrb[1],
-        cpu_wstrb[0]
-    };
-
-    assign cpu_ram_write_en = cpu_ram_write_en_decoded;
-    assign cpu_ram_cs = cpu_ram_en_decoded;
-
-    assign cpu_ram_write_data = cpu_write_data;
-    assign cpu_ram_address = cpu_address[15:2];
-
     wire cpu_ram_ready, peripheral_ready;
-
+    
     generate
         // using !cpu_mem_ready only works if the CPU clk is full speed
         // (refactor this that cpu_mem_ready check is the only point of difference)
