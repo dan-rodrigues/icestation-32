@@ -2,3 +2,8 @@
 
 .DS_Store
 
+# Waves
+
+*.vcd
+*.gtkw
+
