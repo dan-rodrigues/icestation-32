@@ -48,7 +48,7 @@ module pll #(
     );
 `else
     // these are directly assigned to in the verilator testbench
-    reg clk_1x_r; // = 0;
+    reg clk_1x_r = 0;
 
     // reg clk_2x_r; // = 0;
 
@@ -59,7 +59,7 @@ module pll #(
     assign clk_2x = clk_2x_r;
     assign locked = 1;
 
-    always @(posedge clk_2x_r) begin
+    always @(posedge clk_12m) begin
         clk_1x_r <= !clk_1x_r;
     end
 

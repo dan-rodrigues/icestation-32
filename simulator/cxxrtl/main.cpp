@@ -53,7 +53,7 @@ int main(int argc, const char * argv[]) {
     for (uint16_t i = 0; i < ipl_load_length / 4; i++) {
         uint16_t low_word = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
         uint16_t high_word = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
-        
+
         cpu_ram0[i] = value<16>{low_word};
         cpu_ram1[i] = value<16>{high_word};
 
@@ -64,6 +64,10 @@ int main(int argc, const char * argv[]) {
         flash[flash_base + 2] = value<8>{(uint8_t)(high_word & 0xff)};
         flash[flash_base + 3] = value<8>{(uint8_t)(high_word >> 8)};
     }
+
+    /// TEST:
+    std::cout << "std: " << top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem[0] << "\n";
+    std::cout << "std: " << top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem[0] << "\n";
 
     // video setup
 
@@ -104,11 +108,20 @@ int main(int argc, const char * argv[]) {
     bool vga_vsync_previous;
     bool even_frame = true;
 
-    while (true) {
+    int duration = 100;
+    int steps = 0;
+
+    while (steps++ < duration) {
         top.p_clk__12m = value<1>{0u};
         top.step();
         top.p_clk__12m = value<1>{1u};
         top.step();
+
+        std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
+        std::cout << "memaddr: " << top.p_ics32_2e_pico_2e_mem__addr << "\n";
+        std::cout << "memvalid: " << top.p_ics32_2e_pico_2e_mem__valid << "\n";
+        std::cout << "memrdy ???: " << top.p_ics32_2e_bus__arbiter_2e_cpu__mem__ready << "\n";
+        std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
 
         auto round_color = [] (uint8_t component) {
             return component | component << 4;
@@ -122,6 +135,10 @@ int main(int argc, const char * argv[]) {
         if (top.p_vga__hsync.curr.data[0] && !vga_hsync_previous) {
             current_x = 0;
             current_y++;
+
+            std::cout << "line c: " << current_y << "\n";
+//            std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
+//            std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
         }
 
         vga_hsync_previous = top.p_vga__hsync.curr.data[0];
@@ -156,52 +173,3 @@ int main(int argc, const char * argv[]) {
 
     return EXIT_SUCCESS;
 }
-
-/*
-
- #include <iostream>
-
- #include EXAMPLE_TOP
-
- using namespace std;
-
- int main()
- {
- cxxrtl_design::p_ExampleTop top;
-
- int prev_led_red, prev_led_green, prev_led_blue;
-
- top.step();
- for(int i=0;i<1000000;++i){
- top.p_osc__clk__in = value<1>{0u};
- top.step();
- top.p_osc__clk__in = value<1>{1u};
- top.step();
-
- int cur_led_red = top.p_led__red.curr.data[0];
-
- if (cur_led_red != prev_led_red){
- cout << "led_red: " << cur_led_red << endl;
- }
-
- int cur_led_green = top.p_led__green.curr.data[0];
-
- if (cur_led_green != prev_led_green){
- cout << "led_green: " << cur_led_green << endl;
- }
-
- int cur_led_blue = top.p_led__blue.curr.data[0];
-
- if (cur_led_blue != prev_led_blue){
- cout << "led_blue: " << cur_led_blue << endl;
- }
-
-
- prev_led_red = cur_led_red;
- prev_led_green = cur_led_green;
- prev_led_blue = cur_led_blue;
- }
- }
-
-
- */

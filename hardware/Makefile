@@ -29,7 +29,14 @@ cxxrtl_sim: cxxrtl_sim.cpp $(CXXRTL_SRCS)
 	g++ -std=c++14 -O3 -I/Users/dan.rodrigues/hw/icetools/yosys $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
 cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
-	yosys -p 'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); techmap -autoproc -map ./cells_sim.v; hierarchy -check -top ics32_tb; prep -top ics32_tb; flatten; opt; write_cxxrtl -O0 $@'
+	yosys -p \
+		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
+		read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); \
+		techmap -autoproc -map ./cells_sim.v; \
+		hierarchy -check -top ics32_tb; \
+		prep -top ics32_tb -flatten; \
+		memory -nomap; \
+		write_cxxrtl -O5 $@'
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
 	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
