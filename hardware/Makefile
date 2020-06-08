@@ -10,6 +10,8 @@ BOOT_HEX = $(BOOT_DIR)boot.hex
 YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
 YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
 
+CXXRTL_SRCS = ../simulator/cxxrtl/main.cpp
+
 include sources.mk
 
 main-build: pre-build
@@ -21,10 +23,10 @@ pre-build:
 ###
 
 cxxrtl_sim: cxxrtl_sim.cpp
-	g++ -std=c++11 -I/Users/dan.rodrigues/hw/icetools/yosys cxxrtl_sim.cpp -o $@
+	g++ -std=c++14 -I/Users/dan.rodrigues/hw/icetools/yosys $(CXXRTL_SRCS) -o $@
 
 cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
-	yosys -p 'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; read_verilog $(SOURCES);  techmap -autoproc -map +/ice40/cells_sim.v; hierarchy -check -top ics32; prep -top ics32; write_cxxrtl -O0 $@'
+	yosys -p 'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; read_verilog $(SOURCES); techmap -autoproc -map ./cells_sim.v; hierarchy -check -top ics32; prep -top ics32 -flatten; write_cxxrtl -O0 $@'
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
 	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
