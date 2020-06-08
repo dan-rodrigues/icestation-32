@@ -461,12 +461,12 @@ module ics32 #(
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
 
+        .bootloader_read_data(0),
         .cpu_ram_read_data(0),
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
         .pad_read_data(pad_read_data),
-        .bootloader_read_data(0),
 
         // outputs
 
