@@ -79,18 +79,18 @@ module bus_arbiter #(
         end
 
         // ...
-        
-        if (flash_read_en_r) begin
+
+        if (flash_read_en_r && SUPPORT_2X_CLK) begin
             cpu_read_data_ps = flash_read_data;
-        end else if (vdp_en) begin
+        end else if (vdp_en && SUPPORT_2X_CLK) begin
             cpu_read_data_ps[15:0] = vdp_read_data;
-        end else if (dsp_en) begin
+        end else if (dsp_en && SUPPORT_2X_CLK) begin
             cpu_read_data_ps = dsp_read_data;
-        end else if (pad_en) begin
+        end else if (pad_en && SUPPORT_2X_CLK) begin
             cpu_read_data_ps[1:0] = pad_read_data;
-        end else if (bootloader_en) begin
+        end else if (bootloader_en && !SUPPORT_2X_CLK) begin
             cpu_read_data_ps = bootloader_read_data;
-        end else if (cpu_ram_en) begin
+        end else if (cpu_ram_en  && !SUPPORT_2X_CLK) begin
             cpu_read_data_ps = cpu_ram_read_data;
         end
     end
@@ -170,5 +170,31 @@ endmodule
      SB_DFF                         34
      SB_LUT4                        69
 
+WITH the && param stuff
 
+=== ics32 ===
+
+   Number of wires:               4611
+   Number of wire bits:          36641
+   Number of public wires:        4611
+   Number of public wire bits:   36641
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               6056
+     SB_CARRY                      549
+     SB_DFF                        879
+     SB_DFFE                       973
+     SB_DFFESR                     211
+     SB_DFFESS                      21
+     SB_DFFN                        77
+     SB_DFFNESR                     11
+     SB_DFFSR                      150
+     SB_DFFSS                       30
+     SB_LUT4                      3115
+     SB_MAC16                        7
+     SB_PLL40_2F_PAD                 1
+     SB_RAM40_4K                    28
+     SB_SPRAM256KA                   4
+     
      */
