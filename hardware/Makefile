@@ -22,11 +22,15 @@ pre-build:
 
 ###
 
+# new cxxrtl stuff, to cleanup at some point
+
 CXXRTL_CFLAGS := $(shell sdl2-config --cflags)
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
+CXXRTL_OPT = -O3
+CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
 
 cxxrtl_sim: cxxrtl_sim.cpp $(CXXRTL_SRCS)
-	g++ -std=c++14 -O3 -I/Users/dan.rodrigues/hw/icetools/yosys $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
+	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
 cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
@@ -36,7 +40,9 @@ cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
 		hierarchy -check -top ics32_tb; \
 		prep -top ics32_tb -flatten; \
 		memory -nomap; \
-		write_cxxrtl -O5 $@'
+		write_cxxrtl -O0 $@'
+
+###
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
 	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)

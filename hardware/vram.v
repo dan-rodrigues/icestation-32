@@ -13,11 +13,12 @@ module vram(
 
     output [31:0] read_data
 );
-    // maybe
+    // this didn't resolve the original errors
     wire [15:0] low, high;
     // assign read_data = {high, low};
 
-    // the included yosys cells_sim implementation does not play nice with either yosys/cxxrtl
+    // this is/was needed to work around some errors
+    // cpu_ram.v also uses SPRAM has has no such problems? need to look into points of difference
 `ifdef VERILATOR
     reg [15:0] ram0 [0:32767];
     reg [15:0] ram1 [0:32767];

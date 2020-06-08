@@ -48,7 +48,7 @@ module pll #(
     );
 `else
     // these are directly assigned to in the verilator testbench
-    reg clk_1x_r = 0;
+    reg clk_1x_r = 1;
 
     // reg clk_2x_r; // = 0;
 

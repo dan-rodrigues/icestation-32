@@ -37,19 +37,21 @@ module reset_generator #(
         end else begin
             if (counter != DURATION) begin
                 counter <= counter + 1;
-            end else if (!clk_1x) begin
+            end else /*if (!clk_1x)*/ begin
                 // ensure that both reset_1x and reset_2x occur on the same rising edge
                 reset <= 0;
             end
         end
     end
 
-    always @(posedge clk_1x) begin
-        reset_1x <= reset;
-    end
+    // always @(posedge clk_1x) begin
+    //     reset_1x <= reset;
+    // end
 
     always @(posedge clk_2x) begin
         reset_2x <= reset;
+        // ...
+        reset_1x <= reset;
     end
 
 endmodule

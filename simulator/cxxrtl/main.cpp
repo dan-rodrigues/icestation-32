@@ -1,4 +1,5 @@
-#include "../../hardware/cxxrtl_sim.cpp" // FIXME
+// (cleanup simulator directory structure if there's going to be 2 sim options)
+#include "../../hardware/cxxrtl_sim.cpp"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -65,10 +66,6 @@ int main(int argc, const char * argv[]) {
         flash[flash_base + 3] = value<8>{(uint8_t)(high_word >> 8)};
     }
 
-    /// TEST:
-    std::cout << "std: " << top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem[0] << "\n";
-    std::cout << "std: " << top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem[0] << "\n";
-
     // video setup
 
     top.p_clk__12m = value<1>{0u};
@@ -108,8 +105,10 @@ int main(int argc, const char * argv[]) {
     bool vga_vsync_previous;
     bool even_frame = true;
 
-    int duration = 100;
+    int duration = INT_MAX;
     int steps = 0;
+
+    bool log = false;
 
     while (steps++ < duration) {
         top.p_clk__12m = value<1>{0u};
@@ -117,11 +116,24 @@ int main(int argc, const char * argv[]) {
         top.p_clk__12m = value<1>{1u};
         top.step();
 
-        std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
-        std::cout << "memaddr: " << top.p_ics32_2e_pico_2e_mem__addr << "\n";
-        std::cout << "memvalid: " << top.p_ics32_2e_pico_2e_mem__valid << "\n";
-        std::cout << "memrdy ???: " << top.p_ics32_2e_bus__arbiter_2e_cpu__mem__ready << "\n";
-        std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
+        // quick and dirty logs for now
+        if (log) {
+            std::cout << "clk1x: " << top.p_ics32_2e_pll_2e_clk__1x__r << "\n";
+            std::cout << "clk2x: " << top.p_vga__clk << "\n";
+
+            std::cout << "memaddr: " << top.p_ics32_2e_pico_2e_mem__addr << "\n";
+
+            std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
+            std::cout << "memaddr: " << top.p_ics32_2e_pico_2e_mem__addr << "\n";
+            std::cout << "memvalid: " << top.p_ics32_2e_pico_2e_mem__valid << "\n";
+
+            std::cout << "reset out2x: " << top.p_ics32_2e_reset__generator_2e_reset__2x << "\n";
+
+            std::cout << "reset ctr: " << top.p_ics32_2e_reset__generator_2e_counter << "\n";
+            std::cout << "reset core: " << top.p_ics32_2e_reset__generator_2e_reset << "\n";
+
+            std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
+        }
 
         auto round_color = [] (uint8_t component) {
             return component | component << 4;
@@ -137,8 +149,8 @@ int main(int argc, const char * argv[]) {
             current_y++;
 
             std::cout << "line c: " << current_y << "\n";
-//            std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
-//            std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
+            std::cout << "pc: " << top.p_ics32_2e_pico_2e_reg__pc << "\n";
+            std::cout << "trap: " << top.p_ics32_2e_pico_2e_trap << "\n";
         }
 
         vga_hsync_previous = top.p_vga__hsync.curr.data[0];
@@ -155,9 +167,9 @@ int main(int argc, const char * argv[]) {
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-//            top.p_btn3 = value<1>(state[SDL_SCANCODE_LEFT]);
-//            top.p_btn2 = value<1>(state[SDL_SCANCODE_RSHIFT]);
-//            top.p_btn1 = value<1>(state[SDL_SCANCODE_RIGHT]);
+            //            top.p_btn3 = value<1>(state[SDL_SCANCODE_LEFT]);
+            //            top.p_btn2 = value<1>(state[SDL_SCANCODE_RSHIFT]);
+            //            top.p_btn1 = value<1>(state[SDL_SCANCODE_RIGHT]);
         }
 
         vga_vsync_previous = top.p_vga__vsync.curr.data[0];
