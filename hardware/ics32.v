@@ -230,7 +230,8 @@ module ics32 #(
     wire cpu_mem_ready_1x_arbiter;
 
     bus_arbiter #(
-        .SUPPORT_2X_CLK(0)
+        .SUPPORT_2X_CLK(0),
+        .DEFAULT_CPU_RAM_READ(1)
     ) bus_arbiter_1x (
         .clk(cpu_clk),
 
@@ -439,7 +440,8 @@ module ics32 #(
     wire cpu_mem_ready;
 
     bus_arbiter #(
-        .SUPPORT_2X_CLK(!ENABLE_FAST_CPU)
+        .SUPPORT_2X_CLK(!ENABLE_FAST_CPU),
+        .DEFAULT_CPU_RAM_READ(0)
     ) bus_arbiter (
         .clk(vdp_clk),
 
