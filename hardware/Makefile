@@ -20,6 +20,12 @@ pre-build:
 
 ###
 
+cxxrtl_sim: cxxrtl_sim.cpp
+	g++ -std=c++11 -I/Users/dan.rodrigues/hw/icetools/yosys cxxrtl_sim.cpp -o $@
+
+cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
+	yosys -p 'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; read_verilog $(SOURCES);  techmap -autoproc -map +/ice40/cells_sim.v; hierarchy -check -top ics32; prep -top ics32; write_cxxrtl -O0 $@'
+
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
 	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
 
@@ -38,6 +44,5 @@ prog: $(PROJ).bit
 clean:
 	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bit $(PROJ).json
 
-.SECONDARY:
 .PHONY: main-build prog clean count
 

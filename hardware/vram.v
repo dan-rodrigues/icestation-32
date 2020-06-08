@@ -13,6 +13,31 @@ module vram(
 
     output [31:0] read_data
 );
+    // maybe
+    wire [15:0] low, high;
+    // assign read_data = {high, low};
+
+    // the included yosys cells_sim implementation does not play nice with either yosys/cxxrtl
+`ifdef VERILATOR
+    reg [15:0] ram0 [0:32767];
+    reg [15:0] ram1 [0:32767];
+
+    reg [15:0] read_even, read_odd;
+    assign read_data = {read_odd, read_even};
+
+    always @(posedge clk) begin
+        if (even_write_en) begin
+            ram0[even_address] <= write_data[15:0];
+        end
+        if (odd_write_en) begin
+            ram1[odd_address] <= write_data[31:16];
+        end
+
+        read_even <= ram0[even_address];
+        read_odd <= ram1[odd_address];
+    end
+
+`else
     SB_SPRAM256KA ram0 (
         .ADDRESS(even_address),
         .DATAIN(write_data[15:0]),
@@ -23,7 +48,7 @@ module vram(
         .STANDBY(1'b0),
         .SLEEP(1'b0),
         .POWEROFF(1'b1),
-        .DATAOUT(read_data[15:0])
+        .DATAOUT(low)
     );
 
     SB_SPRAM256KA ram1 (
@@ -36,7 +61,8 @@ module vram(
         .STANDBY(1'b0),
         .SLEEP(1'b0),
         .POWEROFF(1'b1),
-        .DATAOUT(read_data[31:16])
+        .DATAOUT(high)
     );
+`endif
 
 endmodule
