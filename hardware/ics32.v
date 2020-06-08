@@ -233,7 +233,6 @@ module ics32 #(
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(0),
-        .DEFAULT_CPU_RAM_READ(1),
         .READ_SOURCES(BA_CPU_RAM | BA_BOOT)
     ) bus_arbiter_1x (
         .clk(cpu_clk),
@@ -444,7 +443,6 @@ module ics32 #(
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU),
-        .DEFAULT_CPU_RAM_READ(0),
         .READ_SOURCES(BA_VDP | BA_FLASH | BA_DSP | BA_PAD)
     ) bus_arbiter (
         .clk(vdp_clk),
