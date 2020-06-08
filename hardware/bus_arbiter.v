@@ -6,9 +6,12 @@
 
 `default_nettype none
 
+`include "bus_arbiter.vh"
+
 module bus_arbiter #(
     parameter SUPPORT_2X_CLK = 0,
-    parameter DEFAULT_CPU_RAM_READ = 0
+    parameter DEFAULT_CPU_RAM_READ = 0,
+    parameter READ_SOURCES = BA_ALL
 ) (
     input clk,
 
@@ -45,15 +48,16 @@ module bus_arbiter #(
 );
     wire cpu_ram_ready, peripheral_ready;
     
+    wire any_peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en);
+
     generate
-        // using !cpu_mem_ready only works if the CPU clk is full speed
-        // (refactor this that cpu_mem_ready check is the only point of difference)
+        // using !cpu_mem_ready only works in CPU clk is full speed
         if (!SUPPORT_2X_CLK) begin
             assign cpu_ram_ready = cpu_ram_en && !cpu_mem_ready;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en) && !cpu_mem_ready;
+            assign peripheral_ready = any_peripheral_ready && !cpu_mem_ready;
         end else begin
             assign cpu_ram_ready = cpu_ram_en;
-            assign peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en);
+            assign peripheral_ready = any_peripheral_ready;
         end
     endgenerate
 
@@ -72,25 +76,29 @@ module bus_arbiter #(
     assign cpu_read_data = cpu_read_data_s;
 
     always @* begin
-        if (DEFAULT_CPU_RAM_READ) begin
+        if (READ_SOURCES & BA_CPU_RAM) begin
             cpu_read_data_ps = cpu_ram_read_data;
-        end else begin
+        end else if (READ_SOURCES & BA_FLASH) begin
             cpu_read_data_ps = flash_read_data;
+        end else begin
+            cpu_read_data_ps = 'bx;
         end
 
-        // ...
+        // the && with the parameters looks strange here but without it, it doesn't get optimized
+        // providing constants for the *_en inputs does not optimize as desired
+        // doing the && at the parameter level does work as expected though and reduces *flattened* cell count
 
-        if (flash_read_en_r && SUPPORT_2X_CLK) begin
+        if (flash_read_en_r && (READ_SOURCES & BA_FLASH)) begin
             cpu_read_data_ps = flash_read_data;
-        end else if (vdp_en && SUPPORT_2X_CLK) begin
+        end else if (vdp_en && (READ_SOURCES & BA_VDP)) begin
             cpu_read_data_ps[15:0] = vdp_read_data;
-        end else if (dsp_en && SUPPORT_2X_CLK) begin
+        end else if (dsp_en && (READ_SOURCES & BA_DSP)) begin
             cpu_read_data_ps = dsp_read_data;
-        end else if (pad_en && SUPPORT_2X_CLK) begin
+        end else if (pad_en && (READ_SOURCES & BA_PAD)) begin
             cpu_read_data_ps[1:0] = pad_read_data;
-        end else if (bootloader_en && !SUPPORT_2X_CLK) begin
+        end else if (bootloader_en && (READ_SOURCES & BA_BOOT)) begin
             cpu_read_data_ps = bootloader_read_data;
-        end else if (cpu_ram_en  && !SUPPORT_2X_CLK) begin
+        end else if (cpu_ram_en && (READ_SOURCES & BA_CPU_RAM)) begin
             cpu_read_data_ps = cpu_ram_read_data;
         end
     end
@@ -114,87 +122,3 @@ module bus_arbiter #(
     endgenerate
 
 endmodule
-
-/*
-=== $paramod\bus_arbiter\SUPPORT_2X_CLK=0 ===
-
-   Number of wires:                111
-   Number of wire bits:            393
-   Number of public wires:         111
-   Number of public wire bits:     393
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:                120
-     SB_DFF                          2
-     SB_LUT4                       118
-
-=== $paramod\bus_arbiter\SUPPORT_2X_CLK=1'1 ===
-
-   Number of wires:                113
-   Number of wire bits:            426
-   Number of public wires:         113
-   Number of public wire bits:     426
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:                152
-     SB_DFF                         34
-     SB_LUT4                       118
-
-     vs.
-
-=== $paramod\bus_arbiter\SUPPORT_2X_CLK=0 ===
-
-   Number of wires:                 27
-   Number of wire bits:            309
-   Number of public wires:          27
-   Number of public wire bits:     309
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:                 36
-     SB_DFF                          1
-     SB_LUT4                        35
-
-=== $paramod\bus_arbiter\SUPPORT_2X_CLK=1'1 ===
-
-   Number of wires:                 64
-   Number of wire bits:            377
-   Number of public wires:          64
-   Number of public wire bits:     377
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:                103
-     SB_DFF                         34
-     SB_LUT4                        69
-
-WITH the && param stuff
-
-=== ics32 ===
-
-   Number of wires:               4611
-   Number of wire bits:          36641
-   Number of public wires:        4611
-   Number of public wire bits:   36641
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:               6056
-     SB_CARRY                      549
-     SB_DFF                        879
-     SB_DFFE                       973
-     SB_DFFESR                     211
-     SB_DFFESS                      21
-     SB_DFFN                        77
-     SB_DFFNESR                     11
-     SB_DFFSR                      150
-     SB_DFFSS                       30
-     SB_LUT4                      3115
-     SB_MAC16                        7
-     SB_PLL40_2F_PAD                 1
-     SB_RAM40_4K                    28
-     SB_SPRAM256KA                   4
-     
-     */
