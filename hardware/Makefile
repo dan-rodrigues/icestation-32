@@ -35,11 +35,8 @@ cxxrtl_sim: cxxrtl_sim.cpp $(CXXRTL_SRCS)
 cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
 		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
-		read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); \
-		techmap -autoproc -map ./cells_sim.v; \
-		hierarchy -check -top ics32_tb; \
-		prep -top ics32_tb -flatten; \
-		memory -nomap; \
+		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
+		proc; flatten; \
 		write_cxxrtl -O0 $@'
 
 ###
