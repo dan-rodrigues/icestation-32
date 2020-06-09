@@ -24,7 +24,7 @@ module ics32_tb(
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
-        .FORCE_FAST_CPU(1),
+        .FORCE_FAST_CPU(0),
         .RESET_DURATION(4),
         .ENABLE_BOOTLOADER(1)
     ) ics32 (

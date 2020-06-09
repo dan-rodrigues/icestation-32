@@ -48,11 +48,10 @@ module pll #(
     );
 `else
     // these are directly assigned to in the verilator testbench
-    reg clk_1x_r = 1;
-
-    // reg clk_2x_r; // = 0;
+    reg clk_1x_r = 0;
 
     // not 12M in sim*
+    // reg clk_2x_r; // = 0;
     wire clk_2x_r = clk_12m;
 
     assign clk_1x = clk_1x_r;
@@ -60,7 +59,8 @@ module pll #(
     assign locked = 1;
 
     always @(posedge clk_12m) begin
-        clk_1x_r <= !clk_1x_r;
+    // always @(posedge clk_2x_r) begin
+        clk_1x_r = !clk_1x_r;
     end
 
 `endif
