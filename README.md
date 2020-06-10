@@ -32,7 +32,9 @@ This repo is still in its early stages and its and contents (including this READ
 * yosys
 * nextpnr-ice40
 * icetools
-* GNU RISC-V toolchain
+* GNU RISC-V toolchain (newlib)
+
+While the RISC-V toolchain can be built from source, the PicoRV32 repo [includes a Makefile](https://github.com/cliffordwolf/picorv32#building-a-pure-rv32i-toolchain) with convenient build-and-install targets. This project only uses the `RV32I` ISA. Those with case-insensitive file systems will likely have issues building the toolchain from source. If so, binaries of the toolchain for various platforms are available [here](https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/tag/v8.3.0-1.1).
 
 ### Programming bitstream on iCEBreaker
 
@@ -64,6 +66,5 @@ Demo software and simulator screenshots are included in the [/software](software
 * More demo software for sprites / scrolling layers / raster effects etc.
 * Re-adding the 3x layer, non-interleaved scrolling layers for more efficient VRAM usage and to reduce LC usage
 * Many bits of cleanup and optimization
-* Remove IRQ in favour of a video coprocessor for raster-timed video updates
 * Gamepad support, when the PMODs become available
 * Audio
