@@ -24,8 +24,8 @@ pre-build:
 
 # iverilog
 
-#iverilog_sim: $(SOURCES) $(BOOT_HEX)
-#	iverilog -Wall -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR=1 -o ics32_tb.v $(SOURCES)
+iverilog_sim: $(SOURCES) $(BOOT_HEX)
+	iverilog -Wall -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR=1 -o sim.vvp cells_sim.v sim/sim_spiflash.v $(SOURCES) ics32_tb.v ics32_ivl_tb.v
 	
 # new cxxrtl stuff, to cleanup at some point
 
