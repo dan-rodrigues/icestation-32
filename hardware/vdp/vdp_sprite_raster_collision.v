@@ -57,6 +57,8 @@ module vdp_sprite_raster_collision #(
         .out(ready)
     );
 
+    wire output_valid;
+
     delay_ffr #(.DELAY(1)) output_valid_dm (
         .clk(clk),
         .reset(restart),
@@ -83,7 +85,6 @@ module vdp_sprite_raster_collision #(
     );
 
     reg finished_t;
-    reg output_valid;
 
     reg [8:0] sprite_y_intersect_t;
     reg has_collision, has_collision_t;
