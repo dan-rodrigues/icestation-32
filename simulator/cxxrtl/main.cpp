@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <numeric>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -110,14 +111,25 @@ int main(int argc, const char * argv[]) {
 
     cxxrtl::vcd_writer vcd;
     vcd.timescale(1, "ns");
-    vcd.add(debug);
+
+    std::vector<std::string> filter_names = {"pico", "clk", "reset"};
+
+    vcd.add(debug, [=](const std::string &name, const debug_item &item) {
+        for (auto filter_name : filter_names) {
+            if (name.find(filter_name) != std::string::npos) {
+                return true;
+            }
+        }
+
+        return false;
+    });
 
     top.p_clk__12m = value<1>{0u};
     top.step();
     vcd.sample(0);
 
     // adjust accordingly
-    int duration = 5;
+    int duration = 500;
     int steps = 0;
     bool log = false;
 

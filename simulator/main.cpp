@@ -119,9 +119,12 @@ int main(int argc, const char * argv[]) {
     bool vga_hsync_previous = false;
     bool vga_vsync_previous = false;
 
+    tb->clk_12m = 0;
+    tb->eval();
+    
     while (!Verilated::gotFinish()) {
         // clock posedge
-        tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 1;
+        tb->clk_12m = 1;
         tb->eval();
 #if VM_TRACE
         tfp->dump(main_time);
@@ -129,7 +132,7 @@ int main(int argc, const char * argv[]) {
         main_time++;
 
         // clock negedge
-        tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 0;
+        tb->clk_12m = 0;
         tb->eval();
 #if VM_TRACE
         tfp->dump(main_time);

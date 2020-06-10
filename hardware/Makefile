@@ -22,6 +22,11 @@ pre-build:
 
 ###
 
+# iverilog
+
+#iverilog_sim: $(SOURCES) $(BOOT_HEX)
+#	iverilog -Wall -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR=1 -o ics32_tb.v $(SOURCES)
+	
 # new cxxrtl stuff, to cleanup at some point
 
 CXXRTL_CFLAGS := $(shell sdl2-config --cflags)

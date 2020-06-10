@@ -67,14 +67,16 @@ module vdp_blender(
                     mapped_dest_alpha = (var_dest_alpha > 0 ? var_dest_alpha + 1 : 0);
                     mapped_dest_alpha = ((16 - mapped_source_alpha) * mapped_dest_alpha) / 16;
 
-                    alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
+                    // this causes an assertion in yosys when used with write_cxxrtl
+                    // alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
                 end
             end
         end
     endgenerate
 
     always @(posedge clk) begin
-        alpha_lut_output <= alpha_lut[alpha_lut_address];
+        // alpha_lut_output <= alpha_lut[alpha_lut_address];
+        alpha_lut_output <= 5'h10;
     end
 
     // need to add 2 cycles of pipeline delay to allow LUT lookup
