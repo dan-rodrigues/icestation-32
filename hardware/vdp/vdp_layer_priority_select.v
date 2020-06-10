@@ -23,7 +23,7 @@ module vdp_layer_priority_select(
     output reg [7:0] prioritized_pixel,
     output reg [1:0] resolved_priority
 );
-    wire sprite_opaque = layer_mask[LAYER_SPRITES];
+    wire sprite_opaque = layer_mask[`LAYER_SPRITES];
 
     always @* begin
         prioritized_layer = 0;
@@ -34,21 +34,21 @@ module vdp_layer_priority_select(
         // layer_mask[0] & !sprite_opaque & !sprite_priority[0] & !sprite_priority[1]
 
         if (layer_mask[0]) begin
-            prioritized_layer = (!sprite_opaque || sprite_priority < 3) ? LAYER_SCROLL0_OHE : LAYER_SPRITES_OHE;
+            prioritized_layer = (!sprite_opaque || sprite_priority < 3) ? `LAYER_SCROLL0_OHE : `LAYER_SPRITES_OHE;
             // TODO: confirm the below
             // this is probably wrong considering the priority score of a sprite that appears above s0
             resolved_priority = 3;
         end else if (layer_mask[1]) begin
-            prioritized_layer = (!sprite_opaque || sprite_priority < 2) ? LAYER_SCROLL1_OHE : LAYER_SPRITES_OHE;
+            prioritized_layer = (!sprite_opaque || sprite_priority < 2) ? `LAYER_SCROLL1_OHE : `LAYER_SPRITES_OHE;
             resolved_priority = 2;
         end else if (layer_mask[2]) begin
-            prioritized_layer = (!sprite_opaque || sprite_priority < 1) ? LAYER_SCROLL2_OHE : LAYER_SPRITES_OHE;
+            prioritized_layer = (!sprite_opaque || sprite_priority < 1) ? `LAYER_SCROLL2_OHE : `LAYER_SPRITES_OHE;
             resolved_priority = 1;
         end else if (layer_mask[3]) begin
-            prioritized_layer = !sprite_opaque ? LAYER_SCROLL3_OHE : LAYER_SPRITES_OHE;
+            prioritized_layer = !sprite_opaque ? `LAYER_SCROLL3_OHE : `LAYER_SPRITES_OHE;
             resolved_priority = 0;
         end else if (sprite_opaque) begin
-            prioritized_layer = LAYER_SPRITES_OHE;
+            prioritized_layer = `LAYER_SPRITES_OHE;
             resolved_priority = sprite_priority;
         end
 

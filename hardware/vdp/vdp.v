@@ -564,12 +564,12 @@ module vdp #(
     always @(posedge clk) begin
         // (scroll0 meta doesn't need to be held)
 
-        if (scroll_meta_load[LAYER_SCROLL1])
-            scroll_map_data_h[LAYER_SCROLL1] <= vram_read_data_odd_r;
-        if (scroll_meta_load[LAYER_SCROLL2])
-            scroll_map_data_h[LAYER_SCROLL2] <= vram_read_data_even_r; 
-        if (scroll_meta_load[LAYER_SCROLL3])
-            scroll_map_data_h[LAYER_SCROLL3] <= vram_read_data_odd_r;
+        if (scroll_meta_load[`LAYER_SCROLL1])
+            scroll_map_data_h[`LAYER_SCROLL1] <= vram_read_data_odd_r;
+        if (scroll_meta_load[`LAYER_SCROLL2])
+            scroll_map_data_h[`LAYER_SCROLL2] <= vram_read_data_even_r; 
+        if (scroll_meta_load[`LAYER_SCROLL3])
+            scroll_map_data_h[`LAYER_SCROLL3] <= vram_read_data_odd_r;
     end
 
     // --- Scroll pixel generators ---
@@ -685,7 +685,7 @@ module vdp #(
         case ((raster_x[2:0] - 1) &3'b111)
             0: begin
                 // now: s2/s3 map data
-                scroll_meta_load = LAYER_SCROLL2_OHE | LAYER_SCROLL3_OHE;
+                scroll_meta_load = `LAYER_SCROLL2_OHE | `LAYER_SCROLL3_OHE;
 
                 // next: s1 tile
                 vram_address_even_nx = tile_address_gen_tile_address_out;
@@ -725,7 +725,7 @@ module vdp #(
                 gen_toggle_nx = 0;
 
                 // now: s0 tile
-                scroll_char_load = LAYER_SCROLL0_OHE;
+                scroll_char_load = `LAYER_SCROLL0_OHE;
 
                 // next: s3 tile
                 vram_address_even_nx = tile_address_gen_tile_address_out;
@@ -737,7 +737,7 @@ module vdp #(
                 gen_toggle_nx = 1;
 
                 // now: s1 tile
-                scroll_char_load = LAYER_SCROLL1_OHE;
+                scroll_char_load = `LAYER_SCROLL1_OHE;
 
                 // next: s0/s1 map address
                 vram_address_even_nx = gen_even_next_map_address;
@@ -745,7 +745,7 @@ module vdp #(
             end
             5: begin
                 // now: s2 tile
-                scroll_char_load = LAYER_SCROLL2_OHE;
+                scroll_char_load = `LAYER_SCROLL2_OHE;
 
                 // next: s1/s2 map address
                 vram_address_even_nx = gen_even_next_map_address;
@@ -768,7 +768,7 @@ module vdp #(
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
 
                 // now: s0/s1 map data
-                scroll_meta_load = LAYER_SCROLL0_OHE | LAYER_SCROLL1_OHE;
+                scroll_meta_load = `LAYER_SCROLL0_OHE | `LAYER_SCROLL1_OHE;
 
                 // s0: prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y[0][2:0];

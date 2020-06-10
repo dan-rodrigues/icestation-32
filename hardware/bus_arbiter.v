@@ -11,7 +11,7 @@
 module bus_arbiter #(
     parameter SUPPORT_2X_CLK = 0,
     parameter DEFAULT_CPU_RAM_READ = 0,
-    parameter READ_SOURCES = BA_ALL
+    parameter READ_SOURCES = `BA_ALL
 ) (
     input clk,
 
@@ -76,9 +76,9 @@ module bus_arbiter #(
     assign cpu_read_data = cpu_read_data_s;
 
     always @* begin
-        if (READ_SOURCES & BA_CPU_RAM) begin
+        if (READ_SOURCES & `BA_CPU_RAM) begin
             cpu_read_data_ps = cpu_ram_read_data;
-        end else if (READ_SOURCES & BA_FLASH) begin
+        end else if (READ_SOURCES & `BA_FLASH) begin
             cpu_read_data_ps = flash_read_data;
         end else begin
             cpu_read_data_ps = 'bx;
@@ -88,17 +88,17 @@ module bus_arbiter #(
         // providing constants for the *_en inputs does not optimize as desired
         // doing the && at the parameter level does work as expected though and reduces *flattened* cell count
 
-        if (flash_read_en_r && (READ_SOURCES & BA_FLASH)) begin
+        if (flash_read_en_r && (READ_SOURCES & `BA_FLASH)) begin
             cpu_read_data_ps = flash_read_data;
-        end else if (vdp_en && (READ_SOURCES & BA_VDP)) begin
+        end else if (vdp_en && (READ_SOURCES & `BA_VDP)) begin
             cpu_read_data_ps[15:0] = vdp_read_data;
-        end else if (dsp_en && (READ_SOURCES & BA_DSP)) begin
+        end else if (dsp_en && (READ_SOURCES & `BA_DSP)) begin
             cpu_read_data_ps = dsp_read_data;
-        end else if (pad_en && (READ_SOURCES & BA_PAD)) begin
+        end else if (pad_en && (READ_SOURCES & `BA_PAD)) begin
             cpu_read_data_ps[1:0] = pad_read_data;
-        end else if (bootloader_en && (READ_SOURCES & BA_BOOT)) begin
+        end else if (bootloader_en && (READ_SOURCES & `BA_BOOT)) begin
             cpu_read_data_ps = bootloader_read_data;
-        end else if (cpu_ram_en && (READ_SOURCES & BA_CPU_RAM)) begin
+        end else if (cpu_ram_en && (READ_SOURCES & `BA_CPU_RAM)) begin
             cpu_read_data_ps = cpu_ram_read_data;
         end
     end
