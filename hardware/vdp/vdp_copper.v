@@ -21,7 +21,7 @@ module vdp_copper(
 
     // RAM interface
 
-    output reg [10:0] ram_read_address,
+    output [10:0] ram_read_address,
     output ram_read_en,
     input [15:0] ram_read_data,
 

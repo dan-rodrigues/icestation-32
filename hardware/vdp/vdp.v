@@ -60,7 +60,7 @@ module vdp #(
     // Copper RAM interface
 
     output cop_ram_read_en,
-    output reg [10:0] cop_ram_read_address,
+    output [10:0] cop_ram_read_address,
     input [15:0] cop_ram_read_data
 );
     // --- Video timing ---
@@ -472,8 +472,8 @@ module vdp #(
     wire [3:0] gen_odd_palette = vram_read_data_odd_r[15:12];
     wire gen_odd_hflip = vram_read_data_odd_r[9];
 
-    reg [13:0] gen_even_next_map_address;
-    reg [13:0] gen_odd_next_map_address;
+    wire [13:0] gen_even_next_map_address;
+    wire [13:0] gen_odd_next_map_address;
 
     reg gen_toggle_nx;
     reg gen_toggle;
@@ -515,7 +515,7 @@ module vdp #(
     reg [15:0] tile_address_gen_map_data_in;
     reg [13:0] tile_address_gen_base_address;
 
-    reg [13:0] tile_address_gen_tile_address_out;
+    wire [13:0] tile_address_gen_tile_address_out;
 
     vdp_tile_address_generator tile_address_generator(
         .clk(clk),
@@ -524,6 +524,7 @@ module vdp #(
         .raster_y_granular(tile_address_gen_raster_y_granular),
         .vram_data(tile_address_gen_map_data_in),
         .tile_base_address(tile_address_gen_base_address),
+
         .tile_address(tile_address_gen_tile_address_out)
     );
     
