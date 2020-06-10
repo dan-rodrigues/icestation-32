@@ -29,10 +29,21 @@ CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_OPT = -O3
 CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
 
-cxxrtl_sim: cxxrtl_sim.cpp $(CXXRTL_SRCS)
+crsim_pre: crsim_pre.cpp $(CXXRTL_SRCS)
 	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
-cxxrtl_sim.cpp: $(SOURCES) $(BOOT_HEX)
+# ...
+crsim_post: crsim_post.cpp $(CXXRTL_SRCS)
+	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
+
+crsim_pre.cpp: $(SOURCES) $(BOOT_HEX)
+	yosys -p \
+	'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
+		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
+		proc; flatten; \
+		write_cxxrtl -O2 $@'
+
+crsim_post.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
         'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
 		read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); \

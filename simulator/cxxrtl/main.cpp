@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <ostream>
 
 #include <SDL.h>
 
@@ -68,9 +69,6 @@ int main(int argc, const char * argv[]) {
 
     // video setup
 
-    top.p_clk__12m = value<1>{0u};
-    top.step();
-
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL_Init() failed: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
@@ -105,16 +103,40 @@ int main(int argc, const char * argv[]) {
     bool vga_vsync_previous;
     bool even_frame = true;
 
-    int duration = INT_MAX;
-    int steps = 0;
+    // vcd
 
+    cxxrtl::debug_items debug;
+    top.debug_info(debug);
+
+    cxxrtl::vcd_writer vcd;
+    vcd.timescale(1, "ns");
+    vcd.add(debug);
+
+    top.p_clk__12m = value<1>{0u};
+    top.step();
+    vcd.sample(0);
+
+    // adjust accordingly
+    int duration = 5;
+    int steps = 0;
     bool log = false;
+
+
+    std::ofstream vcd_stream("sim.vcd", std::ios::out);
 
     while (steps++ < duration) {
         top.p_clk__12m = value<1>{0u};
         top.step();
+        vcd.sample(steps * 2);
+
         top.p_clk__12m = value<1>{1u};
         top.step();
+        vcd.sample(steps * 2 + 1);
+
+        // vcd write
+
+        vcd_stream << vcd.buffer;
+        vcd.buffer.clear();
 
         // quick and dirty logs for now
         if (log) {
@@ -182,6 +204,8 @@ int main(int argc, const char * argv[]) {
             break;
         }
     }
+
+    vcd_stream.close();
 
     return EXIT_SUCCESS;
 }
