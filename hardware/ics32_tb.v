@@ -31,7 +31,8 @@ module ics32_tb(
         .ENABLE_WIDESCREEN(1),
         .FORCE_FAST_CPU(0),
         .RESET_DURATION(4),
-        .ENABLE_BOOTLOADER(1)
+        // .ENABLE_BOOTLOADER(1)
+        .ENABLE_BOOTLOADER(0)
     ) ics32 (
 `ifndef EXTERNAL_CLOCKS
         .clk_12m(clk_12m),

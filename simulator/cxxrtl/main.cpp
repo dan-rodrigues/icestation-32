@@ -1,11 +1,12 @@
 // (cleanup simulator directory structure if there's going to be 2 sim options)
+
+// !!!
 //#include "../../hardware/crsim_pre.cpp"
-#include "../../hardware/crsim_ilang.cpp"
+#include "../../hardware/crsim_post.cpp"
 
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <numeric>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -85,13 +86,13 @@ int main(int argc, const char * argv[]) {
     const auto total_height = active_height + offscreen_height;
 
     auto window = SDL_CreateWindow(
-                                   "ics32-sim",
-                                   SDL_WINDOWPOS_CENTERED,
-                                   SDL_WINDOWPOS_CENTERED,
-                                   total_width,
-                                   total_height,
-                                   SDL_WINDOW_SHOWN
-                                   );
+       "ics32-sim (cxxrtl)",
+       SDL_WINDOWPOS_CENTERED,
+       SDL_WINDOWPOS_CENTERED,
+       total_width,
+       total_height,
+       SDL_WINDOW_SHOWN
+   );
 
     auto renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_RenderSetScale(renderer, 1, 1);
@@ -107,28 +108,28 @@ int main(int argc, const char * argv[]) {
 
     // vcd
 
-    cxxrtl::debug_items debug;
-    top.debug_info(debug);
+//    cxxrtl::debug_items debug;
+//    top.debug_info(debug);
 
     cxxrtl::vcd_writer vcd;
     vcd.timescale(1, "ns");
 
     std::vector<std::string> filter_names = {"pico", "clk", "reset", "arbiter", "valid", "ready"};
 
-    vcd.add(debug, [&](const std::string &name, const debug_item &item) {
-        for (auto filter_name : filter_names) {
-            if (name.find(filter_name) != std::string::npos) {
-                return true;
-            }
-        }
-
-        return false;
-    });
+//    vcd.add(debug, [&](const std::string &name, const debug_item &item) {
+//        for (auto filter_name : filter_names) {
+//            if (name.find(filter_name) != std::string::npos) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    });
 
     top.p_clk__1x = value<1>{0u};
     top.p_clk__2x = value<1>{0u};
     top.step();
-    vcd.sample(0);
+//    vcd.sample(0);
 
     // adjust accordingly
     int duration = INT_MAX;
@@ -140,18 +141,18 @@ int main(int argc, const char * argv[]) {
     while (steps < duration) {
         top.p_clk__2x = value<1>{0u};
         top.step();
-        vcd.sample(steps * 2);
+//        vcd.sample(steps * 2);
 
         top.p_clk__2x = value<1>{1u};
         top.p_clk__1x = value<1>{(uint8_t)(steps & 1)};
         top.step();
-        vcd.sample(steps * 2 + 1);
+//        vcd.sample(steps * 2 + 1);
 
         steps++;
 
         // vcd write
 
-        vcd_stream << vcd.buffer;
+//        vcd_stream << vcd.buffer;
         vcd.buffer.clear();
 
         // quick and dirty logs for now

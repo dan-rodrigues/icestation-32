@@ -43,7 +43,7 @@ module cpu_peripheral_sync(
     reg [31:0] cpu_read_data_r;
     reg cpu_mem_ready_r, cpu_mem_ready_d;
 
-    reg cpu_mem_ready_rose;
+    reg cpu_mem_ready_rose, cpu_mem_ready_rose_r;
 
     always @(negedge clk_2x) begin
         cpu_read_data_r <= cpu_read_data;
@@ -51,6 +51,7 @@ module cpu_peripheral_sync(
         cpu_mem_ready_r <= cpu_mem_ready;
         cpu_mem_ready_d <= cpu_mem_ready_r;
         cpu_mem_ready_rose <= cpu_mem_ready_r && !cpu_mem_ready_d;
+        cpu_mem_ready_rose_r <= cpu_mem_ready_rose;
     end
 
     // eliminating this stage causes problems
@@ -58,7 +59,7 @@ module cpu_peripheral_sync(
 
     always @(posedge clk_1x) begin
         cpu_read_data_1x <= cpu_read_data_r;
-        cpu_mem_ready_1x <= cpu_mem_ready_rose;
+        cpu_mem_ready_1x <= cpu_mem_ready_rose || cpu_mem_ready_rose_r;
     end
 
 endmodule

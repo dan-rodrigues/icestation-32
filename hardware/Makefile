@@ -22,50 +22,28 @@ pre-build:
 
 ###
 
-# iverilog
-
-iverilog_sim: $(SOURCES) $(BOOT_HEX)
-	iverilog -Wall -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR=1 -o sim.vvp cells_sim.v sim/sim_spiflash.v $(SOURCES) ics32_tb.v ics32_ivl_tb.v
-	
 # new cxxrtl stuff, to cleanup at some point
 
-CXXRTL_CFLAGS := $(shell sdl2-config --cflags)
+CXXRTL_CFLAGS := $(shell sdl2-config --cflags) -DCXXRTL_INCLUDE_VCD_CAPI_IMPL
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_OPT = -O3
 CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
+CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS
 
-crgh:
-	yosys -p \
-		'read_ilang ics_build_errors.ilang; \
-		write_cxxrtl -O5 sim.cpp'
-	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -I/Users/dan.rodrigues/hw/icetools/yosys -c sim.cpp -o sim.o
-
-crsim_pre: crsim_pre.cpp $(CXXRTL_SRCS)
-	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
-
-# ...
-crsim_post: crsim_post.cpp $(CXXRTL_SRCS)
-	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
-
-crsim_ilang: crsim_ilang.cpp $(CXXRTL_SRCS)
-	g++ -std=c++14 -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
-
-crsim_ilang.cpp: $(SOURCES) $(BOOT_HEX)
-	yosys -p \
-		'read_ilang ics_build_errors.ilang; \
-		write_cxxrtl -O3 $@'
+cxxrtl_sim_%: crsim_%.cpp $(CXXRTL_SRCS)
+	g++ -std=c++14 $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
 crsim_pre.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
-	'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS; \
+		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
+		hierarchy -check -top ics32_tb; \
 		proc; flatten; \
-		write_ilang ics_build_errors.ilang; \
 		write_cxxrtl -O5 $@'
 
 crsim_post.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
-        'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
+        'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); \
         techmap -autoproc -map ./cells_sim.v; \
         hierarchy -check -top ics32_tb; \
