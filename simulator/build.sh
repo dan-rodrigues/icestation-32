@@ -11,7 +11,7 @@ BOOT_HEX="${BOOT_DIR}/boot.hex"
 EXTRA_VLT_FLAGS=$1
 VLT_FLAGS="	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 		   	-Wall -Wno-fatal -Wno-WIDTH -Wno-TIMESCALEMOD \
-			-DBOOTLOADER=\"${BOOT_HEX}\""
+			-DBOOTLOADER=\"${BOOT_HEX}\" -DEXTERNAL_CLOCKS"
 
 TOP_MODULE=ics32_tb
 RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"

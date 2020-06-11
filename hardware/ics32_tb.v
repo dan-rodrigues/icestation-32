@@ -7,7 +7,12 @@
 `default_nettype none
 
 module ics32_tb(
+`ifndef EXTERNAL_CLOCKS
     input clk_12m,
+`else
+    input clk_1x,
+    input clk_2x,
+`endif
 
     output [3:0] vga_r,
     output [3:0] vga_g,
@@ -28,7 +33,12 @@ module ics32_tb(
         .RESET_DURATION(4),
         .ENABLE_BOOTLOADER(1)
     ) ics32 (
+`ifndef EXTERNAL_CLOCKS
         .clk_12m(clk_12m),
+`else
+        .clk_1x(clk_1x),
+        .clk_2x(clk_2x),
+`endif
 
         .vga_r(vga_r),
         .vga_g(vga_g),

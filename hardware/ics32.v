@@ -19,7 +19,12 @@ module ics32 #(
     parameter BOOTLOADER_PATH = "boot.hex"
 `endif
 ) (
+`ifndef EXTERNAL_CLOCKS
     input clk_12m,
+`else
+    input clk_1x,
+    input clk_2x,
+`endif
 
     output [3:0] vga_r,
     output [3:0] vga_g,
@@ -114,6 +119,7 @@ module ics32 #(
     wire pll_clk_1x, pll_clk_2x;
     wire pll_locked;
 
+`ifndef EXTERNAL_CLOCKS
     pll #(
         .ENABLE_FAST_CLK(ENABLE_WIDESCREEN)
     ) pll (
@@ -123,6 +129,11 @@ module ics32 #(
         .clk_1x(pll_clk_1x),
         .clk_2x(pll_clk_2x)
     );
+`else
+    assign pll_clk_1x = clk_1x;
+    assign pll_clk_2x = clk_2x;
+    assign pll_locked = 1;
+`endif
 
     assign vga_clk = pll_clk_2x;
 

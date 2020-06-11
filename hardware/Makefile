@@ -34,6 +34,12 @@ CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_OPT = -O3
 CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
 
+crgh:
+	yosys -p \
+		'read_ilang ics_build_errors.ilang; \
+		write_cxxrtl -O5 sim.cpp'
+	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -I/Users/dan.rodrigues/hw/icetools/yosys -c sim.cpp -o sim.o
+
 crsim_pre: crsim_pre.cpp $(CXXRTL_SRCS)
 	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
@@ -41,12 +47,21 @@ crsim_pre: crsim_pre.cpp $(CXXRTL_SRCS)
 crsim_post: crsim_post.cpp $(CXXRTL_SRCS)
 	g++ -std=c++14 -DCXXRTL_INCLUDE_VCD_CAPI_IMPL $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
 
+crsim_ilang: crsim_ilang.cpp $(CXXRTL_SRCS)
+	g++ -std=c++14 -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
+
+crsim_ilang.cpp: $(SOURCES) $(BOOT_HEX)
+	yosys -p \
+		'read_ilang ics_build_errors.ilang; \
+		write_cxxrtl -O3 $@'
+
 crsim_pre.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
-	'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR; \
+	'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS; \
 		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
 		proc; flatten; \
-		write_cxxrtl -O2 $@'
+		write_ilang ics_build_errors.ilang; \
+		write_cxxrtl -O5 $@'
 
 crsim_post.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
@@ -56,7 +71,7 @@ crsim_post.cpp: $(SOURCES) $(BOOT_HEX)
         hierarchy -check -top ics32_tb; \
         prep -top ics32_tb -flatten; \
         memory -nomap; \
-		write_cxxrtl -O2 $@'
+		write_cxxrtl -O5 $@'
 
 ###
 

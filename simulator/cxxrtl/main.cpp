@@ -1,5 +1,6 @@
 // (cleanup simulator directory structure if there's going to be 2 sim options)
-#include "../../hardware/cxxrtl_sim.cpp"
+//#include "../../hardware/crsim_pre.cpp"
+#include "../../hardware/crsim_ilang.cpp"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -112,9 +113,9 @@ int main(int argc, const char * argv[]) {
     cxxrtl::vcd_writer vcd;
     vcd.timescale(1, "ns");
 
-    std::vector<std::string> filter_names = {"pico", "clk", "reset"};
+    std::vector<std::string> filter_names = {"pico", "clk", "reset", "arbiter", "valid", "ready"};
 
-    vcd.add(debug, [=](const std::string &name, const debug_item &item) {
+    vcd.add(debug, [&](const std::string &name, const debug_item &item) {
         for (auto filter_name : filter_names) {
             if (name.find(filter_name) != std::string::npos) {
                 return true;
@@ -124,26 +125,29 @@ int main(int argc, const char * argv[]) {
         return false;
     });
 
-    top.p_clk__12m = value<1>{0u};
+    top.p_clk__1x = value<1>{0u};
+    top.p_clk__2x = value<1>{0u};
     top.step();
     vcd.sample(0);
 
     // adjust accordingly
-    int duration = 500;
+    int duration = INT_MAX;
     int steps = 0;
     bool log = false;
 
-
     std::ofstream vcd_stream("sim.vcd", std::ios::out);
 
-    while (steps++ < duration) {
-        top.p_clk__12m = value<1>{0u};
+    while (steps < duration) {
+        top.p_clk__2x = value<1>{0u};
         top.step();
         vcd.sample(steps * 2);
 
-        top.p_clk__12m = value<1>{1u};
+        top.p_clk__2x = value<1>{1u};
+        top.p_clk__1x = value<1>{(uint8_t)(steps & 1)};
         top.step();
         vcd.sample(steps * 2 + 1);
+
+        steps++;
 
         // vcd write
 
@@ -152,8 +156,8 @@ int main(int argc, const char * argv[]) {
 
         // quick and dirty logs for now
         if (log) {
-            std::cout << "clk1x: " << top.p_ics32_2e_pll_2e_clk__1x__r << "\n";
-            std::cout << "clk2x: " << top.p_vga__clk << "\n";
+            std::cout << "clk1x: " << top.p_clk__1x << "\n";
+            std::cout << "clk2x: " << top.p_clk__2x << "\n";
 
             std::cout << "memaddr: " << top.p_ics32_2e_pico_2e_mem__addr << "\n";
 

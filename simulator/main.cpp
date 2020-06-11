@@ -119,23 +119,25 @@ int main(int argc, const char * argv[]) {
     bool vga_hsync_previous = false;
     bool vga_vsync_previous = false;
 
-    tb->clk_12m = 0;
+    tb->clk_1x = 0;
+    tb->clk_2x = 0;
     tb->eval();
     
     while (!Verilated::gotFinish()) {
-        // clock posedge
-        tb->clk_12m = 1;
-        tb->eval();
-#if VM_TRACE
-        tfp->dump(main_time);
-#endif
-        main_time++;
-
         // clock negedge
-        tb->clk_12m = 0;
+        tb->clk_2x = 0;
         tb->eval();
 #if VM_TRACE
-        tfp->dump(main_time);
+        tfp->dump(main_time * 2);
+#endif
+
+        // clock posedge
+        tb->clk_2x = 1;
+        // half-speed clk_1x
+        tb->clk_1x = main_time & 1;
+        tb->eval();
+#if VM_TRACE
+        tfp->dump(main_time * 2 + 1);
 #endif
         main_time++;
 
