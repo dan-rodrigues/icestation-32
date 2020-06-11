@@ -37,8 +37,8 @@ crsim_pre.cpp: $(SOURCES) $(BOOT_HEX)
 	yosys -p \
 		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
-		hierarchy -check -top ics32_tb; \
-		proc; flatten; \
+		hierarchy -check -top ics32_tb; splitnets -driver; clean -purge; \
+		proc; flatten; clean; \
 		write_cxxrtl -O5 $@'
 
 crsim_post.cpp: $(SOURCES) $(BOOT_HEX)
