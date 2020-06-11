@@ -90,7 +90,7 @@ int main(int argc, const char * argv[]) {
     const auto total_height = active_height + offscreen_height;
 
     auto window = SDL_CreateWindow(
-       "ics32-sim",
+       "ics32-sim (verilator)",
        SDL_WINDOWPOS_CENTERED,
        SDL_WINDOWPOS_CENTERED,
        total_width,
