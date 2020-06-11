@@ -1,10 +1,14 @@
 # yosys / nextpnr
 
-*.asc
-*.bit
-*.json
+/*.asc
+/*.bit
+/*.json
 
 # verilator
 
-obj_dir/
+/obj_dir/
+
+# cxxrtl
+
+/cxxrtl_*
 

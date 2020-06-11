@@ -59,7 +59,8 @@ module cpu_peripheral_sync(
 
     always @(posedge clk_1x) begin
         cpu_read_data_1x <= cpu_read_data_r;
-        cpu_mem_ready_1x <= cpu_mem_ready_rose || cpu_mem_ready_rose_r;
+        cpu_mem_ready_1x <= cpu_mem_ready_rose;
+        // (mem_ready_rose_r to be integrated as part of flash overhaul)
     end
 
 endmodule

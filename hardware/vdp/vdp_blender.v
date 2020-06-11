@@ -67,7 +67,11 @@ module vdp_blender(
                     mapped_dest_alpha = (var_dest_alpha > 0 ? var_dest_alpha + 1 : 0);
                     mapped_dest_alpha = ((16 - mapped_source_alpha) * mapped_dest_alpha) / 16;
 
-                    // this causes an assertion in yosys when used with write_cxxrtl
+                    // this causes an assertion in yosys when using this with cxxrtl
+                    // issue with context on the root cause:
+                    // https://github.com/YosysHQ/yosys/issues/2129
+
+                    // TODO: ifdef macro check and readmemh if it is defined instead of doing this
                     // alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
                 end
             end
