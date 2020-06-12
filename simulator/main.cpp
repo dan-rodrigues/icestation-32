@@ -1,9 +1,3 @@
-#include <verilated.h>
-
-#if VM_TRACE
-#include <verilated_vcd_c.h>
-#endif
-
 #include <SDL.h>
 
 #include <fstream>
@@ -12,27 +6,15 @@
 #include <iostream>
 #include <memory>
 
-#include "obj_dir/Vics32_tb.h"
-
 #include "VerilatorSimulation.hpp"
-
-// Current simulation time (64-bit unsigned)
-vluint64_t main_time = 0;
-// Called by $time in Verilog
-double sc_time_stamp() {
-    return main_time;
-}
 
 int main(int argc, const char * argv[]) {
     // test
-    VerilatorSimulation vsim;
-    Simulation & sim = vsim;
+    VerilatorSimulation sim(argc, argv);
+//    VerilatorSimulation sim;
+    // ...
 
-    Verilated::commandArgs(argc, argv);
-
-#if VM_TRACE
-    Verilated::traceEverOn(true);
-#endif
+//    Simulation & sim = vsim;
 
     std::vector<uint8_t> cpu_program;
 
@@ -59,10 +41,6 @@ int main(int argc, const char * argv[]) {
         std::cerr << "Binary has irregular size: " << cpu_program.size() << std::endl;
         return EXIT_FAILURE;
     }
-
-    // to remove:
-//    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
-    auto tb = vsim.tb.get();
 
     sim.preload_cpu_program(cpu_program);
 
@@ -102,12 +80,7 @@ int main(int argc, const char * argv[]) {
     bool even_frame = true;
 
 #if VM_TRACE
-    const auto trace_path = "ics.vcd";
-
-    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-
-    tb->trace(tfp.get(), 99);
-    tfp->open(trace_path);
+    sim.trace();
 #endif
 
     bool vga_hsync_previous = false;
@@ -115,25 +88,20 @@ int main(int argc, const char * argv[]) {
 
     sim.clk_1x = 0;
     sim.clk_2x = 0;
-    sim.step();
-    
-    while (!Verilated::gotFinish()) {
+
+    uint64_t time = 0;
+
+    while (!sim.finished()) {
         // clock negedge
         sim.clk_2x = 0;
-        sim.step();
-#if VM_TRACE
-        tfp->dump(main_time * 2);
-#endif
+        sim.step(time);
+        time++;
 
         // clock posedge
         sim.clk_2x = 1;
-        // half-speed clk_1x
-        sim.clk_1x = main_time & 1;
-        sim.step();
-#if VM_TRACE
-        tfp->dump(main_time * 2 + 1);
-#endif
-        main_time++;
+        sim.clk_1x = time & 2;
+        sim.step(time);
+        time++;
 
         auto round_color = [] (uint8_t component) {
             return component | component << 4;
@@ -180,10 +148,6 @@ int main(int argc, const char * argv[]) {
     };
 
     sim.final();
-
-#if VM_TRACE
-    tfp->close();
-#endif
 
     SDL_DestroyWindow(window);
     SDL_Quit();

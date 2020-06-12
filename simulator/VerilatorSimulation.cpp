@@ -1,5 +1,18 @@
 #include "VerilatorSimulation.hpp"
 
+#include <assert.h>
+
+// Current simulation time (64-bit unsigned)
+vluint64_t main_time = 0;
+// Called by $time in Verilog
+double sc_time_stamp() {
+    return main_time;
+}
+
+VerilatorSimulation::VerilatorSimulation(int argc, const char *argv[]) {
+    Verilated::commandArgs(argc, argv);
+}
+
 void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &program) {
     auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
     auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
@@ -16,7 +29,9 @@ void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &progra
     std::copy(program.begin(), program.end(), &flash[flash_user_base]);
 }
 
-void VerilatorSimulation::step() {
+void VerilatorSimulation::step(uint64_t time) {
+    main_time = time;
+
     tb->clk_1x = clk_1x;
     tb->clk_2x = clk_2x;
 
@@ -25,7 +40,31 @@ void VerilatorSimulation::step() {
     tb->ics32_tb__DOT__ics32__DOT__btn3 = button_3;
 
     tb->eval();
+
+#if VM_TRACE
+    trace_update(time);
+#endif
 }
+
+#if VM_TRACE
+
+void VerilatorSimulation::trace_update(uint64_t time) {
+    assert(tfp);
+    tfp->dump((vluint64_t)time);
+}
+
+void VerilatorSimulation::trace() {
+    Verilated::traceEverOn(true);
+
+    const auto trace_path = "ics.vcd"; // !
+
+    tfp = std::unique_ptr<VerilatedVcdC>(new VerilatedVcdC);
+
+    tb->trace(tfp.get(), 99);
+    tfp->open(trace_path);
+}
+
+#endif
 
 uint8_t VerilatorSimulation::r() const {
     return tb->vga_r;
@@ -49,4 +88,15 @@ bool VerilatorSimulation::vsync() const {
 
 void VerilatorSimulation::final() {
     tb->final();
+
+#if VM_TRACE
+    if (tfp) {
+        tfp->close();
+    }
+#endif
 }
+
+bool VerilatorSimulation::finished() const { 
+    return Verilated::gotFinish();
+}
+

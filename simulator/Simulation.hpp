@@ -5,15 +5,24 @@
 #include <vector>
 #include <stdint.h>
 
+#define VM_TRACE 1
+
 class Simulation {
+    
 public:
     virtual ~Simulation() {}
+
+    void operator = (Simulation const &s) = delete;
 
     bool clk_1x = false, clk_2x = false;
     bool button_1 = false, button_2 = false, button_3 = false;
 
     virtual void preload_cpu_program(const std::vector<uint8_t> &program) = 0;
-    virtual void step() = 0;
+    virtual void step(uint64_t time) = 0;
+
+#if VM_TRACE
+    virtual void trace() = 0;
+#endif
 
     virtual uint8_t r() const = 0;
     virtual uint8_t g() const = 0;
@@ -23,6 +32,8 @@ public:
     virtual bool vsync() const = 0;
 
     virtual void final() = 0;
+
+    virtual bool finished() const = 0;
 };
 
 #endif /* Simulation_hpp */

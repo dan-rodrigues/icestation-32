@@ -6,11 +6,21 @@
 
 #include <memory>
 
+#if VM_TRACE
+#include <verilated_vcd_c.h>
+#endif
+
 class VerilatorSimulation: public Simulation {
 
 public:
+    VerilatorSimulation(int argc, const char * argv[]);
+
     void preload_cpu_program(const std::vector<uint8_t> &program) override;
-    void step() override;
+    void step(uint64_t time) override;
+
+#if VM_TRACE
+    void trace() override;
+#endif
 
     uint8_t r() const override;
     uint8_t g() const override;
@@ -21,8 +31,15 @@ public:
 
     void final() override;
 
-//private:
+    bool finished() const override;
+
+private:
     std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
+
+#if VM_TRACE
+    std::unique_ptr<VerilatedVcdC> tfp;
+    void trace_update(uint64_t time);
+#endif
 };
 
 #endif /* VerilatorSimulation_hpp */
