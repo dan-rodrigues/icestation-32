@@ -12,7 +12,9 @@
 #include <iostream>
 #include <memory>
 
-#include "Vics32_tb.h"
+#include "obj_dir/Vics32_tb.h"
+
+#include "VerilatorSimulation.hpp"
 
 // Current simulation time (64-bit unsigned)
 vluint64_t main_time = 0;
@@ -22,6 +24,9 @@ double sc_time_stamp() {
 }
 
 int main(int argc, const char * argv[]) {
+    // test
+    VerilatorSimulation vsim;
+
     Verilated::commandArgs(argc, argv);
 
 #if VM_TRACE
@@ -54,23 +59,11 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
+    // to remove:
+//    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
+    auto tb = vsim.tb.get();
 
-    // ...into both flash (for software use) and CPU RAM (so that IPL can be skipped)
-
-    auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
-    auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
-
-    size_t ipl_load_length = std::min((size_t)0x20000, cpu_program.size());
-    for (uint16_t i = 0; i < ipl_load_length / 4; i++) {
-        cpu_ram0[i] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
-        cpu_ram1[i] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
-    }
-
-    const auto flash_user_base = 0x100000;
-    auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
-
-    std::copy(cpu_program.begin(), cpu_program.end(), &flash[flash_user_base]);
+    vsim.preload_cpu_program(cpu_program);
 
     // 2. present an SDL window to simulate video output
 
