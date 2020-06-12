@@ -10,8 +10,6 @@ BOOT_HEX = $(BOOT_DIR)boot.hex
 YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
 YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
 
-CXXRTL_SRCS = ../simulator/cxxrtl/main.cpp
-
 include sources.mk
 
 main-build: pre-build
@@ -19,37 +17,6 @@ main-build: pre-build
 
 pre-build:
 	@$(MAKE) -C $(BOOT_DIR)
-
-###
-
-# new cxxrtl stuff, to cleanup at some point
-
-CXXRTL_CFLAGS := $(shell sdl2-config --cflags) -DCXXRTL_INCLUDE_VCD_CAPI_IMPL
-CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
-CXXRTL_OPT = -O3
-CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
-CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS
-
-cxxrtl_sim_%: cxxrtl_sim_%.cpp $(CXXRTL_SRCS)
-	g++ -std=c++14 $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
-
-cxxrtl_sim_pre.cpp: $(SOURCES) $(BOOT_HEX)
-	yosys -p \
-		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
-		read_verilog ics32_tb.v cells_sim.v sim/sim_spiflash.v $(SOURCES); \
-		hierarchy -check -top ics32_tb; splitnets -driver; clean -purge; \
-		proc; flatten; clean; \
-		write_cxxrtl -O5 $@'
-
-cxxrtl_sim_post.cpp: $(SOURCES) $(BOOT_HEX)
-	yosys -p \
-        'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
-		read_verilog ics32_tb.v sim/sim_spiflash.v $(SOURCES); \
-        techmap -autoproc -map ./cells_sim.v; \
-        hierarchy -check -top ics32_tb; \
-        prep -top ics32_tb -flatten; \
-        memory -nomap; \
-		write_cxxrtl -O5 $@'
 
 ###
 
@@ -71,5 +38,6 @@ prog: $(PROJ).bit
 clean:
 	rm -f $(PROJ).asc $(PROJ).rpt $(PROJ).bit $(PROJ).json
 
+.SECONDARY:
 .PHONY: main-build prog clean count
 

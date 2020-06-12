@@ -1,0 +1,25 @@
+CXXRTL_SRCS = main.cpp
+
+CXXRTL_CFLAGS := $(shell sdl2-config --cflags) -DCXXRTL_INCLUDE_VCD_CAPI_IMPL
+CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
+CXXRTL_OPT = -O3
+CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
+CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS
+
+include ../hardware/sources.mk
+
+HDL_TOP = ics32_tb
+HDL_DIR = ../hardware
+HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
+HDL_SOURCES += $(HDL_TOP).v cells_sim.v sim_spiflash.v
+
+cxxrtl_sim: cxxrtl_sim.cpp $(CXXRTL_SRCS)
+	g++ -std=c++14 $(CXXRTL_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
+
+cxxrtl_sim.cpp: $(HDL_SOURCES) $(BOOT_HEX)
+	yosys -p \
+		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
+		read_verilog -I$(HDL_DIR) $(HDL_SOURCES); \
+		hierarchy -check -top $(HDL_TOP); splitnets -driver; clean -purge; \
+		proc; flatten; clean; \
+		write_cxxrtl -O5 $@'
