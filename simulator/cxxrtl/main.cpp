@@ -1,7 +1,7 @@
 // (cleanup simulator directory structure if there's going to be 2 sim options)
 
 // !!!
-#include "../../hardware/cxxrtl_sim_pre.cpp"
+#include "../cxxrtl_sim.cpp"
 //#include "../../hardware/crsim_post.cpp"
 
 #include <stdio.h>

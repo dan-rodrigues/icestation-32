@@ -1,9 +1,20 @@
-CXXRTL_SRCS = main.cpp
+BOOT_DIR = ../firmware/
+BOOT_HEX = $(BOOT_DIR)boot.hex
 
-CXXRTL_CFLAGS := $(shell sdl2-config --cflags) -DCXXRTL_INCLUDE_VCD_CAPI_IMPL
+main-build: pre-build
+	@$(MAKE) --no-print-directory cxxrtl_sim
+
+pre-build:
+	@$(MAKE) -C $(BOOT_DIR)
+
+###
+
+CXXRTL_SRCS = cxxrtl/main.cpp
+
+CXXRTL_CFLAGS := $(shell sdl2-config --cflags) -DCXXRTL_INCLUDE_VCD_CAPI_IMPL # !!!
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_OPT = -O3
-CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys
+CXXRTL_INCLUDES := $(HOME)/hw/icetools/yosys # !!!
 CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS
 
 include ../hardware/sources.mk
@@ -23,3 +34,7 @@ cxxrtl_sim.cpp: $(HDL_SOURCES) $(BOOT_HEX)
 		hierarchy -check -top $(HDL_TOP); splitnets -driver; clean -purge; \
 		proc; flatten; clean; \
 		write_cxxrtl -O5 $@'
+
+# remove cxxrtl_sim.cpp as phony target when this is all working
+
+.PHONY: main-build cxxrtl_sim.cpp
