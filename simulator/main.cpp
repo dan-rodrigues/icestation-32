@@ -26,6 +26,7 @@ double sc_time_stamp() {
 int main(int argc, const char * argv[]) {
     // test
     VerilatorSimulation vsim;
+    Simulation & sim = vsim;
 
     Verilated::commandArgs(argc, argv);
 
@@ -63,7 +64,7 @@ int main(int argc, const char * argv[]) {
 //    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
     auto tb = vsim.tb.get();
 
-    vsim.preload_cpu_program(cpu_program);
+    sim.preload_cpu_program(cpu_program);
 
     // 2. present an SDL window to simulate video output
 
@@ -112,23 +113,23 @@ int main(int argc, const char * argv[]) {
     bool vga_hsync_previous = false;
     bool vga_vsync_previous = false;
 
-    tb->clk_1x = 0;
-    tb->clk_2x = 0;
-    tb->eval();
+    sim.clk_1x = 0;
+    sim.clk_2x = 0;
+    sim.step();
     
     while (!Verilated::gotFinish()) {
         // clock negedge
-        tb->clk_2x = 0;
-        tb->eval();
+        sim.clk_2x = 0;
+        sim.step();
 #if VM_TRACE
         tfp->dump(main_time * 2);
 #endif
 
         // clock posedge
-        tb->clk_2x = 1;
+        sim.clk_2x = 1;
         // half-speed clk_1x
-        tb->clk_1x = main_time & 1;
-        tb->eval();
+        sim.clk_1x = main_time & 1;
+        sim.step();
 #if VM_TRACE
         tfp->dump(main_time * 2 + 1);
 #endif
@@ -139,18 +140,18 @@ int main(int argc, const char * argv[]) {
         };
 
         // render current VGA output pixel
-        SDL_SetRenderDrawColor(renderer, round_color(tb->vga_r), round_color(tb->vga_g), round_color(tb->vga_b), 255);
+        SDL_SetRenderDrawColor(renderer, round_color(sim.r()), round_color(sim.g()), round_color(sim.b()), 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
-        if (tb->vga_hsync && !vga_hsync_previous) {
+        if (sim.hsync() && !vga_hsync_previous) {
             current_x = 0;
             current_y++;
         }
 
-        vga_hsync_previous = tb->vga_hsync;
+        vga_hsync_previous = sim.hsync();
 
-        if (tb->vga_vsync && !vga_vsync_previous) {
+        if (sim.vsync() && !vga_vsync_previous) {
             current_y = 0;
             even_frame = !even_frame;
 
@@ -162,12 +163,12 @@ int main(int argc, const char * argv[]) {
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_LEFT];
-            tb->ics32_tb__DOT__ics32__DOT__btn2 = state[SDL_SCANCODE_RSHIFT];
-            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_RIGHT];
+            sim.button_1 = state[SDL_SCANCODE_LEFT];
+            sim.button_2 = state[SDL_SCANCODE_RSHIFT];
+            sim.button_3 = state[SDL_SCANCODE_RIGHT];
         }
 
-        vga_vsync_previous = tb->vga_vsync;
+        vga_vsync_previous = sim.vsync();
 
         // exit checking
         SDL_Event e;
@@ -178,7 +179,7 @@ int main(int argc, const char * argv[]) {
         }
     };
 
-    tb->final();
+    sim.final();
 
 #if VM_TRACE
     tfp->close();

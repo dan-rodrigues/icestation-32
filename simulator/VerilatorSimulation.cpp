@@ -15,3 +15,38 @@ void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &progra
 
     std::copy(program.begin(), program.end(), &flash[flash_user_base]);
 }
+
+void VerilatorSimulation::step() {
+    tb->clk_1x = clk_1x;
+    tb->clk_2x = clk_2x;
+
+    tb->ics32_tb__DOT__ics32__DOT__btn1 = button_1;
+    tb->ics32_tb__DOT__ics32__DOT__btn2 = button_2;
+    tb->ics32_tb__DOT__ics32__DOT__btn3 = button_3;
+
+    tb->eval();
+}
+
+uint8_t VerilatorSimulation::r() const {
+    return tb->vga_r;
+}
+
+uint8_t VerilatorSimulation::g() const {
+    return tb->vga_g;
+}
+
+uint8_t VerilatorSimulation::b() const {
+    return tb->vga_b;
+}
+
+bool VerilatorSimulation::hsync() const {
+    return tb->vga_hsync;
+}
+
+bool VerilatorSimulation::vsync() const {
+    return tb->vga_vsync;
+}
+
+void VerilatorSimulation::final() {
+    tb->final();
+}
