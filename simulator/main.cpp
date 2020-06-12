@@ -20,8 +20,6 @@ int main(int argc, const char * argv[]) {
     SimulationImpl sim;
     sim.forward_cmd_args(argc, argv);
 
-    std::vector<uint8_t> cpu_program;
-
     // expecting the test program as first argument for now
 
     if (argc < 2) {
@@ -39,10 +37,10 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    cpu_program = std::vector<uint8_t>(std::istreambuf_iterator<char>(cpu_program_stream), {});
+    std::vector<uint8_t> cpu_program(std::istreambuf_iterator<char>(cpu_program_stream), {});
 
     if (cpu_program.size() % 4) {
-        std::cerr << "Binary has irregular size: " << cpu_program.size() << std::endl;
+        std::cerr << "Program has irregular size: " << cpu_program.size() << std::endl;
         return EXIT_FAILURE;
     }
 

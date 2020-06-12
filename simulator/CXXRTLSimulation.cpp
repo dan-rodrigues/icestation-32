@@ -1,8 +1,8 @@
 #include "CXXRTLSimulation.hpp"
 
 void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) { 
-    auto & cpu_ram0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
-    auto & cpu_ram1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
+    auto & cpu_ram_0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
+    auto & cpu_ram_1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
 
     size_t flash_user_base = 0x100000; // !
     auto & flash = top.memory_p_sim__flash_2e_memory;
@@ -13,8 +13,8 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
         uint16_t low_word = program[i * 4] | program[i * 4 + 1] << 8;
         uint16_t high_word = program[i * 4 + 2] | program[i * 4 + 3] << 8;
 
-        cpu_ram0[i] = value<16>{low_word};
-        cpu_ram1[i] = value<16>{high_word};
+        cpu_ram_0[i] = value<16>{low_word};
+        cpu_ram_1[i] = value<16>{high_word};
 
         size_t flash_base = flash_user_base + i * 4;
 
@@ -63,9 +63,32 @@ void CXXRTLSimulation::step(uint64_t time) {
 
     top.step();
 
-//    tb->eval();
-
-#if VCD_WRITE
-//    vcd.sample(0);
+#if VM_TRACE
+    vcd.sample(time);
 #endif
 }
+
+#if VM_TRACE
+
+void CXXRTLSimulation::trace() {
+    cxxrtl::debug_items debug;
+    top.debug_info(debug);
+
+    cxxrtl::vcd_writer vcd;
+    vcd.timescale(1, "ns");
+
+    std::vector<std::string> filter_names = {"pico", "clk", "reset", "arbiter", "valid", "ready"};
+
+    vcd.add(debug, [&](const std::string &name, const debug_item &item) {
+        for (auto filter_name : filter_names) {
+            if (name.find(filter_name) != std::string::npos) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+}
+
+#endif
+

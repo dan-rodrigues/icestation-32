@@ -3,7 +3,8 @@
 
 #include "Simulation.hpp"
 
-#include SIM_INCLUDE
+#include "cxxrtl_sim.h"
+#include "cxxrtl_vcd.h"
 
 class CXXRTLSimulation: public Simulation {
 
@@ -29,16 +30,11 @@ public:
     bool finished() const override;
 
 private:
-    //        std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
-
-private:
     cxxrtl_design::p_ics32__tb top;
 
 #if VM_TRACE
-    std::unique_ptr<VerilatedVcdC> tfp;
-    void trace_update(uint64_t time);
+    cxxrtl::vcd_writer vcd;
 #endif
-
 };
 
 #endif /* CXXRTLSimulation_hpp */

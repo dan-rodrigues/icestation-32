@@ -38,7 +38,7 @@ cxxrtl_sim.cpp: $(HDL_SOURCES) $(BOOT_HEX)
 		read_verilog -I$(HDL_DIR) $(HDL_SOURCES); \
 		hierarchy -check -top $(HDL_TOP); splitnets -driver; clean -purge; \
 		proc; flatten; clean; \
-		write_cxxrtl -O5 $@'
+		write_cxxrtl -header -O5 $@'
 
 # remove cxxrtl_sim.cpp as phony target when this is all working
 .PHONY: main-build cxxrtl_sim # cxxrtl_sim.cpp
