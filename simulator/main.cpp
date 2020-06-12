@@ -6,12 +6,18 @@
 #include <iostream>
 #include <memory>
 
-#include "VerilatorSimulation.hpp"
+//#include "VerilatorSimulation.hpp"
+#include "CXXRTLSimulation.hpp"
 
 //#define SIM_IMPL VerilatorSimulation
+#define SIM_IMPL CXXRTLSimulation
+
+typedef SIM_IMPL SimulationImpl;
 
 int main(int argc, const char * argv[]) {
-    SIM_IMPL sim;
+    // should probably typedef this one to a common one
+    // which can be done in the impl specific build setup
+    SimulationImpl sim;
     sim.forward_cmd_args(argc, argv);
 
     std::vector<uint8_t> cpu_program;

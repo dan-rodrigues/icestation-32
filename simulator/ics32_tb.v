@@ -25,7 +25,11 @@ module ics32_tb(
     output vga_de,
 
     output led_r,
-    output led_b
+    output led_b,
+
+    input btn_1,
+    input btn_2,
+    input btn_3
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
@@ -50,6 +54,10 @@ module ics32_tb(
 
         .vga_clk(vga_clk),
         .vga_de(vga_de),
+
+        .btn_1(btn_1),
+        .btn_2(btn_2),
+        .btn_3(btn_3),
 
         .led_r(led_r),
         .led_b(led_b),

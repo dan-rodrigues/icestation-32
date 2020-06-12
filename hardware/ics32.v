@@ -39,9 +39,9 @@ module ics32 #(
     output led_r,
     output led_b,
 
-    input btn1,
-    input btn2,
-    input btn3,
+    input btn_1,
+    input btn_2,
+    input btn_3,
 
     output flash_sck,
     output flash_csn,
@@ -437,7 +437,7 @@ module ics32 #(
     always @(posedge vdp_clk) begin
         if (pad_latch) begin
             // left, right, B inputs respectively
-            pad_mock_state <= {btn1, btn3, 5'b0, btn2};
+            pad_mock_state <= {btn_1, btn_3, 5'b0, btn_2};
         end
 
         if (pad_clk && !pad_clk_r) begin
