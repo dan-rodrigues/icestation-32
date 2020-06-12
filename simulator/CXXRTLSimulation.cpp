@@ -45,15 +45,15 @@ bool CXXRTLSimulation::vsync() const {
     return top.p_vga__vsync.curr.data[0];
 }
 
-void CXXRTLSimulation::final() { 
-
+void CXXRTLSimulation::final() {
+    vcd_stream.close();
 }
 
 bool CXXRTLSimulation::finished() const { 
     return false;
 }
 
-void CXXRTLSimulation::step(uint64_t time) { 
+void CXXRTLSimulation::step(uint64_t time) {
     top.p_clk__1x = value<1>{clk_1x};
     top.p_clk__2x = value<1>{clk_2x};
 
@@ -64,20 +64,23 @@ void CXXRTLSimulation::step(uint64_t time) {
     top.step();
 
 #if VM_TRACE
-    vcd.sample(time);
+    update_trace(time);
 #endif
 }
 
 #if VM_TRACE
 
-void CXXRTLSimulation::trace() {
+void CXXRTLSimulation::trace(const std::string &filename) {
+    vcd_stream.exceptions(std::ofstream::failbit);
+    vcd_stream.open(filename, std::ios::out);
+
     cxxrtl::debug_items debug;
     top.debug_info(debug);
 
-    cxxrtl::vcd_writer vcd;
     vcd.timescale(1, "ns");
 
-    std::vector<std::string> filter_names = {"pico", "clk", "reset", "arbiter", "valid", "ready"};
+    // for now, just filter to a few signals of interest
+    std::vector<std::string> filter_names = {"pico", "clk", "reset", "valid", "ready"};
 
     vcd.add(debug, [&](const std::string &name, const debug_item &item) {
         for (auto filter_name : filter_names) {
@@ -90,5 +93,11 @@ void CXXRTLSimulation::trace() {
     });
 }
 
-#endif
+void CXXRTLSimulation::update_trace(uint64_t time) {
+    vcd.sample(time);
 
+    vcd_stream << vcd.buffer;
+    vcd.buffer.clear();
+}
+
+#endif

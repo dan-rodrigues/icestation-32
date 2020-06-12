@@ -56,15 +56,13 @@ void VerilatorSimulation::trace_update(uint64_t time) {
     tfp->dump((vluint64_t)time);
 }
 
-void VerilatorSimulation::trace() {
+void VerilatorSimulation::trace(const std::string &filename) {
     Verilated::traceEverOn(true);
-
-    const auto trace_path = "ics.vcd"; // !
 
     tfp = std::unique_ptr<VerilatedVcdC>(new VerilatedVcdC);
 
     tb->trace(tfp.get(), 99);
-    tfp->open(trace_path);
+    tfp->open(filename.c_str());
 }
 
 #endif

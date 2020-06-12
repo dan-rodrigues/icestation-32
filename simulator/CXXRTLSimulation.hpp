@@ -1,6 +1,9 @@
 #ifndef CXXRTLSimulation_hpp
 #define CXXRTLSimulation_hpp
 
+#include <fstream>
+#include <ostream>
+
 #include "Simulation.hpp"
 
 #include "cxxrtl_sim.h"
@@ -15,7 +18,7 @@ public:
     void step(uint64_t time) override;
 
 #if VM_TRACE
-    void trace() override;
+    void trace(const std::string &filename) override;
 #endif
 
     uint8_t r() const override;
@@ -34,6 +37,9 @@ private:
 
 #if VM_TRACE
     cxxrtl::vcd_writer vcd;
+    std::ofstream vcd_stream;
+
+    void update_trace(uint64_t time);
 #endif
 };
 

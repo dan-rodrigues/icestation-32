@@ -10,6 +10,5 @@
 
 # cxxrtl
 
-/cxxrtl_sim.cpp
-/cxxrtl_sim
+/cxxrtl_sim*
 

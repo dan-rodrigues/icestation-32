@@ -19,7 +19,7 @@ public:
     void step(uint64_t time) override;
 
 #if VM_TRACE
-    void trace() override;
+    void trace(const std::string &filename) override;
 #endif
 
     uint8_t r() const override;

@@ -21,7 +21,7 @@ public:
     virtual void step(uint64_t time) = 0;
 
 #if VM_TRACE
-    virtual void trace() = 0;
+    virtual void trace(const std::string &filename) = 0;
 #endif
 
     virtual uint8_t r() const = 0;

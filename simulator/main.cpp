@@ -82,7 +82,7 @@ int main(int argc, const char * argv[]) {
     bool even_frame = true;
 
 #if VM_TRACE
-    sim.trace();
+    sim.trace("ics.vcd");
 #endif
 
     bool vga_hsync_previous = false;
