@@ -5,8 +5,6 @@
 #include <vector>
 #include <stdint.h>
 
-#define VM_TRACE 1
-
 class Simulation {
     
 public:
@@ -17,6 +15,8 @@ public:
     bool clk_1x = false, clk_2x = false;
     bool button_1 = false, button_2 = false, button_3 = false;
 
+    virtual void forward_cmd_args(int argc, const char * argv[]) = 0;
+    
     virtual void preload_cpu_program(const std::vector<uint8_t> &program) = 0;
     virtual void step(uint64_t time) = 0;
 

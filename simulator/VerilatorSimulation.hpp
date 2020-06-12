@@ -1,8 +1,8 @@
 #ifndef VerilatorSimulation_hpp
 #define VerilatorSimulation_hpp
 
-#include "obj_dir/Vics32_tb.h"
 #include "Simulation.hpp"
+#include "obj_dir/Vics32_tb.h"
 
 #include <memory>
 
@@ -13,7 +13,7 @@
 class VerilatorSimulation: public Simulation {
 
 public:
-    VerilatorSimulation(int argc, const char * argv[]);
+    void forward_cmd_args(int argc, const char * argv[]) override;
 
     void preload_cpu_program(const std::vector<uint8_t> &program) override;
     void step(uint64_t time) override;

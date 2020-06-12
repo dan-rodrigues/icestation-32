@@ -8,13 +8,11 @@
 
 #include "VerilatorSimulation.hpp"
 
-int main(int argc, const char * argv[]) {
-    // test
-    VerilatorSimulation sim(argc, argv);
-//    VerilatorSimulation sim;
-    // ...
+//#define SIM_IMPL VerilatorSimulation
 
-//    Simulation & sim = vsim;
+int main(int argc, const char * argv[]) {
+    SIM_IMPL sim;
+    sim.forward_cmd_args(argc, argv);
 
     std::vector<uint8_t> cpu_program;
 

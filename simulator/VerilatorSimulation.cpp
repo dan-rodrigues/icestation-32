@@ -2,15 +2,18 @@
 
 #include <assert.h>
 
-// Current simulation time (64-bit unsigned)
-vluint64_t main_time = 0;
-// Called by $time in Verilog
+// verilator specific: called by $time in Verilog
+static vluint64_t main_time = 0;
 double sc_time_stamp() {
     return main_time;
 }
 
-VerilatorSimulation::VerilatorSimulation(int argc, const char *argv[]) {
+void VerilatorSimulation::forward_cmd_args(int argc, const char *argv[]) {
     Verilated::commandArgs(argc, argv);
+}
+
+bool VerilatorSimulation::finished() const {
+    return Verilated::gotFinish();
 }
 
 void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &program) {
@@ -95,8 +98,3 @@ void VerilatorSimulation::final() {
     }
 #endif
 }
-
-bool VerilatorSimulation::finished() const { 
-    return Verilated::gotFinish();
-}
-
