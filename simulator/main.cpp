@@ -6,12 +6,6 @@
 #include <iostream>
 #include <memory>
 
-//#include "VerilatorSimulation.hpp"
-//#include "CXXRTLSimulation.hpp"
-
-//#define SIM_IMPL VerilatorSimulation
-//#define SIM_IMPL CXXRTLSimulation
-
 #ifdef SIM_VERILATOR
 
 #include "VerilatorSimulation.hpp"
@@ -29,8 +23,6 @@ typedef CXXRTLSimulation SimulationImpl;
 #endif
 
 int main(int argc, const char * argv[]) {
-    // should probably typedef this one to a common one
-    // which can be done in the impl specific build setup
     SimulationImpl sim;
     sim.forward_cmd_args(argc, argv);
 

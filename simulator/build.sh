@@ -20,7 +20,7 @@ VLT_FLAGS="	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 TOP_MODULE=ics32_tb
 RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"
 
-CFLAGS="-std=c++14 -Os $(sdl2-config --cflags) -I../ -DSIM_VERILATOR"
+CFLAGS="-std=c++14 -O3 $(sdl2-config --cflags) -I../ -DSIM_VERILATOR"
 LDFLAGS="$(sdl2-config --libs)"
 
 ICE40_CELLS_SIM=$(yosys-config --datdir/ice40/cells_sim.v)
