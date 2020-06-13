@@ -6,11 +6,11 @@
 #include <iostream>
 #include <memory>
 
-//#include "VerilatorSimulation.hpp"
-#include "CXXRTLSimulation.hpp"
+#include "VerilatorSimulation.hpp"
+//#include "CXXRTLSimulation.hpp"
 
-//#define SIM_IMPL VerilatorSimulation
-#define SIM_IMPL CXXRTLSimulation
+#define SIM_IMPL VerilatorSimulation
+//#define SIM_IMPL CXXRTLSimulation
 
 typedef SIM_IMPL SimulationImpl;
 
@@ -53,6 +53,12 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
+    // SDL defaults to Metal API on MacOS and is incredibly slow to run SDL_RenderPresent()
+    // Hint to use OpenGL if possible
+#if TARGET_OS_MAC
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+#endif
+
     // 848x480 is assumed (smaller video modes will still appear correctly)
 
     const auto active_width = 848;
@@ -79,7 +85,6 @@ int main(int argc, const char * argv[]) {
 
     int current_x = 0;
     int current_y = 0;
-    bool even_frame = true;
 
 #if VM_TRACE
     sim.trace("ics.vcd");
@@ -122,15 +127,12 @@ int main(int argc, const char * argv[]) {
         if (sim.hsync() && !vga_hsync_previous) {
             current_x = 0;
             current_y++;
-
-            std::cout << "line: " << current_y << "\n";
         }
 
         vga_hsync_previous = sim.hsync();
 
         if (sim.vsync() && !vga_vsync_previous) {
             current_y = 0;
-            even_frame = !even_frame;
 
             SDL_RenderPresent(renderer);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -143,6 +145,8 @@ int main(int argc, const char * argv[]) {
             sim.button_1 = state[SDL_SCANCODE_LEFT];
             sim.button_2 = state[SDL_SCANCODE_RSHIFT];
             sim.button_3 = state[SDL_SCANCODE_RIGHT];
+
+            std::cout << "frame, step: " << time << "\n";
         }
 
         vga_vsync_previous = sim.vsync();

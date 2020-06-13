@@ -38,9 +38,9 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->clk_1x = clk_1x;
     tb->clk_2x = clk_2x;
 
-    tb->ics32_tb__DOT__ics32__DOT__btn1 = button_1;
-    tb->ics32_tb__DOT__ics32__DOT__btn2 = button_2;
-    tb->ics32_tb__DOT__ics32__DOT__btn3 = button_3;
+    tb->btn_1 = button_1;
+    tb->btn_2 = button_2;
+    tb->btn_3 = button_3;
 
     tb->eval();
 
