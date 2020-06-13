@@ -10,11 +10,13 @@
 
 #include "VerilatorSimulation.hpp"
 typedef VerilatorSimulation SimulationImpl;
+const std::string title = "verilator";
 
 #elif defined(SIM_CXXRTL)
 
 #include "CXXRTLSimulation.hpp"
 typedef CXXRTLSimulation SimulationImpl;
+const std::string title = "cxxrtl";
 
 #else
 
@@ -76,7 +78,7 @@ int main(int argc, const char * argv[]) {
     const auto total_height = active_height + offscreen_height;
 
     auto window = SDL_CreateWindow(
-       "ics32-sim (verilator)",
+       ("ics32-sim (" + title + ")").c_str(),
        SDL_WINDOWPOS_CENTERED,
        SDL_WINDOWPOS_CENTERED,
        total_width,

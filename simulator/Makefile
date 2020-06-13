@@ -73,7 +73,7 @@ cxxrtl_sim_trace.cpp: $(CXXRTL_DEPS)
 ### Verilator ###
 
 VLT_FLAGS =	\
-	-cc --language 1364-2005 -v config.vlt $(CXX_OPT) --assert \
+	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 	-Wall -Wno-fatal -Wno-WIDTH -Wno-TIMESCALEMOD \
 	-I$(HDL_DIR) \
 	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS
@@ -82,7 +82,8 @@ ICE40_CELLS_SIM := $(shell yosys-config --datdir/ice40/cells_sim.v)
 
 VLT_CXX_SOURCES = main.cpp ../VerilatorSimulation.cpp
 
-VLT_CFLAGS := -std=c++14 -O3 $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
+VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
+
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 
 verilator_sim_trace: VLT_FLAGS += --trace
@@ -107,4 +108,3 @@ verilator_sim_trace:
 	$(build-verilator-sim)
 
 .PHONY: verilator_sim verilator_sim_trace
-
