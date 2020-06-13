@@ -11,4 +11,5 @@
 # cxxrtl
 
 /cxxrtl_sim*
+/verilator_sim*
 

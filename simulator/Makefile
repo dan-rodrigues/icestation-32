@@ -21,7 +21,7 @@ HDL_DIR = ../hardware
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
-HDL_SOURCES += $(HDL_TOP).v cells_sim.v sim_spiflash.v
+HDL_SOURCES += $(HDL_TOP).v sim_spiflash.v
 
 CXX_OPT = -O3
 
@@ -31,6 +31,7 @@ CXXRTL_OPT = -O6
 cxxrtl_sim_trace: CXXRTL_OPT = -Og
 
 CXXRTL_SRCS = CXXRTLSimulation.cpp
+CXXRTL_SIM_MODELS = ice40_spram.v
 CXXRTL_INCLUDES := $(shell yosys-config --datdir/include)
 CXXRTL_CFLAGS := \
 	-Wall \
@@ -46,7 +47,7 @@ CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alph
 define write-sim
 	yosys -p \
 		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
-		read_verilog -I$(HDL_DIR) $(HDL_SOURCES); \
+		read_verilog -I$(HDL_DIR) $(CXXRTL_SIM_MODELS) $(HDL_SOURCES); \
 		hierarchy -check -top $(HDL_TOP); \
 		proc; flatten; clean; splitnets -driver; clean -purge; \
 		write_cxxrtl -header $(CXXRTL_OPT) $@'
@@ -62,7 +63,7 @@ cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
 cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)	
 	$(build-sim)
 
-$(CXXRTL_DEPS): $(HDL_SOURCES) $(BOOT_HEX) alpha_lut.hex
+$(CXXRTL_DEPS): $(HDL_SOURCES) $(BOOT_HEX) $(CXXRTL_SIM_MODELS) alpha_lut.hex
  
 cxxrtl_sim.cpp: $(CXXRTL_DEPS)
 	$(write-sim)
