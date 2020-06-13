@@ -6,11 +6,11 @@
 #include <iostream>
 #include <memory>
 
-#include "VerilatorSimulation.hpp"
-//#include "CXXRTLSimulation.hpp"
+//#include "VerilatorSimulation.hpp"
+#include "CXXRTLSimulation.hpp"
 
-#define SIM_IMPL VerilatorSimulation
-//#define SIM_IMPL CXXRTLSimulation
+//#define SIM_IMPL VerilatorSimulation
+#define SIM_IMPL CXXRTLSimulation
 
 typedef SIM_IMPL SimulationImpl;
 
@@ -110,7 +110,7 @@ int main(int argc, const char * argv[]) {
 
     uint64_t time = 0;
 
-    const auto sdl_poll_interval = 100000;
+    const auto sdl_poll_interval = 10000;
     auto sdl_poll_counter = sdl_poll_interval;
 
     while (!sim.finished()) {

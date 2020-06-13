@@ -53,6 +53,7 @@ module vdp_blender(
     wire [4:0] alpha_lut_source_output = alpha_lut_output[4:0];
     wire [4:0] alpha_lut_dest_output = alpha_lut_output[9:5];
 
+`ifndef ALPHA_LUT
     genvar var_source_alpha, var_dest_alpha;
 
     generate
@@ -70,17 +71,19 @@ module vdp_blender(
                     // this causes an assertion in yosys when using this with cxxrtl
                     // issue with context on the root cause:
                     // https://github.com/YosysHQ/yosys/issues/2129
-
-                    // TODO: ifdef macro check and readmemh if it is defined instead of doing this
-                    // alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
+                    alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
                 end
             end
         end
     endgenerate
+`else
+    initial begin
+        $readmemh(`ALPHA_LUT, alpha_lut);
+    end
+`endif
 
     always @(posedge clk) begin
-        // alpha_lut_output <= alpha_lut[alpha_lut_address];
-        alpha_lut_output <= 5'h10;
+        alpha_lut_output <= alpha_lut[alpha_lut_address];
     end
 
     // need to add 2 cycles of pipeline delay to allow LUT lookup
