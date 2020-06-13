@@ -83,6 +83,18 @@ int main(int argc, const char * argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    SDL_Texture *texture = SDL_CreateTexture(renderer,
+        SDL_PIXELFORMAT_RGB24,
+        SDL_TEXTUREACCESS_STATIC,
+        total_width,
+        total_height
+    );
+
+    const auto stride = total_width * 3;
+
+    uint8_t *pixels = (uint8_t *)std::calloc(stride * total_height * 3, sizeof(uint8_t));
+    assert(pixels);
+
     int current_x = 0;
     int current_y = 0;
 
@@ -98,7 +110,7 @@ int main(int argc, const char * argv[]) {
 
     uint64_t time = 0;
 
-    const auto sdl_poll_interval = 10000;
+    const auto sdl_poll_interval = 100000;
     auto sdl_poll_counter = sdl_poll_interval;
 
     while (!sim.finished()) {
@@ -118,10 +130,11 @@ int main(int argc, const char * argv[]) {
         };
 
         // render current VGA output pixel
-        // this could alternatively go into a SDL_TEXTUREACCESS_STATIC texture rather than going through SDL API
-        // does not seem to make a noticable difference compared to this simple offscreen RenderDrawPoint approach
-        SDL_SetRenderDrawColor(renderer, extend_color(sim.r()), extend_color(sim.g()), extend_color(sim.b()), 255);
-        SDL_RenderDrawPoint(renderer, current_x, current_y);
+        size_t pixel_base = (current_y * total_width + current_x) * 3;
+        pixels[pixel_base++] = extend_color(sim.r());
+        pixels[pixel_base++] = extend_color(sim.g());
+        pixels[pixel_base++] = extend_color(sim.b());
+
         current_x++;
 
         if (sim.hsync() && !vga_hsync_previous) {
@@ -134,9 +147,9 @@ int main(int argc, const char * argv[]) {
         if (sim.vsync() && !vga_vsync_previous) {
             current_y = 0;
 
+            SDL_UpdateTexture(texture, NULL, pixels, stride);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
 
             // input test (using mocked 3-button setup as the iCEBreaker)
             SDL_PumpEvents();
@@ -167,8 +180,12 @@ int main(int argc, const char * argv[]) {
 
     sim.final();
 
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    std::free(pixels);
 
     return EXIT_SUCCESS;
 }
