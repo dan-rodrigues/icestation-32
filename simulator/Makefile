@@ -9,11 +9,11 @@ dummy:
 
 -include dummy
 
-### common ###
+### Common ###
 
 SIM_NAME = ics32-sim
-SIM_IMPL = CXXRTLSimulation
-SIM_SRCS = main.cpp $(SIM_IMPL).cpp
+SIM_SRCS = main.cpp
+SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb
 HDL_DIR = ../hardware
@@ -25,18 +25,20 @@ HDL_SOURCES += $(HDL_TOP).v cells_sim.v sim_spiflash.v
 
 CXX_OPT = -O3
 
-### cxxrtl ###
+### CXXRTL ###
 
+CXXRTL_OPT = -O6
+cxxrtl_sim_trace: CXXRTL_OPT = -Og
+
+CXXRTL_SRCS = CXXRTLSimulation.cpp
 CXXRTL_INCLUDES := $(shell yosys-config --datdir/include)
 CXXRTL_CFLAGS := \
+	-Wall \
 	$(shell sdl2-config --cflags) \
 	-DSIM_CXXRTL \
 	-DCXXRTL_INCLUDE_CAPI_IMPL
 
-CXXRTL_OPT = -O6
-
-cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE
-cxxrtl_sim_trace: CXXRTL_OPT = -Og
+cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE=1
 
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
@@ -51,13 +53,13 @@ define write-sim
 endef
 
 define build-sim
-	g++ -std=c++14 $(CXX_OPT) -I$(CXXRTL_INCLUDES) $< $(SIM_SRCS) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) -o $@
+	g++ -std=c++14 $(CXX_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) $< $(SIM_SRCS) $(CXXRTL_SRCS) -o $@
 endef
 
-cxxrtl_sim: cxxrtl_sim.cpp
+cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
 	$(build-sim)
 
-cxxrtl_sim_trace: cxxrtl_sim_trace.cpp	
+cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)	
 	$(build-sim)
 
 $(CXXRTL_DEPS): $(HDL_SOURCES) $(BOOT_HEX) alpha_lut.hex
@@ -86,6 +88,7 @@ VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VE
 
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 
+verilator_sim_trace: VLT_CFLAGS += -DVCD_WRITE=1
 verilator_sim_trace: VLT_FLAGS += --trace
 
 # Verilator already manages dependnecies, generates its own Makefile, forwards your C/LDFLAGS etc.

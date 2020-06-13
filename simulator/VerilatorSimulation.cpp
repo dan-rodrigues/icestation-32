@@ -44,12 +44,12 @@ void VerilatorSimulation::step(uint64_t time) {
 
     tb->eval();
 
-#if VM_TRACE
+#if VCD_WRITE
     trace_update(time);
 #endif
 }
 
-#if VM_TRACE
+#if VCD_WRITE
 
 void VerilatorSimulation::trace_update(uint64_t time) {
     assert(tfp);
@@ -63,6 +63,7 @@ void VerilatorSimulation::trace(const std::string &filename) {
 
     tb->trace(tfp.get(), 99);
     tfp->open(filename.c_str());
+    assert(tfp->isOpen());
 }
 
 #endif
@@ -90,7 +91,7 @@ bool VerilatorSimulation::vsync() const {
 void VerilatorSimulation::final() {
     tb->final();
 
-#if VM_TRACE
+#if VCD_WRITE
     if (tfp) {
         tfp->close();
     }

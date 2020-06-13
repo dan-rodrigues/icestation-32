@@ -31,7 +31,7 @@ int main(int argc, const char * argv[]) {
     // expecting the test program as first argument for now
 
     if (argc < 2) {
-        std::cout << "Usage: ics32-sim <test-program>" << std::endl;
+        std::cout << "Usage: <sim> <test-program>" << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -46,6 +46,7 @@ int main(int argc, const char * argv[]) {
     }
 
     std::vector<uint8_t> cpu_program(std::istreambuf_iterator<char>(cpu_program_stream), {});
+    cpu_program_stream.close();
 
     if (cpu_program.size() % 4) {
         std::cerr << "Program has irregular size: " << cpu_program.size() << std::endl;
@@ -106,7 +107,7 @@ int main(int argc, const char * argv[]) {
     int current_x = 0;
     int current_y = 0;
 
-#if VM_TRACE
+#if VCD_WRITE
     sim.trace("ics.vcd");
 #endif
 
@@ -117,6 +118,7 @@ int main(int argc, const char * argv[]) {
     sim.clk_2x = 0;
 
     uint64_t time = 0;
+    uint64_t previous_ticks = 0;
 
     const auto sdl_poll_interval = 10000;
     auto sdl_poll_counter = sdl_poll_interval;
@@ -167,7 +169,12 @@ int main(int argc, const char * argv[]) {
             sim.button_2 = state[SDL_SCANCODE_RSHIFT];
             sim.button_3 = state[SDL_SCANCODE_RIGHT];
 
-            std::cout << "frame, step: " << time << "\n";
+            // measure time spent to render frame
+            uint64_t current_ticks = SDL_GetTicks();
+            double delta = current_ticks - previous_ticks;
+            auto fps_estimate = 1 / (delta / 1000.f);
+            std::cout << "Frame drawn in: " << delta << "ms, " << fps_estimate << "fps" << std::endl;
+            previous_ticks = current_ticks;
         }
 
         vga_vsync_previous = sim.vsync();

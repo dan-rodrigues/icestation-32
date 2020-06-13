@@ -20,7 +20,7 @@ public:
     virtual void preload_cpu_program(const std::vector<uint8_t> &program) = 0;
     virtual void step(uint64_t time) = 0;
 
-#if VM_TRACE
+#if VCD_WRITE
     virtual void trace(const std::string &filename) = 0;
 #endif
 

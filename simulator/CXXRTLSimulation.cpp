@@ -4,7 +4,7 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
     auto & cpu_ram_0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
     auto & cpu_ram_1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
 
-    size_t flash_user_base = 0x100000; // !
+    size_t flash_user_base = 0x100000;
     auto & flash = top.memory_p_sim__flash_2e_memory;
 
     size_t ipl_load_length = std::min((size_t)0x20000, program.size());
@@ -46,7 +46,7 @@ bool CXXRTLSimulation::vsync() const {
 }
 
 void CXXRTLSimulation::final() {
-#if VM_TRACE
+#if VCD_WRITE
     vcd_stream.close();
 #endif
 }
@@ -65,15 +65,15 @@ void CXXRTLSimulation::step(uint64_t time) {
 
     top.step();
 
-#if VM_TRACE
+#if VCD_WRITE
     update_trace(time);
 #endif
 }
 
-#if VM_TRACE
+#if VCD_WRITE
 
 void CXXRTLSimulation::trace(const std::string &filename) {
-    vcd_stream.exceptions(std::ofstream::failbit);
+    vcd_stream.exceptions(std::ofstream::failbit | std::ofstream::badbit);
     vcd_stream.open(filename, std::ios::out);
 
     cxxrtl::debug_items debug;
@@ -82,7 +82,7 @@ void CXXRTLSimulation::trace(const std::string &filename) {
     vcd.timescale(1, "ns");
 
     // for now, just filter to a few signals of interest
-    std::vector<std::string> filter_names = {"pico", "clk", "reset", "valid", "ready"};
+    const std::vector<std::string> filter_names = {"pico", "clk", "reset", "valid", "ready"};
 
     vcd.add(debug, [&](const std::string &name, const debug_item &item) {
         for (auto filter_name : filter_names) {

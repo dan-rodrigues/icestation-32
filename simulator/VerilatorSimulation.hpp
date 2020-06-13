@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#if VM_TRACE
+#if VCD_WRITE
 #include <verilated_vcd_c.h>
 #endif
 
@@ -18,7 +18,7 @@ public:
     void preload_cpu_program(const std::vector<uint8_t> &program) override;
     void step(uint64_t time) override;
 
-#if VM_TRACE
+#if VCD_WRITE
     void trace(const std::string &filename) override;
 #endif
 
@@ -36,7 +36,7 @@ public:
 private:
     std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
 
-#if VM_TRACE
+#if VCD_WRITE
     std::unique_ptr<VerilatedVcdC> tfp;
     void trace_update(uint64_t time);
 #endif

@@ -8,8 +8,8 @@
 
 #include "cxxrtl_sim.h"
 
-#if VM_TRACE
-#include "cxxrtl_vcd.h"
+#if VCD_WRITE
+#include <backends/cxxrtl/cxxrtl_vcd.h>
 #endif
 
 class CXXRTLSimulation: public Simulation {
@@ -20,7 +20,7 @@ public:
     void preload_cpu_program(const std::vector<uint8_t> &program) override;
     void step(uint64_t time) override;
 
-#if VM_TRACE
+#if VCD_WRITE
     void trace(const std::string &filename) override;
 #endif
 
@@ -38,7 +38,7 @@ public:
 private:
     cxxrtl_design::p_ics32__tb top;
 
-#if VM_TRACE
+#if VCD_WRITE
     cxxrtl::vcd_writer vcd;
     std::ofstream vcd_stream;
 
