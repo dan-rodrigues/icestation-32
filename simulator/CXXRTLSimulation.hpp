@@ -7,7 +7,10 @@
 #include "Simulation.hpp"
 
 #include "cxxrtl_sim.h"
+
+#if VM_TRACE
 #include "cxxrtl_vcd.h"
+#endif
 
 class CXXRTLSimulation: public Simulation {
 

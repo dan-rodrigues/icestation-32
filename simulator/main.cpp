@@ -93,6 +93,9 @@ int main(int argc, const char * argv[]) {
 
     uint64_t time = 0;
 
+    const auto sdl_poll_interval = 10000;
+    auto sdl_poll_counter = sdl_poll_interval;
+
     while (!sim.finished()) {
         // clock negedge
         sim.clk_2x = 0;
@@ -105,18 +108,22 @@ int main(int argc, const char * argv[]) {
         sim.step(time);
         time++;
 
-        auto round_color = [] (uint8_t component) {
+        auto extend_color = [] (uint8_t component) {
             return component | component << 4;
         };
 
         // render current VGA output pixel
-        SDL_SetRenderDrawColor(renderer, round_color(sim.r()), round_color(sim.g()), round_color(sim.b()), 255);
+        // this could alternatively go into a SDL_TEXTUREACCESS_STATIC texture rather than going through SDL API
+        // does not seem to make a noticable difference compared to this simple offscreen RenderDrawPoint approach
+        SDL_SetRenderDrawColor(renderer, extend_color(sim.r()), extend_color(sim.g()), extend_color(sim.b()), 255);
         SDL_RenderDrawPoint(renderer, current_x, current_y);
         current_x++;
 
         if (sim.hsync() && !vga_hsync_previous) {
             current_x = 0;
             current_y++;
+
+            std::cout << "line: " << current_y << "\n";
         }
 
         vga_hsync_previous = sim.hsync();
@@ -141,11 +148,16 @@ int main(int argc, const char * argv[]) {
         vga_vsync_previous = sim.vsync();
 
         // exit checking
-        SDL_Event e;
-        SDL_PollEvent(&e);
 
-        if (e.type == SDL_QUIT) {
-            break;
+        if (!(--sdl_poll_counter)) {
+            SDL_Event e;
+            SDL_PollEvent(&e);
+
+            if (e.type == SDL_QUIT) {
+                break;
+            }
+
+            sdl_poll_counter = sdl_poll_interval;
         }
     };
 
