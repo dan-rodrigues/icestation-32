@@ -40,8 +40,8 @@ cxxrtl_sim.cpp: $(HDL_SOURCES) $(BOOT_HEX) alpha_lut.hex
 	yosys -p \
 		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog -I$(HDL_DIR) $(HDL_SOURCES); \
-		hierarchy -check -top $(HDL_TOP); splitnets -driver; clean -purge; \
-		proc; flatten; clean; \
+		hierarchy -check -top $(HDL_TOP); \
+		proc; flatten; clean; splitnets -driver; clean -purge; \
 		write_cxxrtl -header $(CXXRTL_OPT) $@'
 
 # remove cxxrtl_sim.cpp as phony target when this is all working
