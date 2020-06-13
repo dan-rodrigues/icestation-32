@@ -7,12 +7,26 @@
 #include <memory>
 
 //#include "VerilatorSimulation.hpp"
-#include "CXXRTLSimulation.hpp"
+//#include "CXXRTLSimulation.hpp"
 
 //#define SIM_IMPL VerilatorSimulation
-#define SIM_IMPL CXXRTLSimulation
+//#define SIM_IMPL CXXRTLSimulation
 
-typedef SIM_IMPL SimulationImpl;
+#ifdef SIM_VERILATOR
+
+#include "VerilatorSimulation.hpp"
+typedef VerilatorSimulation SimulationImpl;
+
+#elif defined(SIM_CXXRTL)
+
+#include "CXXRTLSimulation.hpp"
+typedef CXXRTLSimulation SimulationImpl;
+
+#else
+
+#error Expected one of SIM_VERILATOR or SIM_CXXRTL to be defined
+
+#endif
 
 int main(int argc, const char * argv[]) {
     // should probably typedef this one to a common one

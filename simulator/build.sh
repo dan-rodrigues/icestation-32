@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# Verilator already manages dependnecies, generates its own Makefile, invokes for you etc. etc.
+# There is no need to duplicate that effort here, just invokve it everytime and it'll only do
+# work if necessary.
+
 SH_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)
 
 SIM_NAME=ics32-sim
-CXX_SOURCES="main.cpp VerilatorSimulation.cpp"
+CXX_SOURCES="main.cpp ../VerilatorSimulation.cpp"
 
 BOOT_DIR="${SH_DIR}/../firmware"
 BOOT_HEX="${BOOT_DIR}/boot.hex"
@@ -16,8 +20,8 @@ VLT_FLAGS="	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 TOP_MODULE=ics32_tb
 RTL_INCLUDE="-I../hardware -I../hardware/vdp -I../hardware/sim"
 
-CFLAGS="-std=c++14 -Os $(sdl2-config --cflags) -DSIM_IMPL=VerilatorSimulation"
-LDFLAGS=$(sdl2-config --libs)
+CFLAGS="-std=c++14 -Os $(sdl2-config --cflags) -I../ -DSIM_VERILATOR"
+LDFLAGS="$(sdl2-config --libs)"
 
 ICE40_CELLS_SIM=$(yosys-config --datdir/ice40/cells_sim.v)
 
