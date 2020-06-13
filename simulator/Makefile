@@ -31,7 +31,6 @@ ifeq ($(TRACE), 1)
 endif
 
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
-CXXRTL_OPT = -O3
 CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
 
 include ../hardware/sources.mk

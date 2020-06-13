@@ -56,12 +56,12 @@ bool CXXRTLSimulation::finished() const {
 }
 
 void CXXRTLSimulation::step(uint64_t time) {
-    top.p_clk__1x.next = value<1>{clk_1x};
-    top.p_clk__2x.next = value<1>{clk_2x};
+    top.p_clk__1x = value<1>{clk_1x};
+    top.p_clk__2x = value<1>{clk_2x};
 
-    top.p_btn__1.next = value<1>{button_1};
-    top.p_btn__2.next = value<1>{button_2};
-    top.p_btn__3.next = value<1>{button_3};
+    top.p_btn__1 = value<1>{button_1};
+    top.p_btn__2 = value<1>{button_2};
+    top.p_btn__3 = value<1>{button_3};
 
     top.step();
 
