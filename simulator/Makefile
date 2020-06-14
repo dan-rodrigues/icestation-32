@@ -42,7 +42,7 @@ CXXRTL_CFLAGS := \
 cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE=1
 
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
-CXXRTL_HDL_DEFINES = -DVERILATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
+CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
 
 define write-sim
 	yosys -p \
@@ -63,7 +63,7 @@ cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
 cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)	
 	$(build-sim)
 
-$(CXXRTL_DEPS): $(HDL_SOURCES) $(BOOT_HEX) $(CXXRTL_SIM_MODELS) alpha_lut.hex
+CXXRTL_DEPS = $(HDL_SOURCES) $(BOOT_HEX) $(CXXRTL_SIM_MODELS) alpha_lut.hex
  
 cxxrtl_sim.cpp: $(CXXRTL_DEPS)
 	$(write-sim)
@@ -79,7 +79,7 @@ VLT_FLAGS =	\
 	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 	-Wall -Wno-fatal -Wno-WIDTH -Wno-TIMESCALEMOD \
 	-I$(HDL_DIR) \
-	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS
+	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS -DSIMULATOR
 
 ICE40_CELLS_SIM := $(shell yosys-config --datdir/ice40/cells_sim.v)
 

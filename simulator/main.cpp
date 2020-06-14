@@ -99,20 +99,20 @@ int main(int argc, const char * argv[]) {
         total_height
     );
 
-    const auto stride = total_width * 3;
-
-    uint8_t *pixels = (uint8_t *)std::calloc(stride * total_height * 3, sizeof(uint8_t));
+    const size_t rgb24_size = 3;
+    uint8_t *pixels = (uint8_t *)std::calloc(total_width * total_height * rgb24_size, sizeof(uint8_t));
     assert(pixels);
 
     int current_x = 0;
     int current_y = 0;
+    size_t pixel_index = 0;
 
 #if VCD_WRITE
     sim.trace("ics.vcd");
 #endif
 
-    bool vga_hsync_previous = false;
-    bool vga_vsync_previous = false;
+    bool vga_hsync_previous = true;
+    bool vga_vsync_previous = true;
 
     sim.clk_1x = 0;
     sim.clk_2x = 0;
@@ -135,28 +135,46 @@ int main(int argc, const char * argv[]) {
         sim.step(time);
         time++;
 
-        auto extend_color = [] (uint8_t component) {
+        const auto extend_color = [] (uint8_t component) {
             return component | component << 4;
         };
 
         // render current VGA output pixel
-        size_t pixel_base = (current_y * total_width + current_x) * 3;
-        pixels[pixel_base++] = extend_color(sim.r());
-        pixels[pixel_base++] = extend_color(sim.g());
-        pixels[pixel_base++] = extend_color(sim.b());
+        bool active_display = sim.vsync() && sim.hsync();
+        bool in_bounds = current_x < total_width && current_y < total_height;
+        if (active_display && in_bounds) {
+            pixels[pixel_index++] = extend_color(sim.r());
+            pixels[pixel_index++] = extend_color(sim.g());
+            pixels[pixel_index++] = extend_color(sim.b());
+        } else if (active_display) {
+            std::cout << "Attempted to draw out of bounds pixel: (" << current_x << ", " << current_y << ")" << std::endl;
+        }
 
         current_x++;
 
-        if (sim.hsync() && !vga_hsync_previous) {
+        const auto update_pixel_index = [&] () {
+            pixel_index = current_y * total_width * rgb24_size;
+        };
+
+        if (!sim.hsync()) {
             current_x = 0;
+            update_pixel_index();
+        }
+
+        if (sim.hsync() && !vga_hsync_previous) {
             current_y++;
+            update_pixel_index();
         }
 
         vga_hsync_previous = sim.hsync();
 
-        if (sim.vsync() && !vga_vsync_previous) {
+        if (!sim.vsync()) {
             current_y = 0;
+            update_pixel_index();
+        }
 
+        if (sim.vsync() && !vga_vsync_previous) {
+            const auto stride = total_width * rgb24_size;
             SDL_UpdateTexture(texture, NULL, pixels, stride);
             SDL_RenderCopy(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
