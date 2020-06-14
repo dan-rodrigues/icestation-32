@@ -11,7 +11,6 @@ dummy:
 
 ### Common ###
 
-SIM_NAME = ics32-sim
 SIM_SRCS = main.cpp
 SIM_HEADERS =  Simulation.hpp
 
@@ -71,9 +70,9 @@ cxxrtl_sim.cpp: $(CXXRTL_DEPS)
 cxxrtl_sim_trace.cpp: $(CXXRTL_DEPS)
 	$(write-sim)
 
-.PHONY: main-build
-
 ### Verilator ###
+
+VLT_SIM_NAME = ics32-sim
 
 VLT_FLAGS =	\
 	-cc --language 1364-2005 -v config.vlt -O3 --assert \
@@ -84,9 +83,7 @@ VLT_FLAGS =	\
 ICE40_CELLS_SIM := $(shell yosys-config --datdir/ice40/cells_sim.v)
 
 VLT_CXX_SOURCES = main.cpp ../VerilatorSimulation.cpp
-
 VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
-
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 
 verilator_sim_trace: VLT_CFLAGS += -DVCD_WRITE=1
@@ -98,11 +95,11 @@ verilator_sim_trace: VLT_FLAGS += --trace
 
 define build-verilator-sim
 	set -e ;\
-	verilator $(VLT_FLAGS) -o $(SIM_NAME) \
+	verilator $(VLT_FLAGS) -o $(VLT_SIM_NAME) \
 		--top-module $(HDL_TOP) $(HDL_SOURCES) $(HDL_TOP).v $(ICE40_CELLS_SIM) \
 		-CFLAGS "$(VLT_CFLAGS)" -LDFLAGS "$(VLT_LDFLAGS)" --exe $(VLT_CXX_SOURCES) ;\
 	make -C obj_dir/ -f V$(HDL_TOP).mk ;\
-	cp obj_dir/$(SIM_NAME) $@
+	cp obj_dir/$(VLT_SIM_NAME) $@
 endef
 
 verilator_sim:
