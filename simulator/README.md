@@ -26,7 +26,7 @@ make cxxrtl_sim
 
 ## Quickstart
 
-An example script is included to build and run the sprites demo in one step. Note that this example script assumes a GNU RISC-V toolchain is already installed and configured in its Makefile.
+An example script is included to build and run the sprites demo + Verilator sim in one step. Note that this example script assumes a GNU RISC-V toolchain is already installed and configured in its Makefile.
 
 ```
 ./build-and-run-sprites-demo.sh

@@ -43,7 +43,7 @@ cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE=1
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
 CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
 
-define write-sim
+define write-cxxrtl-sim
 	yosys -p \
 		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog -I$(HDL_DIR) $(CXXRTL_SIM_MODELS) $(HDL_SOURCES); \
@@ -65,10 +65,10 @@ cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
 CXXRTL_DEPS = $(HDL_SOURCES) $(BOOT_HEX) $(CXXRTL_SIM_MODELS) alpha_lut.hex
  
 cxxrtl_sim.cpp: $(CXXRTL_DEPS)
-	$(write-sim)
+	$(write-cxxrtl-sim)
 
 cxxrtl_sim_trace.cpp: $(CXXRTL_DEPS)
-	$(write-sim)
+	$(write-cxxrtl-sim)
 
 ### Verilator ###
 
