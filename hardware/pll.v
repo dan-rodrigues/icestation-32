@@ -29,7 +29,6 @@ module pll #(
     localparam PLL_DIVF = ENABLE_FAST_CLK ? PLL_DIVF_33M : PLL_DIVF_25M;
     localparam PLL_DIVQ = ENABLE_FAST_CLK ? PLL_DIVQ_33M : PLL_DIVQ_25M;
 
-`ifndef VERILATOR
     SB_PLL40_2F_PAD #(
         .FEEDBACK_PATH("SIMPLE"),
         .PLLOUT_SELECT_PORTA("GENCLK_HALF"),
@@ -46,19 +45,5 @@ module pll #(
         .PLLOUTGLOBALA(clk_1x),
         .PLLOUTGLOBALB(clk_2x)
     );
-`else
-    // these are directly assigned to in the verilator testbench
-    reg clk_1x_r = 0;
-    reg clk_2x_r = 0;
-
-    assign clk_1x = clk_1x_r;
-    assign clk_2x = clk_2x_r;
-    assign locked = 1;
-
-    always @(posedge clk_2x_r) begin
-        clk_1x_r = !clk_1x_r;
-    end
-
-`endif
 
 endmodule

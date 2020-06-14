@@ -4,8 +4,8 @@
 make -C ../software/sprites
 
 # Build the simulator
-./build.sh
+make verilator_sim
 
 # Run the sprites demo in the simulator
-./obj_dir/ics32-sim ../software/sprites/prog.bin
+./verilator_sim ../software/sprites/prog.bin
 

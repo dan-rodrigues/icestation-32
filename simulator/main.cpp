@@ -1,9 +1,3 @@
-#include <verilated.h>
-
-#if VM_TRACE
-#include <verilated_vcd_c.h>
-#endif
-
 #include <SDL.h>
 
 #include <fstream>
@@ -12,28 +6,32 @@
 #include <iostream>
 #include <memory>
 
-#include "Vics32_tb.h"
+#ifdef SIM_VERILATOR
 
-// Current simulation time (64-bit unsigned)
-vluint64_t main_time = 0;
-// Called by $time in Verilog
-double sc_time_stamp() {
-    return main_time;
-}
+#include "VerilatorSimulation.hpp"
+typedef VerilatorSimulation SimulationImpl;
+const std::string title = "verilator";
 
-int main(int argc, const char * argv[]) {
-    Verilated::commandArgs(argc, argv);
+#elif defined(SIM_CXXRTL)
 
-#if VM_TRACE
-    Verilated::traceEverOn(true);
+#include "CXXRTLSimulation.hpp"
+typedef CXXRTLSimulation SimulationImpl;
+const std::string title = "cxxrtl";
+
+#else
+
+#error Expected one of SIM_VERILATOR or SIM_CXXRTL to be defined
+
 #endif
 
-    std::vector<uint8_t> cpu_program;
+int main(int argc, const char * argv[]) {
+    SimulationImpl sim;
+    sim.forward_cmd_args(argc, argv);
 
     // expecting the test program as first argument for now
 
     if (argc < 2) {
-        std::cout << "Usage: ics32-sim <test-program>" << std::endl;
+        std::cout << "Usage: <sim> <test-program>" << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -47,30 +45,15 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    cpu_program = std::vector<uint8_t>(std::istreambuf_iterator<char>(cpu_program_stream), {});
+    std::vector<uint8_t> cpu_program(std::istreambuf_iterator<char>(cpu_program_stream), {});
+    cpu_program_stream.close();
 
     if (cpu_program.size() % 4) {
-        std::cerr << "Binary has irregular size: " << cpu_program.size() << std::endl;
+        std::cerr << "Program has irregular size: " << cpu_program.size() << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::unique_ptr<Vics32_tb> tb(new Vics32_tb);
-
-    // ...into both flash (for software use) and CPU RAM (so that IPL can be skipped)
-
-    auto cpu_ram0 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_0__DOT__mem;
-    auto cpu_ram1 = tb->ics32_tb__DOT__ics32__DOT__cpu_ram__DOT__cpu_ram_1__DOT__mem;
-
-    size_t ipl_load_length = std::min((size_t)0x20000, cpu_program.size());
-    for (uint16_t i = 0; i < ipl_load_length / 4; i++) {
-        cpu_ram0[i] = cpu_program[i * 4] | cpu_program[i * 4 + 1] << 8;
-        cpu_ram1[i] = cpu_program[i * 4 + 2] | cpu_program[i * 4 + 3] << 8;
-    }
-
-    const auto flash_user_base = 0x100000;
-    auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
-
-    std::copy(cpu_program.begin(), cpu_program.end(), &flash[flash_user_base]);
+    sim.preload_cpu_program(cpu_program);
 
     // 2. present an SDL window to simulate video output
 
@@ -78,6 +61,12 @@ int main(int argc, const char * argv[]) {
         std::cerr << "SDL_Init() failed: " << SDL_GetError() << std::endl;
         return EXIT_FAILURE;
     }
+
+    // SDL defaults to Metal API on MacOS and is incredibly slow to run SDL_RenderPresent()
+    // Hint to use OpenGL if possible
+#if TARGET_OS_MAC
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+#endif
 
     // 848x480 is assumed (smaller video modes will still appear correctly)
 
@@ -90,7 +79,7 @@ int main(int argc, const char * argv[]) {
     const auto total_height = active_height + offscreen_height;
 
     auto window = SDL_CreateWindow(
-       "ics32-sim",
+       ("ics32-sim (" + title + ")").c_str(),
        SDL_WINDOWPOS_CENTERED,
        SDL_WINDOWPOS_CENTERED,
        total_width,
@@ -103,91 +92,133 @@ int main(int argc, const char * argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    SDL_Texture *texture = SDL_CreateTexture(renderer,
+        SDL_PIXELFORMAT_RGB24,
+        SDL_TEXTUREACCESS_STATIC,
+        total_width,
+        total_height
+    );
+
+    const size_t rgb24_size = 3;
+    uint8_t *pixels = (uint8_t *)std::calloc(total_width * total_height * rgb24_size, sizeof(uint8_t));
+    assert(pixels);
+
     int current_x = 0;
     int current_y = 0;
-    bool even_frame = true;
+    size_t pixel_index = 0;
 
-#if VM_TRACE
-    const auto trace_path = "ics.vcd";
-
-    std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-
-    tb->trace(tfp.get(), 99);
-    tfp->open(trace_path);
+#if VCD_WRITE
+    sim.trace("ics.vcd");
 #endif
 
-    bool vga_hsync_previous = false;
-    bool vga_vsync_previous = false;
+    bool vga_hsync_previous = true;
+    bool vga_vsync_previous = true;
 
-    while (!Verilated::gotFinish()) {
-        // clock posedge
-        tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 1;
-        tb->eval();
-#if VM_TRACE
-        tfp->dump(main_time);
-#endif
-        main_time++;
+    sim.clk_1x = 0;
+    sim.clk_2x = 0;
 
+    uint64_t time = 0;
+    uint64_t previous_ticks = 0;
+
+    const auto sdl_poll_interval = 10000;
+    auto sdl_poll_counter = sdl_poll_interval;
+
+    while (!sim.finished()) {
         // clock negedge
-        tb->ics32_tb__DOT__ics32__DOT__pll__DOT__clk_2x_r = 0;
-        tb->eval();
-#if VM_TRACE
-        tfp->dump(main_time);
-#endif
-        main_time++;
+        sim.clk_2x = 0;
+        sim.step(time);
+        time++;
 
-        auto round_color = [] (uint8_t component) {
+        // clock posedge
+        sim.clk_2x = 1;
+        sim.clk_1x = time & 2;
+        sim.step(time);
+        time++;
+
+        const auto extend_color = [] (uint8_t component) {
             return component | component << 4;
         };
 
         // render current VGA output pixel
-        SDL_SetRenderDrawColor(renderer, round_color(tb->vga_r), round_color(tb->vga_g), round_color(tb->vga_b), 255);
-        SDL_RenderDrawPoint(renderer, current_x, current_y);
-        current_x++;
-
-        if (tb->vga_hsync && !vga_hsync_previous) {
-            current_x = 0;
-            current_y++;
+        bool active_display = sim.vsync() && sim.hsync();
+        bool in_bounds = current_x < total_width && current_y < total_height;
+        if (active_display && in_bounds) {
+            pixels[pixel_index++] = extend_color(sim.r());
+            pixels[pixel_index++] = extend_color(sim.g());
+            pixels[pixel_index++] = extend_color(sim.b());
+        } else if (active_display) {
+            std::cout << "Attempted to draw out of bounds pixel: (" << current_x << ", " << current_y << ")" << std::endl;
         }
 
-        vga_hsync_previous = tb->vga_hsync;
+        current_x++;
 
-        if (tb->vga_vsync && !vga_vsync_previous) {
+        const auto update_pixel_index = [&] () {
+            pixel_index = current_y * total_width * rgb24_size;
+        };
+
+        if (!sim.hsync()) {
+            current_x = 0;
+            update_pixel_index();
+        }
+
+        if (sim.hsync() && !vga_hsync_previous) {
+            current_y++;
+            update_pixel_index();
+        }
+
+        vga_hsync_previous = sim.hsync();
+
+        if (!sim.vsync()) {
             current_y = 0;
-            even_frame = !even_frame;
+            update_pixel_index();
+        }
 
+        if (sim.vsync() && !vga_vsync_previous) {
+            const auto stride = total_width * rgb24_size;
+            SDL_UpdateTexture(texture, NULL, pixels, stride);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
 
             // input test (using mocked 3-button setup as the iCEBreaker)
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-            tb->ics32_tb__DOT__ics32__DOT__btn3 = state[SDL_SCANCODE_LEFT];
-            tb->ics32_tb__DOT__ics32__DOT__btn2 = state[SDL_SCANCODE_RSHIFT];
-            tb->ics32_tb__DOT__ics32__DOT__btn1 = state[SDL_SCANCODE_RIGHT];
+            sim.button_1 = state[SDL_SCANCODE_LEFT];
+            sim.button_2 = state[SDL_SCANCODE_RSHIFT];
+            sim.button_3 = state[SDL_SCANCODE_RIGHT];
+
+            // measure time spent to render frame
+            uint64_t current_ticks = SDL_GetTicks();
+            double delta = current_ticks - previous_ticks;
+            auto fps_estimate = 1 / (delta / 1000.f);
+            std::cout << "Frame drawn in: " << delta << "ms, " << fps_estimate << "fps" << std::endl;
+            previous_ticks = current_ticks;
         }
 
-        vga_vsync_previous = tb->vga_vsync;
+        vga_vsync_previous = sim.vsync();
 
         // exit checking
-        SDL_Event e;
-        SDL_PollEvent(&e);
 
-        if (e.type == SDL_QUIT) {
-            break;
+        if (!(--sdl_poll_counter)) {
+            SDL_Event e;
+            SDL_PollEvent(&e);
+
+            if (e.type == SDL_QUIT) {
+                break;
+            }
+
+            sdl_poll_counter = sdl_poll_interval;
         }
     };
 
-    tb->final();
+    sim.final();
 
-#if VM_TRACE
-    tfp->close();
-#endif
-
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    std::free(pixels);
 
     return EXIT_SUCCESS;
 }

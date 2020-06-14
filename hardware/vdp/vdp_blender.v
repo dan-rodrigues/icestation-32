@@ -53,6 +53,7 @@ module vdp_blender(
     wire [4:0] alpha_lut_source_output = alpha_lut_output[4:0];
     wire [4:0] alpha_lut_dest_output = alpha_lut_output[9:5];
 
+`ifndef ALPHA_LUT
     genvar var_source_alpha, var_dest_alpha;
 
     generate
@@ -67,11 +68,19 @@ module vdp_blender(
                     mapped_dest_alpha = (var_dest_alpha > 0 ? var_dest_alpha + 1 : 0);
                     mapped_dest_alpha = ((16 - mapped_source_alpha) * mapped_dest_alpha) / 16;
 
+                    // this causes an assertion in yosys when using this with cxxrtl
+                    // issue with context on the root cause:
+                    // https://github.com/YosysHQ/yosys/issues/2129
                     alpha_lut[lut_index] = mapped_source_alpha | (mapped_dest_alpha << 5);
                 end
             end
         end
     endgenerate
+`else
+    initial begin
+        $readmemh(`ALPHA_LUT, alpha_lut);
+    end
+`endif
 
     always @(posedge clk) begin
         alpha_lut_output <= alpha_lut[alpha_lut_address];
