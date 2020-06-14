@@ -4,7 +4,7 @@ SOURCES = boot.S
 
 COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 
-CFLAGS = -Wall -flto -march=rv32i -ffreestanding -nostdlib
+CFLAGS = -Wall -flto -march=rv32i -mabi=ilp32 -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
 ELF = boot.elf
