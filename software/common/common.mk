@@ -7,7 +7,7 @@ ifeq ($(OPT_LEVEL),)
 OPT_LEVEL := -Os
 endif
 
-CFLAGS = -Wall $(OPT_LEVEL) -flto -march=rv32i -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
+CFLAGS = -Wall $(OPT_LEVEL) -flto -march=rv32i -mabi=ilp32 -I$(COMMON_DIR) -I$(COMMON_DIR)../lib/ -I./ -ffreestanding -nostdlib
 DFLAGS = --line-numbers
  
 LDS = ../common/sections.lds
