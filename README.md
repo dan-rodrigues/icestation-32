@@ -53,7 +53,7 @@ make
 iceprog -o 1M prog.bin
 ```
 
-### Running simulator (Verilator + SDL2)
+### Running simulator (Verilator or CXXRTL, plus SDL2)
 
 A simulator using SDL2 and its documentation is included in the [/simulator](simulator/) directory.
 
@@ -68,3 +68,4 @@ Demo software and simulator screenshots are included in the [/software](software
 * Many bits of cleanup and optimization
 * Gamepad support, when the PMODs become available
 * Audio
+
