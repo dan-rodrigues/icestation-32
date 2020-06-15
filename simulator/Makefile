@@ -53,7 +53,8 @@ define write-cxxrtl-sim
 endef
 
 define build-sim
-	g++ -std=c++14 $(CXX_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_CFLAGS) $(CXXRTL_LDFLAGS) $< $(SIM_SRCS) $(CXXRTL_SRCS) -o $@
+	g++ -std=c++14 $(CXX_OPT) -I$(CXXRTL_INCLUDES) $(CXXRTL_CFLAGS) $< $(SIM_SRCS) $(CXXRTL_SRCS) $(CXXRTL_LDFLAGS) -o $@
+
 endef
 
 cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
