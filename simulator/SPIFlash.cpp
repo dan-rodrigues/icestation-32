@@ -1,6 +1,7 @@
 #include "SPIFlash.hpp"
 
 #include <cassert>
+#include <iostream>
 
 // minimal at start:
 
@@ -13,9 +14,7 @@ void SPIFlash::load(std::vector<uint8_t> source, size_t offset) {
 
     data.resize(flash_size);
 
-    // not so efficient assuming vector allocates this up front
-
-
+    // not so efficient assuming vector allocates this up front, look into that
     std::copy(source.begin() , source.end(), &data[offset]);
 }
 
@@ -35,12 +34,22 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
         state = State::CMD;
         read_index = 0;
         buffer = 0;
+        byte_count = 0;
+        cmd = 0; // !
+
         // ...
     }
 
     bool clk_rose = clk && !clk_prev;
-    if (!csn && clk_rose) {
-        clk_tick(io);
+    bool clk_fell = !clk && clk_prev;
+
+    uint8_t io_updated = 0;
+    if (!csn && clk_rose && state != State::DATA) {
+        io_updated = clk_tick(io);
+    } else if (!csn && clk_fell && state == State::DATA) {
+        // quick hack
+        // this needs to go out on falling edge
+        io_updated = clk_tick(io);
     }
 
     // ...
@@ -48,10 +57,10 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
     this->csn = csn;
     this->clk = clk;
 
-    return 0;
+    return io_updated;
 }
 
-void SPIFlash::clk_tick(uint8_t io) {
+uint8_t SPIFlash::clk_tick(uint8_t io) {
     switch (state) {
         case State::CMD:
             read_bits(io, 1);
@@ -60,6 +69,9 @@ void SPIFlash::clk_tick(uint8_t io) {
                 // common transition conditions?
                 byte_count = 0;
                 state = State::ADDRESS;
+                cmd = buffer;
+
+                assert(cmd == 0x03);
             }
             break;
         case State::ADDRESS:
@@ -73,19 +85,60 @@ void SPIFlash::clk_tick(uint8_t io) {
 
             if (byte_count == 3) {
                 byte_count = 0;
-                state = State::XIP_CMD;
+
+                state = State::DATA;
+//                state = State::XIP_CMD;
+
+                // assume attempts to read the bitstream are not intentional
+                const size_t flash_user_base = 0x10000;
+                assert(read_index >= flash_user_base);
             }
             break;
         case State::XIP_CMD:
-            // catch M5-4 only
+            // (catch M5-4 only)
+            read_bits(io, 1);
+            if (byte_count == 1) {
+                byte_count = 0;
+//                state = State::DUMMY;
+                state = State::DATA;
+            }
             break;
         case State::DUMMY:
-            // configurable wait time
+            // (configurable wait time)
+            read_bits(io, 1);
+            if (byte_count == 1) {
+                byte_count = 0;
+                state = State::DATA;
+            }
             break;
         case State::DATA:
             // start returning bytes
-            break;
+            // (ensure region was actually loaded)
+            // (bonus assertion: deassertion of CS before complete byte is read)
+            if (bit_count == 0) {
+                assert(read_index <= data.size());
+                send_byte = data[read_index++];
+            }
+
+            return send_bits(1);
     }
+
+    return 0;
+}
+
+uint8_t SPIFlash::send_bits(uint8_t count) {
+    // SPI only for now
+    assert(count == 1);
+
+    uint8_t out = (send_byte & 0x80) >> 7;
+    send_byte <<= 1;
+    bit_count++;
+
+    if (bit_count >= 8) {
+        bit_count -= 8;
+    }
+
+    return out;
 }
 
 void SPIFlash::read_bits(uint8_t io, uint8_t count) {

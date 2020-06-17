@@ -14,7 +14,7 @@ module ics32 #(
     parameter integer RESET_DURATION = 1 << 10,
     parameter ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
-    parameter BOOTLOADER_PATH = `BOOTLOADER
+    parameter BOOTLOADER_PATH = "/Users/dan.rodrigues/hw/ics-published/firmware/boot.hex" //`BOOTLOADER
 `else
     parameter BOOTLOADER_PATH = "boot.hex"
 `endif

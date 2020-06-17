@@ -29,7 +29,13 @@ module ics32_tb(
 
     input btn_1,
     input btn_2,
-    input btn_3
+    input btn_3,
+
+    //!
+    output flash_sck,
+    output flash_csn,
+    output flash_mosi,
+    input flash_miso
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
@@ -39,7 +45,7 @@ module ics32_tb(
         // For simulator use, there's no point enabling this unless the bootloader itself is being tested
         // The sim performs the bootloaders job of copying the program from flash to CPU RAM
         // Enabling this just delays the program start
-        .ENABLE_BOOTLOADER(0)
+        .ENABLE_BOOTLOADER(1)
     ) ics32 (
 `ifndef EXTERNAL_CLOCKS
         .clk_12m(clk_12m),
@@ -73,16 +79,35 @@ module ics32_tb(
 
     // flash to be used in simulator
 
-    wire flash_csn;
-    wire flash_sck;
-    wire flash_mosi;
-    wire flash_miso;
+    // wire flash_csn;
+    // wire flash_sck;
+    // wire flash_mosi;
+    // wire flash_miso;
 
-    sim_spiflash sim_flash(
-        .SPI_FLASH_CS(flash_csn),
-        .SPI_FLASH_MISO(flash_miso),
-        .SPI_FLASH_MOSI(flash_mosi),
-        .SPI_FLASH_SCLK(flash_sck)
-    );
+    // flash_bb sim_flash(
+    //     .csn(flash_csn),
+    //     .clk(flash_sck),
+    //     .io0(flash_mosi),
+    //     .io1(flash_miso)
+    // );
+
+    // sim_spiflash sim_flash(
+    //     .SPI_FLASH_CS(flash_csn),
+    //     .SPI_FLASH_MISO(flash_miso),
+    //     .SPI_FLASH_MOSI(flash_mosi),
+    //     .SPI_FLASH_SCLK(flash_sck)
+    // );
 
 endmodule
+
+module flash_bb(
+    input csn,
+    input clk,
+
+    // inout [3:0] io
+    input io0,
+    output io1
+);
+
+endmodule
+

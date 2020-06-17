@@ -25,11 +25,6 @@ void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &progra
         cpu_ram0[i] = program[i * 4] | program[i * 4 + 1] << 8;
         cpu_ram1[i] = program[i * 4 + 2] | program[i * 4 + 3] << 8;
     }
-
-    const size_t flash_user_base = 0x100000;
-    auto flash = tb->ics32_tb__DOT__sim_flash__DOT__memory;
-
-    std::copy(program.begin(), program.end(), &flash[flash_user_base]);
 }
 
 void VerilatorSimulation::step(uint64_t time) {
@@ -42,7 +37,10 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_2 = button_2;
     tb->btn_3 = button_3;
 
+    uint8_t io = flash.update(tb->flash_csn, tb->flash_sck, tb->flash_mosi);
+
     tb->eval();
+    tb->flash_miso = io;
 
 #if VCD_WRITE
     trace_update(time);
