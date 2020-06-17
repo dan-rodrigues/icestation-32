@@ -171,7 +171,7 @@ module vdp_sprite_core(
     // off: offscreen - being rendered to
 
     wire [9:0] line_buffer_write_address;
-    wire [12:0] line_buffer_data_in;
+    wire [11:0] line_buffer_data_in;
     wire line_buffer_write_en;
 
     wire [9:0] line_buffer_clear_write_address;
@@ -179,16 +179,16 @@ module vdp_sprite_core(
 
     // --- Line buffers ---
 
-    wire [24:0] line_buffer_data_out;
-    wire [12:0] line_buffer_data_out_0 = line_buffer_data_out[11:0];
-    wire [12:0] line_buffer_data_out_1 = line_buffer_data_out[23:12];
+    wire [23:0] line_buffer_data_out;
+    wire [11:0] line_buffer_data_out_0 = line_buffer_data_out[11:0];
+    wire [11:0] line_buffer_data_out_1 = line_buffer_data_out[23:12];
 
     generate
         for (i = 0; i < 2; i = i + 1) begin : line_buffer_gen
             wire select = line_buffer_select ^ i;
 
             wire [9:0] write_address = select ? line_buffer_write_address : line_buffer_clear_write_address;
-            wire [12:0] write_data = select ? line_buffer_data_in : line_buffer_clear_data_in;
+            wire [11:0] write_data = select ? line_buffer_data_in : line_buffer_clear_data_in;
             wire write_en = select ? line_buffer_write_en : line_buffer_clear_en;
 
             reg [11:0] line_buffer [0:1023];
@@ -221,7 +221,7 @@ module vdp_sprite_core(
     // --- Line buffer reading ---
 
     wire [9:0] line_buffer_display_read_address;
-    wire [12:0] line_buffer_display_data;
+    wire [9:0] line_buffer_display_data;
 
     // data to read from active buffer
     assign line_buffer_display_data = line_buffer_select ?
@@ -249,11 +249,8 @@ module vdp_sprite_core(
     wire sprite_flip_y = y_block_data_out[9];
     wire sprite_width_select = y_block_data_out[11];
 
-    wire [15:0] collision_hit_list_data_in;
-    assign hit_list_data_in = collision_hit_list_data_in | (collision_test_finished << 15);
-
-    wire collision_test_finished;
-
+    assign hit_list_data_in[14:13] = 0;
+    
     vdp_sprite_raster_collision collision(
         .clk(clk),
         .restart(start_new_line_r),
@@ -268,11 +265,11 @@ module vdp_sprite_core(
         .width_select_in(sprite_width_select),
 
         // writing
-        .sprite_y_intersect(collision_hit_list_data_in[11:8]),
-        .sprite_id(collision_hit_list_data_in[7:0]),
+        .sprite_y_intersect(hit_list_data_in[11:8]),
+        .sprite_id(hit_list_data_in[7:0]),
         .hit_list_index(hit_list_write_address),
-        .finished(collision_test_finished),
-        .width_select_out(collision_hit_list_data_in[12]),
+        .finished(hit_list_data_in[15]),
+        .width_select_out(hit_list_data_in[12]),
         .hit_list_write_en(hit_list_write_en)
     );
 

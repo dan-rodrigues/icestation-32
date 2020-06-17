@@ -185,8 +185,7 @@ module vdp #(
 
         .reg_write_address(cop_write_address),
         .reg_write_data(cop_write_data),
-        .reg_write_en(copper_write_en),
-        .reg_write_ready(cop_write_ready)
+        .reg_write_en(copper_write_en)
     );
 
     // --- Register writes ---

@@ -104,7 +104,7 @@ module vdp_vga_timing #(
     end
 
     reg [10:0] raster_x_nx;
-    reg [10:0] raster_y_nx;
+    reg [9:0] raster_y_nx;
 
     always @* begin
         raster_x_nx = raster_x + 1;

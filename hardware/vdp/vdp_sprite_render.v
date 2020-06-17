@@ -122,7 +122,7 @@ module vdp_sprite_render(
     localparam META_READ_LATENCY = 1;
 
     // pipelines from hit_list
-    reg [7:0] xb_line_offset;
+    reg [3:0] xb_line_offset;
     reg xb_width_select_r;
 
     // FIXME: separate relevant bits instead...

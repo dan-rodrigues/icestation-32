@@ -29,8 +29,7 @@ module vdp_copper(
 
     output reg [5:0] reg_write_address,
     output reg [15:0] reg_write_data,
-    output reg reg_write_en,
-    input reg_write_ready
+    output reg reg_write_en
 );
     localparam PC_RESET = 10'h000;
 

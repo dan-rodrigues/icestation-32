@@ -33,9 +33,6 @@ module vdp_host_interface #(
     input cop_write_en,
     input [5:0] cop_write_address,
     input [15:0] cop_write_data,
-    
-    // (this may not be needed)
-    output reg cop_write_ready,
 
     // CPU reads
 
