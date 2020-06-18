@@ -412,7 +412,6 @@ module vdp #(
     // --- Raster offset for sprites ---
 
     localparam SPRITE_START_LEAD_TIME = 10;
-
     localparam SPRITE_HOLD_TIME = HEIGHT_TOTAL - 512;
 
     reg [9:0] sprites_x;

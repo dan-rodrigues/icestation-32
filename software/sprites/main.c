@@ -168,6 +168,7 @@ void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t pa
         uint16_t x_block = x + sprite_x_offset + (right_column ? 0x10 : 0);
 
         uint16_t y_block = y + sprite_y_offset + (bottom_row ? 0x10 : 0);
+        y_block &= 0x1ff;
         y_block |= SPRITE_16_TALL | SPRITE_16_WIDE;
 
         uint16_t g_block = base_tile;
