@@ -32,10 +32,14 @@ module ics32_tb(
     input btn_3,
 
     // to be extended with i/o for DSPI/QSPI
+    // ...
+
+`ifndef FLASH_BLACKBOX
     output flash_sck,
     output flash_csn,
     output flash_mosi,
     input flash_miso
+`endif
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
@@ -77,17 +81,38 @@ module ics32_tb(
         .flash_miso(flash_miso)
     );
 
+`ifdef FLASH_BLACKBOX
+
+    wire flash_sck;
+    wire flash_csn;
+    wire flash_mosi;
+    wire flash_miso;
+
+    flash_bb flash(
+        .csn(flash_csn),
+        .clk(flash_sck),
+        .io0(flash_mosi),
+        .io1(flash_miso)
+    );
+
+`endif
+
 endmodule
 
-// ...
+`ifdef FLASH_BLACKBOX
+
+(* cxxrtl_blackbox *)
 module flash_bb(
     input csn,
     input clk,
 
-    // inout [3:0] io
     input io0,
-    output io1
+    (* cxxrtl_sync *) output io1
+
+    // inout [3:0] io
 );
 
 endmodule
+
+`endif
 

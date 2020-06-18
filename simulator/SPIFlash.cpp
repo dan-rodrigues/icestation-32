@@ -5,7 +5,6 @@
 
 // minimal at start: assume power up state, assume SPI only etc
 
-
 void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     const size_t flash_size = 0x1000000;
     assert(source.size() + offset < flash_size);
@@ -29,39 +28,49 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
 
     bool should_deactivate = csn && !csn_prev;
     bool should_activate = !csn && csn_prev;
-
     if (should_deactivate) {
-        // this is duping the init declaration, could reuse in a common function
-        // that is also called in init
-        bit_count = 0;
+        // ...
     } else if (should_activate) {
         state = State::CMD;
         read_index = 0;
         buffer = 0;
         byte_count = 0;
-        cmd = 0; // !
-
-        // ...
+        cmd = 0; // optional?
+        bit_count = 0;
     }
 
     bool clk_rose = clk && !clk_prev;
     bool clk_fell = !clk && clk_prev;
 
     uint8_t io_updated = 0;
-    if (!csn && clk_rose && state != State::DATA) {
-        io_updated = clk_tick(io);
-    } else if (!csn && clk_fell && state == State::DATA) {
-        // quick hack
-        // this needs to go out on falling edge
-        io_updated = clk_tick(io);
+    if (!csn && clk_rose) {
+        io_updated = posedge_tick(io);
+    } else if (!csn && clk_fell) {
+        io_updated = negedge_tick(io);
     }
-
-    // ...
 
     return io_updated;
 }
 
-uint8_t SPIFlash::clk_tick(uint8_t io) {
+uint8_t SPIFlash::negedge_tick(uint8_t io) {
+    switch (state) {
+        case State::DATA:
+            // (bonus assertion: deassertion of CS before complete byte is read)
+            if (bit_count == 0) {
+                assert(read_index <= data.size());
+                assert(index_is_defined(read_index));
+                send_byte = data[read_index++];
+            }
+
+            return send_bits(1);
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+uint8_t SPIFlash::posedge_tick(uint8_t io) {
     switch (state) {
         case State::CMD:
             read_bits(io, 1);
@@ -111,17 +120,8 @@ uint8_t SPIFlash::clk_tick(uint8_t io) {
                 state = State::DATA;
             }
             break;
-        case State::DATA:
-            // start returning bytes
-            // (ensure region was actually loaded)
-            // (bonus assertion: deassertion of CS before complete byte is read)
-            if (bit_count == 0) {
-                assert(read_index <= data.size());
-                assert(index_is_defined(read_index));
-                send_byte = data[read_index++];
-            }
-
-            return send_bits(1);
+        default:
+            break;
     }
 
     return 0;

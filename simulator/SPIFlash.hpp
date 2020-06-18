@@ -26,7 +26,6 @@ class SPIFlash {
 
 public:
     void load(const std::vector<uint8_t> &source, size_t offset);
-
     uint8_t update(bool csn, bool clk, uint8_t io);
 private:
     bool csn = true, clk = false;
@@ -41,7 +40,8 @@ private:
     uint8_t byte_count = 0;
     uint32_t read_index = 0;
 
-    uint8_t clk_tick(uint8_t io);
+    uint8_t posedge_tick(uint8_t io);
+    uint8_t negedge_tick(uint8_t io);
     void read_bits(uint8_t io, uint8_t count);
 
     uint8_t send_byte = 0;

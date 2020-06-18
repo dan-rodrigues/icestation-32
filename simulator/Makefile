@@ -11,7 +11,7 @@ dummy:
 
 ### Common ###
 
-SIM_SRCS = main.cpp
+SIM_SRCS = main.cpp Simulation.cpp SPIFlash.cpp
 SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb
@@ -29,7 +29,7 @@ CXX_OPT = -O3
 CXXRTL_OPT = -O6
 cxxrtl_sim_trace: CXXRTL_OPT = -Og
 
-CXXRTL_SRCS = CXXRTLSimulation.cpp SPIFlash.cpp
+CXXRTL_SRCS = CXXRTLSimulation.cpp
 CXXRTL_HEADERS = $(CXXRTL_SRCS:%.cpp=%.hpp)
 CXXRTL_INCLUDES := $(shell yosys-config --datdir/include)
 CXXRTL_CFLAGS := \
@@ -41,7 +41,7 @@ CXXRTL_CFLAGS := \
 cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE=1
 
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
-CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
+CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DFLASH_BLACKBOX -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
 
 define write-cxxrtl-sim
 	yosys -p \
@@ -81,7 +81,7 @@ VLT_FLAGS =	\
 	-I$(HDL_DIR) \
 	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS -DSIMULATOR
 
-VLT_CXX_SOURCES = main.cpp ../VerilatorSimulation.cpp ../SPIFlash.cpp
+VLT_CXX_SOURCES = $(SIM_SRCS) ../VerilatorSimulation.cpp
 VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 

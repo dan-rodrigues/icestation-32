@@ -37,7 +37,7 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_2 = button_2;
     tb->btn_3 = button_3;
 
-    uint8_t io = flash->update(tb->flash_csn, tb->flash_sck, tb->flash_mosi);
+    uint8_t io = flash.update(tb->flash_csn, tb->flash_sck, tb->flash_mosi);
 
     tb->eval();
     tb->flash_miso = io;
@@ -95,8 +95,3 @@ void VerilatorSimulation::final() {
     }
 #endif
 }
-
-void VerilatorSimulation::set_flash(std::unique_ptr<SPIFlash> flash) {
-    this->flash = std::move(flash);
-}
-

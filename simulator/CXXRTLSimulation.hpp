@@ -18,7 +18,6 @@ public:
     void forward_cmd_args(int argc, const char * argv[]) override {};
 
     void preload_cpu_program(const std::vector<uint8_t> &program) override;
-    void set_flash(std::unique_ptr<SPIFlash>) override;
     void step(uint64_t time) override;
 
 #if VCD_WRITE

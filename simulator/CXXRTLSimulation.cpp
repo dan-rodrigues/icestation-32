@@ -1,6 +1,29 @@
 #include "CXXRTLSimulation.hpp"
 
-void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) { 
+class SPIFlashBlackBox : public cxxrtl_design::bb_p_flash__bb {
+
+public:
+    SPIFlashBlackBox(SPIFlash flash) : flash(flash) {};
+
+    bool eval() override {
+        uint8_t io = flash.update(p_csn.data[0], p_clk.data[0], p_io0.data[0]);
+        p_io1.next = value<1>{(uint8_t)(io & 1)};
+        return true;
+    }
+
+private:
+    SPIFlash flash;
+};
+
+namespace cxxrtl_design {
+
+std::unique_ptr<bb_p_flash__bb> bb_p_flash__bb::create(std::string name, metadata_map parameters, metadata_map attributes) {
+    return std::make_unique<SPIFlashBlackBox>(Simulation::default_flash);
+}
+
+}
+
+void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) {
     auto & cpu_ram_0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
     auto & cpu_ram_1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
 
@@ -13,10 +36,6 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
         cpu_ram_0[i] = value<16>{low_word};
         cpu_ram_1[i] = value<16>{high_word};
     }
-}
-
-void CXXRTLSimulation::set_flash(std::unique_ptr<SPIFlash> flash) {
-    this->flash = std::move(flash);
 }
 
 uint8_t CXXRTLSimulation::r() const {
@@ -56,15 +75,8 @@ void CXXRTLSimulation::step(uint64_t time) {
     top.p_btn__1 = value<1>{button_1};
     top.p_btn__2 = value<1>{button_2};
     top.p_btn__3 = value<1>{button_3};
-
-    uint8_t io = flash->update(
-       top.p_flash__csn.curr.data[0],
-       top.p_flash__sck.curr.data[0],
-       top.p_flash__mosi.curr.data[0]
-   );
-
+    
     top.step();
-    top.p_flash__miso = value<1>{io};
 
 #if VCD_WRITE
     update_trace(time);
