@@ -5,8 +5,6 @@ module SB_SPRAM256KA (
     input WREN, CHIPSELECT, CLOCK, STANDBY, SLEEP, POWEROFF,
     output reg [15:0] DATAOUT
 );
-`ifndef BLACKBOX
-`ifndef EQUIV
     reg [15:0] mem [0:16383];
     wire off = SLEEP || !POWEROFF;
     integer i;

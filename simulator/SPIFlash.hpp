@@ -7,23 +7,20 @@
 class SPIFlash {
 
     enum class State {
-        // (power off)
         CMD,
         ADDRESS,
         XIP_CMD,
         DUMMY,
         DATA
+        // (power off and others to add..)
     };
 
 public:
-    // could keep track of loaded memory regions
-    // or any other safety ideas
-    void load(std::vector<uint8_t> source, size_t offset);
+    void load(const std::vector<uint8_t> &source, size_t offset);
 
     uint8_t update(bool csn, bool clk, uint8_t io);
 private:
     bool csn = true, clk = false;
-    uint8_t io = 0;
 
     std::vector<uint8_t> data;
 

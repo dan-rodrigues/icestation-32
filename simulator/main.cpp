@@ -27,11 +27,6 @@ const std::string title = "cxxrtl";
 #endif
 
 int main(int argc, const char * argv[]) {
-//    SimulationImpl sim;
-//    sim.forward_cmd_args(argc, argv);
-
-    // expecting the test program as first argument for now
-
     if (argc < 2) {
         std::cout << "Usage: <sim> <test-program>" << std::endl;
         return EXIT_SUCCESS;
@@ -55,15 +50,15 @@ int main(int argc, const char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    // TODO: initialise and pass SPIFlash object, loaded and ready to use
-    // clean this up, with init-after-the-fact-if-eeeded
-    SPIFlash flash_sim;
-    flash_sim.load(cpu_program, 0x100000);
-
-    VerilatorSimulation sim(flash_sim);
+    SimulationImpl sim;
     sim.forward_cmd_args(argc, argv);
 
-    sim.forward_cmd_args(argc, argv);
+    const size_t flash_user_base = 0x100000;
+    
+    std::unique_ptr<SPIFlash> flash_sim(new SPIFlash);
+    flash_sim->load(cpu_program, flash_user_base);
+
+    sim.set_flash(std::move(flash_sim));
     sim.preload_cpu_program(cpu_program);
 
     // 2. present an SDL window to simulate video output

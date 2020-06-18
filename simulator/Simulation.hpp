@@ -5,6 +5,8 @@
 #include <vector>
 #include <stdint.h>
 
+#include "SPIFlash.hpp"
+
 class Simulation {
     
 public:
@@ -18,6 +20,7 @@ public:
     virtual void forward_cmd_args(int argc, const char * argv[]) = 0;
     
     virtual void preload_cpu_program(const std::vector<uint8_t> &program) = 0;
+    virtual void set_flash(std::unique_ptr<SPIFlash>) = 0;
     virtual void step(uint64_t time) = 0;
 
 #if VCD_WRITE

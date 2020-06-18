@@ -3,24 +3,26 @@
 #include <cassert>
 #include <iostream>
 
-// minimal at start:
+// minimal at start: assume power up state, assume SPI only etc
 
-// assume power up
-// assume SPI only
-
-void SPIFlash::load(std::vector<uint8_t> source, size_t offset) {
+void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     const size_t flash_size = 0x1000000;
     assert(source.size() + offset < flash_size);
-
     data.resize(flash_size);
 
-    // not so efficient assuming vector allocates this up front, look into that
     std::copy(source.begin() , source.end(), &data[offset]);
 }
 
 uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
     bool csn_prev = this->csn;
     bool clk_prev = this->clk;
+    this->csn = csn;
+    this->clk = clk;
+
+    bool still_deactivated = csn_prev && csn;
+    if (still_deactivated) {
+        return 0;
+    }
 
     bool should_deactivate = csn && !csn_prev;
     bool should_activate = !csn && csn_prev;
@@ -28,7 +30,6 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
     if (should_deactivate) {
         // this is duping the init declaration, could reuse in a common function
         // that is also called in init
-        io = 0;
         bit_count = 0;
     } else if (should_activate) {
         state = State::CMD;
@@ -54,9 +55,6 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
 
     // ...
 
-    this->csn = csn;
-    this->clk = clk;
-
     return io_updated;
 }
 
@@ -78,7 +76,6 @@ uint8_t SPIFlash::clk_tick(uint8_t io) {
             read_bits(io, 1);
 
             if (bit_count == 0) {
-                // FIXME: confirm address order
                 read_index <<= 8;
                 read_index |= buffer;
             }

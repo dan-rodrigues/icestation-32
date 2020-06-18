@@ -4,9 +4,6 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
     auto & cpu_ram_0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
     auto & cpu_ram_1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
 
-    size_t flash_user_base = 0x100000;
-    auto & flash = top.memory_p_sim__flash_2e_memory;
-
     size_t ipl_load_length = std::min((size_t)0x20000, program.size());
 
     for (size_t i = 0; i < ipl_load_length / 4; i++) {
@@ -15,14 +12,11 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
 
         cpu_ram_0[i] = value<16>{low_word};
         cpu_ram_1[i] = value<16>{high_word};
-
-        size_t flash_base = flash_user_base + i * 4;
-
-        flash[flash_base + 0] = value<8>{(uint8_t)(low_word & 0xff)};
-        flash[flash_base + 1] = value<8>{(uint8_t)(low_word >> 8)};
-        flash[flash_base + 2] = value<8>{(uint8_t)(high_word & 0xff)};
-        flash[flash_base + 3] = value<8>{(uint8_t)(high_word >> 8)};
     }
+}
+
+void CXXRTLSimulation::set_flash(std::unique_ptr<SPIFlash> flash) {
+    this->flash = std::move(flash);
 }
 
 uint8_t CXXRTLSimulation::r() const {
@@ -63,7 +57,14 @@ void CXXRTLSimulation::step(uint64_t time) {
     top.p_btn__2 = value<1>{button_2};
     top.p_btn__3 = value<1>{button_3};
 
+    uint8_t io = flash->update(
+       top.p_flash__csn.curr.data[0],
+       top.p_flash__sck.curr.data[0],
+       top.p_flash__mosi.curr.data[0]
+   );
+
     top.step();
+    top.p_flash__miso = value<1>{io};
 
 #if VCD_WRITE
     update_trace(time);

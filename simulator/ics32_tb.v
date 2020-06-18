@@ -31,7 +31,7 @@ module ics32_tb(
     input btn_2,
     input btn_3,
 
-    //!
+    // to be extended with i/o for DSPI/QSPI
     output flash_sck,
     output flash_csn,
     output flash_mosi,
@@ -77,29 +77,9 @@ module ics32_tb(
         .flash_miso(flash_miso)
     );
 
-    // flash to be used in simulator
-
-    // wire flash_csn;
-    // wire flash_sck;
-    // wire flash_mosi;
-    // wire flash_miso;
-
-    // flash_bb sim_flash(
-    //     .csn(flash_csn),
-    //     .clk(flash_sck),
-    //     .io0(flash_mosi),
-    //     .io1(flash_miso)
-    // );
-
-    // sim_spiflash sim_flash(
-    //     .SPI_FLASH_CS(flash_csn),
-    //     .SPI_FLASH_MISO(flash_miso),
-    //     .SPI_FLASH_MOSI(flash_mosi),
-    //     .SPI_FLASH_SCLK(flash_sck)
-    // );
-
 endmodule
 
+// ...
 module flash_bb(
     input csn,
     input clk,
