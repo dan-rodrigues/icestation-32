@@ -36,7 +36,7 @@ typedef struct {
 } CircleArrangement;
 
 static const CircleArrangement CIRCLE_ARRANGEMENTS[] = {
-    {.sprite_count = 32, .angle_delta = SIN_PERIOD / 32, .radius = 192, .palette = YELLOW_PALETTE},
+    {.sprite_count = 32, .angle_delta = SIN_PERIOD / 32, .radius = 260, .palette = YELLOW_PALETTE},
     {.sprite_count = 16, .angle_delta = SIN_PERIOD / 16, .radius = 128, .palette = GREEN_PALETTE},
     {.sprite_count = 8, .angle_delta = SIN_PERIOD / 8, .radius = 64, .palette = RED_PALETTE},
     {.sprite_count = 1, .angle_delta = SIN_PERIOD / 1, .radius = 0, .palette = MAGENTA_PALETTE},

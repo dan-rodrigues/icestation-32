@@ -413,30 +413,31 @@ module vdp #(
 
     localparam SPRITE_START_LEAD_TIME = 10;
 
+    localparam SPRITE_HOLD_TIME = HEIGHT_TOTAL - 512;
+
     reg [9:0] sprites_x;
     reg [8:0] sprites_y;
+
+    reg [3:0] sprites_y_hold_counter;
+    wire sprites_y_held = |sprites_y_hold_counter;
 
     reg [8:0] sprites_y_nx;
 
     always @* begin
-        sprites_y_nx = raster_y;
+        sprites_y_nx = sprites_y;
 
-        // the raster_y counter does not count up to a power-of-2
-        // this manual offset handling is added to make it appear as if it does to the sprite core
-        if (raster_y >= V_ACTIVE_HEIGHT) begin
-            if (raster_y > (HEIGHT_TOTAL - 16)) begin
-                // there may be a 16px tall sprite coming in from the top of the screen
-                sprites_y_nx = (512 - 16) + (raster_y - (HEIGHT_TOTAL - 16));
-            end else begin
-                sprites_y_nx = V_ACTIVE_HEIGHT;
-            end
-        end 
+        if (frame_ended) begin
+            sprites_y_nx = 0;
+        end else if (line_ended && !sprites_y_held) begin
+            sprites_y_nx = sprites_y + 1;
+        end
     end
 
     wire sprites_x_start = (raster_x == (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME - 1));
     wire sprites_x_reset = line_ended;
     reg sprites_x_counting = 0;
 
+    // (review LUT cost of inverters to init these one bits)
     localparam sprites_x_initial = -1;
 
     always @(posedge clk) begin
@@ -449,9 +450,48 @@ module vdp #(
 
         sprites_x <= (sprites_x_counting ? sprites_x + 1 : sprites_x_initial);
 
-        // used for raster collision test
         sprites_y <= sprites_y_nx;
+        // (count up, cost...)
+        sprites_y_hold_counter <= sprites_y_held ? sprites_y_hold_counter - 1 : 0;
+
+        // doesn't need all bits compared
+        // since it counts up predictably, only the number of 1-bits need testing
+        // (review similar cases throughout)
+        if (sprites_y == V_ACTIVE_HEIGHT) begin
+            sprites_y_hold_counter <= SPRITE_HOLD_TIME;
+        end
     end
+
+/*
+=== $paramod\vdp\ENABLE_WIDESCREEN=1 ===
+
+   Number of wires:                325
+   Number of wire bits:           2131
+   Number of public wires:         325
+   Number of public wire bits:    2131
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1021
+     $paramod$77c27a7114b635e8600ce86a2307b1aa3117554b\vdp_vga_timing      1
+     $paramod\vdp_scroll_pixel_generator\STAGE_PIXEL_ROW=1'0      1
+     $paramod\vdp_scroll_pixel_generator\STAGE_PIXEL_ROW=1'1      3
+     SB_CARRY                       85
+     SB_DFF                         92
+     SB_DFFE                       326
+     SB_DFFSR                       35
+     SB_DFFSS                       27
+     SB_LUT4                       440
+     SB_RAM40_4K                     2
+     vdp_affine_layer                1
+     vdp_blender                     1
+     vdp_copper                      1
+     vdp_host_interface              1
+     vdp_map_address_generator       2
+     vdp_priority_compute            1
+     vdp_sprite_core                 1
+     vdp_tile_address_generator      1
+     */
 
     // --- Layer attribute selection ---
 
