@@ -54,8 +54,10 @@ int main(int argc, const char * argv[]) {
     sim.forward_cmd_args(argc, argv);
 
     const size_t flash_user_base = 0x100000;
-    
+    const size_t flash_ipl_size = 0x10000;
+
     std::unique_ptr<SPIFlash> flash_sim(new SPIFlash);
+    cpu_program.resize(flash_ipl_size);
     flash_sim->load(cpu_program, flash_user_base);
 
     sim.set_flash(std::move(flash_sim));

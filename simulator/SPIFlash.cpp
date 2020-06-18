@@ -5,12 +5,15 @@
 
 // minimal at start: assume power up state, assume SPI only etc
 
+
 void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     const size_t flash_size = 0x1000000;
     assert(source.size() + offset < flash_size);
     data.resize(flash_size);
 
-    std::copy(source.begin() , source.end(), &data[offset]);
+    defined_ranges.insert(Range(offset, source.size()));
+
+    std::copy(source.begin(), source.end(), &data[offset]);
 }
 
 uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
@@ -114,6 +117,7 @@ uint8_t SPIFlash::clk_tick(uint8_t io) {
             // (bonus assertion: deassertion of CS before complete byte is read)
             if (bit_count == 0) {
                 assert(read_index <= data.size());
+                assert(index_is_defined(read_index));
                 send_byte = data[read_index++];
             }
 
@@ -121,6 +125,16 @@ uint8_t SPIFlash::clk_tick(uint8_t io) {
     }
 
     return 0;
+}
+
+bool SPIFlash::index_is_defined(size_t index) {
+    for (auto range : defined_ranges) {
+        if (range.contains(index)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 uint8_t SPIFlash::send_bits(uint8_t count) {
@@ -152,4 +166,12 @@ void SPIFlash::read_bits(uint8_t io, uint8_t count) {
         bit_count -= 8;
         byte_count++;
     }
+}
+
+bool SPIFlash::Range::contains(size_t index) const {
+    return index >= offset && index < (offset + length);
+}
+
+bool SPIFlash::Range::operator < (const Range &other) const {
+    return offset < other.offset || length < other.length;
 }

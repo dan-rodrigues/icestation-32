@@ -3,8 +3,17 @@
 
 #include <stdint.h>
 #include <vector>
+#include <set>
 
 class SPIFlash {
+
+    struct Range {
+        Range(size_t offset, size_t length) : offset(offset), length(length) {}
+        size_t offset, length;
+
+        bool operator < (const Range &other) const;
+        bool contains(size_t index) const;
+    };
 
     enum class State {
         CMD,
@@ -23,6 +32,7 @@ private:
     bool csn = true, clk = false;
 
     std::vector<uint8_t> data;
+    std::set<Range> defined_ranges;
 
     State state = State::CMD;
     uint8_t cmd = 0;
@@ -36,5 +46,7 @@ private:
 
     uint8_t send_byte = 0;
     uint8_t send_bits(uint8_t count);
+
+    bool index_is_defined(size_t index);
 };
 #endif /* SPIFlash_hpp */
