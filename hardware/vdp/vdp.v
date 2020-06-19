@@ -411,6 +411,7 @@ module vdp #(
 
     // --- Raster offset for sprites ---
 
+    localparam SPRITE_X_INITIAL = -1;
     localparam SPRITE_START_LEAD_TIME = 10;
     localparam SPRITE_HOLD_TIME = HEIGHT_TOTAL - 512;
 
@@ -432,12 +433,11 @@ module vdp #(
         end
     end
 
+    // alternatively instead fo comparing all bits in raster_x, just check for all 1-bits
+    // since it counts up and resets to 0 predictably
     wire sprites_x_start = (raster_x == (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME - 1));
     wire sprites_x_reset = line_ended;
-    reg sprites_x_counting = 0;
-
-    // (review LUT cost of inverters to init these one bits)
-    localparam sprites_x_initial = -1;
+    reg sprites_x_counting;
 
     always @(posedge clk) begin
         // used for line buffer read address for display
@@ -447,15 +447,12 @@ module vdp #(
             sprites_x_counting <= 1;
         end
 
-        sprites_x <= (sprites_x_counting ? sprites_x + 1 : sprites_x_initial);
+        sprites_x <= (sprites_x_counting ? sprites_x + 1 : SPRITE_X_INITIAL);
 
         sprites_y <= sprites_y_nx;
         sprites_y_hold_counter <= sprites_y_held ? sprites_y_hold_counter + 1 : 0;
         sprites_y_held <= sprites_y_held && sprites_y_hold_counter != SPRITE_HOLD_TIME;
 
-        // doesn't need all bits compared
-        // since it counts up predictably, only the number of 1-bits need testing
-        // (review similar cases throughout)
         if (sprites_y == V_ACTIVE_HEIGHT) begin
             sprites_y_held <= 1;
         end
