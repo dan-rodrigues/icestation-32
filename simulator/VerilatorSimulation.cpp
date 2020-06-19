@@ -37,10 +37,11 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_2 = button_2;
     tb->btn_3 = button_3;
 
-    uint8_t io = flash.update(tb->flash_csn, tb->flash_sck, tb->flash_mosi);
+    // TODO: oe handling
+    uint8_t io = flash.update(tb->flash_csn, tb->flash_sck, tb->flash_out);
 
     tb->eval();
-    tb->flash_miso = io;
+    tb->flash_in = io;
 
 #if VCD_WRITE
     trace_update(time);

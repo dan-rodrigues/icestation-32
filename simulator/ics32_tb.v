@@ -37,8 +37,9 @@ module ics32_tb(
 `ifndef FLASH_BLACKBOX
     output flash_sck,
     output flash_csn,
-    output flash_mosi,
-    input flash_miso
+    output [3:0] flash_out,
+    output [3:0] flash_oe,
+    input [3:0] flash_in
 `endif
 );
     ics32 #(
@@ -77,8 +78,9 @@ module ics32_tb(
 
         .flash_sck(flash_sck),
         .flash_csn(flash_csn),
-        .flash_mosi(flash_mosi),
-        .flash_miso(flash_miso)
+        .flash_oe(flash_oe),
+        .flash_out(flash_out),
+        .flash_in(flash_in)
     );
 
 `ifdef FLASH_BLACKBOX

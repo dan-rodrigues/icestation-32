@@ -8,9 +8,6 @@
 
 `include "debug.vh"
 
-// this is being minimised when the BRAM-based software IPL is added
-// that would make this hardware IPL redundant
-
 module flash_dma (
     input clk,
     input reset,
@@ -25,8 +22,9 @@ module flash_dma (
     // SPI flash
     output flash_sck,
     output flash_csn,
-    output flash_mosi,
-    input flash_miso
+    output [3:0] flash_out,
+    output [3:0] flash_oe,
+    input [3:0] flash_in
 );
     localparam FLASH_USER_BASE = 24'h100000;
 
@@ -91,8 +89,9 @@ module flash_dma (
         
         .spi_cs(flash_csn),
         .spi_sclk(flash_sck),
-        .spi_mosi(flash_mosi),
-        .spi_miso(flash_miso)
+        .flash_out(flash_out),
+        .flash_in(flash_in),
+        .flash_oe(flash_oe)
     );
 
 endmodule
