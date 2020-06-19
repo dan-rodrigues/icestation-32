@@ -6,8 +6,8 @@ public:
     SPIFlashBlackBox(SPIFlash flash) : flash(flash) {};
 
     bool eval() override {
-        uint8_t io = flash.update(p_csn.data[0], p_clk.data[0], p_in.data[0]);
-        p_out.next = value<4>{(uint8_t)io};
+        uint8_t io = flash.update(p_csn.get<bool>(), p_clk.get<bool>(), p_in.get<uint8_t>());
+        p_out.set(io);
         return true;
     }
 
@@ -39,23 +39,23 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
 }
 
 uint8_t CXXRTLSimulation::r() const {
-    return top.p_vga__r.curr.data[0];
+    return top.p_vga__r.get<uint8_t>();
 }
 
 uint8_t CXXRTLSimulation::g() const { 
-    return top.p_vga__g.curr.data[0];
+    return top.p_vga__g.get<uint8_t>();
 }
 
 uint8_t CXXRTLSimulation::b() const { 
-    return top.p_vga__b.curr.data[0];
+    return top.p_vga__b.get<uint8_t>();
 }
 
 bool CXXRTLSimulation::hsync() const { 
-    return top.p_vga__hsync.curr.data[0];
+    return top.p_vga__hsync.get<bool>();
 }
 
 bool CXXRTLSimulation::vsync() const { 
-    return top.p_vga__vsync.curr.data[0];
+    return top.p_vga__vsync.get<bool>();
 }
 
 void CXXRTLSimulation::final() {
@@ -69,12 +69,13 @@ bool CXXRTLSimulation::finished() const {
 }
 
 void CXXRTLSimulation::step(uint64_t time) {
+    // using .set() has a severe performance impact (todo profile and confirm)
     top.p_clk__1x = value<1>{clk_1x};
     top.p_clk__2x = value<1>{clk_2x};
 
-    top.p_btn__1 = value<1>{button_1};
-    top.p_btn__2 = value<1>{button_2};
-    top.p_btn__3 = value<1>{button_3};
+    top.p_btn__1.set(button_1);
+    top.p_btn__2.set(button_2);
+    top.p_btn__3.set(button_3);
     
     top.step();
 
