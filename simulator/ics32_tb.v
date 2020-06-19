@@ -39,7 +39,9 @@ module ics32_tb(
     output flash_csn,
     output [3:0] flash_out,
     output [3:0] flash_oe,
-    input [3:0] flash_in
+    input [3:0] flash_in,
+
+    input [3:0] flash_in_en
 `endif
 );
     ics32 #(
@@ -76,6 +78,7 @@ module ics32_tb(
         .led_r(led_r),
         .led_b(led_b),
 
+        // sort out naming, flash_in_en, flash_out, flash_in ...
         .flash_sck(flash_sck),
         .flash_csn(flash_csn),
         .flash_oe(flash_oe),

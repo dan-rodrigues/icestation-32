@@ -37,8 +37,8 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_2 = button_2;
     tb->btn_3 = button_3;
 
-    // TODO: oe handling
     uint8_t io = flash.update(tb->flash_csn, tb->flash_sck, tb->flash_out);
+    flash.check_conflicts(tb->flash_oe);
 
     tb->eval();
     tb->flash_in = io;

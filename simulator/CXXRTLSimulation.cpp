@@ -7,7 +7,9 @@ public:
 
     bool eval() override {
         uint8_t io = flash.update(p_csn.get<bool>(), p_clk.get<bool>(), p_in.get<uint8_t>());
+        flash.check_conflicts(p_oe.get<uint8_t>());
         p_out.set(io);
+        
         return true;
     }
 

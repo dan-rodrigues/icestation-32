@@ -2,8 +2,8 @@
 
 #include <cassert>
 #include <iostream>
-
-// minimal at start: assume power up state, assume SPI only etc
+#include <sstream>
+#include <iomanip>
 
 void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     const size_t flash_size = 0x1000000;
@@ -15,25 +15,36 @@ void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     std::copy(source.begin(), source.end(), &data[offset]);
 }
 
-// FIXME: io combined with oe states, without compromising API
-// could have a separate function to set an oe state to opt in to those assertions
-// SPIFlash::check_conflicts(uint8_t oe);
+bool SPIFlash::check_conflicts(uint8_t host_output_en) {
+    uint8_t conflict_mask = output_en & host_output_en;
+    if (conflict_mask) {
+        log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
+    }
 
-uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io) {
+    return false;
+}
+
+uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
     bool csn_prev = this->csn;
-    bool clk_prev = this->clk;
     this->csn = csn;
-    this->clk = clk;
 
     bool still_deactivated = csn_prev && csn;
     if (still_deactivated) {
         return 0;
     }
 
+    bool clk_prev = this->clk;
+    this->clk = clk;
+
     bool should_deactivate = csn && !csn_prev;
     bool should_activate = !csn && csn_prev;
     if (should_deactivate) {
-        // ...
+        output_en = 0;
+        clk_on_deactivate = clk;
+
+        if (bit_count != 0) {
+            log("/CS deasserted before transferring a complete byte");
+        }
     } else if (should_activate) {
         state = State::CMD;
         io_mode = IOMode::SPI;
@@ -42,16 +53,25 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io) {
         byte_count = 0;
         cmd = 0; // optional?
         bit_count = 0;
+        output_en = 0;
+
+        if (activated_previously && clk_on_deactivate != clk) {
+            log("Activated clock state doesn't match previous deactivation state");
+        }
+
+        activated_previously = true;
     }
 
     bool clk_rose = clk && !clk_prev;
     bool clk_fell = !clk && clk_prev;
-
-    // only set the bits that are to be output depending on the mode
     if (!csn && clk_rose) {
         io = posedge_tick(new_io);
     } else if (!csn && clk_fell) {
         io = negedge_tick(new_io);
+    }
+
+    if (new_output_en) {
+        *new_output_en = this->output_en;
     }
 
     return io;
@@ -62,11 +82,13 @@ uint8_t SPIFlash::negedge_tick(uint8_t io) {
         case State::DATA:
             // (bonus assertion: deassertion of CS before complete byte is read)
             if (bit_count == 0) {
-                assert(read_index <= data.size());
-                assert(index_is_defined(read_index));
-                send_byte = data[read_index++];
+                if (!index_is_defined(read_index)) {
+                    log("read index undefined (index: " + format_hex(read_index, 6) + ")");
+                    send_byte = 0x00;
+                } else {
+                    send_byte = data[read_index++];
+                }
             }
-
             return send_bits();
         default:
             break;
@@ -84,7 +106,9 @@ void SPIFlash::handle_new_cmd(uint8_t new_cmd) {
             io_mode = IOMode::DSPI;
             break;
         default:
-            assert(false);
+            log("unrecognized command (" + format_hex(new_cmd) + ")");
+            io_mode = IOMode::SPI;
+            break;
     }
 
     cmd = new_cmd;
@@ -113,15 +137,7 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
 
             if (byte_count == 3) {
                 byte_count = 0;
-
-                state = (cmd == 0x03 ? State::DATA : State::XIP_CMD);
-//                state = State::DATA;
-//                state = State::XIP_CMD;
-
-                // assume attempts to read the bitstream are not intentional
-                // (parameterize this)
-                const size_t flash_user_base = 0x10000;
-                assert(read_index >= flash_user_base);
+                state = state_after_address();
             }
             break;
         case State::XIP_CMD:
@@ -147,6 +163,18 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
     }
 
     return 0;
+}
+
+SPIFlash::State SPIFlash::state_after_address() {
+    switch (cmd) {
+        case 0x03:
+            return State::DATA;
+        case 0xbb:
+            return State::XIP_CMD;
+        default:
+            assert(false);
+            return State::DATA;
+    }
 }
 
 bool SPIFlash::index_is_defined(size_t index) {
@@ -181,8 +209,11 @@ uint8_t SPIFlash::send_bits(uint8_t count) {
     bit_count += count;
 
     if (bit_count >= 8) {
-        bit_count -= 8;
+        assert(bit_count == 8);
+        bit_count = 0;
     }
+
+    output_en = mask;
 
     return out;
 }
@@ -205,12 +236,11 @@ void SPIFlash::read_bits(uint8_t io, uint8_t count) {
 
     buffer <<= count;
     buffer |= io & ((1 << count) - 1);
-
     bit_count += count;
 
-    // shouldn't expect byte crossing?
     if (bit_count >= 8) {
-        bit_count -= 8;
+        assert(bit_count == 8);
+        bit_count = 0;
         byte_count++;
     }
 }
@@ -221,4 +251,26 @@ bool SPIFlash::Range::contains(size_t index) const {
 
 bool SPIFlash::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
+}
+
+void SPIFlash::log_if(bool condition, const std::string &message) {
+    std::cerr << message << std::endl;
+}
+
+void SPIFlash::log(const std::string &message) {
+    std::cerr << "SPI Flash: " << message << std::endl;
+}
+
+std::string SPIFlash::format_hex(uint8_t integer) {
+    return format_hex(integer, sizeof(uint8_t) * 2);
+}
+
+template<typename T> std::string SPIFlash::format_hex(T integer) {
+    return format_hex(integer, sizeof(T) * 2);
+}
+
+std::string SPIFlash::format_hex(uint32_t integer, uint32_t chars) {
+    std::stringstream stream;
+    stream << std::hex << std::setfill('0') << std::setw(chars) << integer;
+    return stream.str();
 }
