@@ -6,8 +6,8 @@ public:
     SPIFlashBlackBox(SPIFlash flash) : flash(flash) {};
 
     bool eval() override {
-        uint8_t io = flash.update(p_csn.data[0], p_clk.data[0], p_io0.data[0]);
-        p_io1.next = value<1>{(uint8_t)(io & 1)};
+        uint8_t io = flash.update(p_csn.data[0], p_clk.data[0], p_in.data[0]);
+        p_out.next = value<4>{(uint8_t)io};
         return true;
     }
 

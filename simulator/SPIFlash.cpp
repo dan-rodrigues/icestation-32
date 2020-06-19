@@ -15,7 +15,11 @@ void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
     std::copy(source.begin(), source.end(), &data[offset]);
 }
 
-uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
+// FIXME: io combined with oe states, without compromising API
+// could have a separate function to set an oe state to opt in to those assertions
+// SPIFlash::check_conflicts(uint8_t oe);
+
+uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io) {
     bool csn_prev = this->csn;
     bool clk_prev = this->clk;
     this->csn = csn;
@@ -32,6 +36,7 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
         // ...
     } else if (should_activate) {
         state = State::CMD;
+        io_mode = IOMode::SPI;
         read_index = 0;
         buffer = 0;
         byte_count = 0;
@@ -42,14 +47,14 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t io) {
     bool clk_rose = clk && !clk_prev;
     bool clk_fell = !clk && clk_prev;
 
-    uint8_t io_updated = 0;
+    // only set the bits that are to be output depending on the mode
     if (!csn && clk_rose) {
-        io_updated = posedge_tick(io);
+        io = posedge_tick(new_io);
     } else if (!csn && clk_fell) {
-        io_updated = negedge_tick(io);
+        io = negedge_tick(new_io);
     }
 
-    return io_updated;
+    return io;
 }
 
 uint8_t SPIFlash::negedge_tick(uint8_t io) {
@@ -62,12 +67,27 @@ uint8_t SPIFlash::negedge_tick(uint8_t io) {
                 send_byte = data[read_index++];
             }
 
-            return send_bits(1);
+            return send_bits();
         default:
             break;
     }
 
     return 0;
+}
+
+void SPIFlash::handle_new_cmd(uint8_t new_cmd) {
+    switch (new_cmd) {
+        case 0x03:
+            io_mode = IOMode::SPI;
+            break;
+        case 0xbb:
+            io_mode = IOMode::DSPI;
+            break;
+        default:
+            assert(false);
+    }
+
+    cmd = new_cmd;
 }
 
 uint8_t SPIFlash::posedge_tick(uint8_t io) {
@@ -79,13 +99,12 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
                 // common transition conditions?
                 byte_count = 0;
                 state = State::ADDRESS;
-                cmd = buffer;
 
-                assert(cmd == 0x03);
+                handle_new_cmd(buffer);
             }
             break;
         case State::ADDRESS:
-            read_bits(io, 1);
+            read_bits(io);
 
             if (bit_count == 0) {
                 read_index <<= 8;
@@ -95,26 +114,29 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
             if (byte_count == 3) {
                 byte_count = 0;
 
-                state = State::DATA;
+                state = (cmd == 0x03 ? State::DATA : State::XIP_CMD);
+//                state = State::DATA;
 //                state = State::XIP_CMD;
 
                 // assume attempts to read the bitstream are not intentional
+                // (parameterize this)
                 const size_t flash_user_base = 0x10000;
                 assert(read_index >= flash_user_base);
             }
             break;
         case State::XIP_CMD:
             // (catch M5-4 only)
-            read_bits(io, 1);
+            read_bits(io);
             if (byte_count == 1) {
                 byte_count = 0;
-//                state = State::DUMMY;
+
+                // depends on command and whether (eventually) we're in QPI mode
                 state = State::DATA;
             }
             break;
         case State::DUMMY:
             // (configurable wait time)
-            read_bits(io, 1);
+            read_bits(io);
             if (byte_count == 1) {
                 byte_count = 0;
                 state = State::DATA;
@@ -137,13 +159,26 @@ bool SPIFlash::index_is_defined(size_t index) {
     return false;
 }
 
-uint8_t SPIFlash::send_bits(uint8_t count) {
-    // SPI only for now
-    assert(count == 1);
+uint8_t SPIFlash::send_bits() {
+    switch (io_mode) {
+        case IOMode::SPI:
+            return send_bits(1);
+        case IOMode::DSPI:
+            return send_bits(2);
+        default:
+            assert(false);
+            return 0;
+    }
+}
 
-    uint8_t out = (send_byte & 0x80) >> 7;
-    send_byte <<= 1;
-    bit_count++;
+uint8_t SPIFlash::send_bits(uint8_t count) {
+    assert(count <= 4);
+
+    uint8_t mask = (1 << count) - 1;
+    uint8_t shift = 8 - count;
+    uint8_t out = (send_byte & (mask << shift) ) >> shift;
+    send_byte <<= count;
+    bit_count += count;
 
     if (bit_count >= 8) {
         bit_count -= 8;
@@ -152,12 +187,24 @@ uint8_t SPIFlash::send_bits(uint8_t count) {
     return out;
 }
 
-void SPIFlash::read_bits(uint8_t io, uint8_t count) {
-    // SPI only for now
-    assert(count == 1);
+void SPIFlash::read_bits(uint8_t io) {
+    switch (io_mode) {
+        case IOMode::SPI:
+            read_bits(io, 1);
+            break;
+        case IOMode::DSPI:
+            read_bits(io, 2);
+            break;
+        default:
+            assert(false);
+    }
+}
 
-    buffer <<= 1;
-    buffer |= io & 1;
+void SPIFlash::read_bits(uint8_t io, uint8_t count) {
+    assert(count <= 4);
+
+    buffer <<= count;
+    buffer |= io & ((1 << count) - 1);
 
     bit_count += count;
 

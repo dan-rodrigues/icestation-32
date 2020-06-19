@@ -15,13 +15,19 @@ class SPIFlash {
         bool contains(size_t index) const;
     };
 
-    enum class State {
+    enum class State { // IOState
         CMD,
         ADDRESS,
         XIP_CMD,
         DUMMY,
         DATA
-        // (power off and others to add..)
+        // OFF ...
+    };
+
+    enum class IOMode {
+        SPI,
+        DSPI
+        // QSPI ...
     };
 
 public:
@@ -34,6 +40,8 @@ private:
     std::set<Range> defined_ranges;
 
     State state = State::CMD;
+    IOMode io_mode = IOMode::SPI;
+    uint8_t io;
     uint8_t cmd = 0;
     uint8_t buffer = 0;
     uint8_t bit_count = 0;
@@ -42,9 +50,12 @@ private:
 
     uint8_t posedge_tick(uint8_t io);
     uint8_t negedge_tick(uint8_t io);
+    void read_bits(uint8_t io);
     void read_bits(uint8_t io, uint8_t count);
+    void handle_new_cmd(uint8_t new_cmd);
 
     uint8_t send_byte = 0;
+    uint8_t send_bits();
     uint8_t send_bits(uint8_t count);
 
     bool index_is_defined(size_t index);

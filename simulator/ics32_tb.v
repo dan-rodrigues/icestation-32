@@ -79,22 +79,24 @@ module ics32_tb(
         .flash_sck(flash_sck),
         .flash_csn(flash_csn),
         .flash_oe(flash_oe),
-        .flash_out(flash_out),
-        .flash_in(flash_in)
+        .flash_in(flash_in),
+        .flash_out(flash_out)
     );
 
 `ifdef FLASH_BLACKBOX
 
     wire flash_sck;
     wire flash_csn;
-    wire flash_mosi;
-    wire flash_miso;
+    wire [3:0] flash_oe;
+    wire [3:0] flash_in;
+    wire [3:0] flash_out;
 
     flash_bb flash(
         .csn(flash_csn),
         .clk(flash_sck),
-        .io0(flash_mosi),
-        .io1(flash_miso)
+        .oe(flash_oe), // this is oe from host perspective, could be named better
+        .in(flash_out),
+        .out(flash_in)
     );
 
 `endif
@@ -105,13 +107,11 @@ endmodule
 
 (* cxxrtl_blackbox *)
 module flash_bb(
-    input csn,
     input clk,
-
-    input io0,
-    (* cxxrtl_sync *) output io1
-
-    // inout [3:0] io
+    input csn,
+    input [3:0] oe,
+    input [3:0] in,
+    (* cxxrtl_sync *) output [3:0] out
 );
 
 endmodule
