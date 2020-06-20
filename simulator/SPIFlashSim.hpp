@@ -13,8 +13,8 @@
 // Modelled after the W25Q128JV-DTR
 // https://www.winbond.com/resource-files/w25q128jv_dtr%20revc%2003272018%20plus.pdf
 
-#ifndef SPIFlash_hpp
-#define SPIFlash_hpp
+#ifndef SPIFlashSim_hpp
+#define SPIFlashSim_hpp
 
 #include <stdint.h>
 #include <vector>
@@ -102,4 +102,4 @@ private:
     std::string format_hex(uint32_t integer, uint32_t chars) const ;
     template<typename T> std::string format_hex(T integer) const ;
 };
-#endif /* SPIFlash_hpp */
+#endif /* SPIFlashSim_hpp */
