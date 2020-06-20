@@ -1,10 +1,10 @@
 #ifndef VerilatorSimulation_hpp
 #define VerilatorSimulation_hpp
 
+#include <memory>
+
 #include "Simulation.hpp"
 #include "obj_dir/Vics32_tb.h"
-
-#include <memory>
 
 #if VCD_WRITE
 #include <verilated_vcd_c.h>
@@ -37,7 +37,7 @@ public:
 
 private:
     std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
-    SPIFlash flash;
+    SPIFlashSim flash;
 
 #if VCD_WRITE
     std::unique_ptr<VerilatedVcdC> tfp;

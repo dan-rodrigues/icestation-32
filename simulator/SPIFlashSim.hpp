@@ -1,3 +1,9 @@
+// SPIFlashSim.hpp
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef SPIFlash_hpp
 #define SPIFlash_hpp
 
@@ -5,10 +11,10 @@
 #include <vector>
 #include <set>
 
-class SPIFlash {
+class SPIFlashSim {
 
 public:
-    SPIFlash(size_t max_size = 0x1000000) : max_size(max_size) {};
+    SPIFlashSim(size_t max_size = 0x1000000) : max_size(max_size) {};
 
     void load(const std::vector<uint8_t> &source, size_t offset);
     uint8_t update(bool csn, bool clk, uint8_t io, uint8_t *new_output_en = NULL);

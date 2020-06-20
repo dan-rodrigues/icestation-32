@@ -20,11 +20,11 @@ module flash_dma (
     output reg read_ready,
 
     // SPI flash
-    output flash_sck,
+    output flash_clk,
     output flash_csn,
-    output [3:0] flash_out,
-    output [3:0] flash_oe,
-    input [3:0] flash_in
+    output [3:0] flash_in,
+    output [3:0] flash_in_en,
+    input [3:0] flash_out
 );
     localparam FLASH_USER_BASE = 24'h100000;
 
@@ -87,11 +87,11 @@ module flash_dma (
         .addr(cpu_read_address),
         .rdata(flash_data_out),
         
-        .spi_cs(flash_csn),
-        .spi_sclk(flash_sck),
+        .flash_csn(flash_csn),
+        .flash_clk(flash_clk),
         .flash_out(flash_out),
         .flash_in(flash_in),
-        .flash_oe(flash_oe)
+        .flash_in_en(flash_in_en)
     );
 
 endmodule

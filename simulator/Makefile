@@ -11,7 +11,7 @@ dummy:
 
 ### Common ###
 
-SIM_SRCS = main.cpp Simulation.cpp SPIFlash.cpp
+SIM_SRCS = main.cpp Simulation.cpp SPIFlashSim.cpp
 SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb
@@ -41,7 +41,7 @@ CXXRTL_CFLAGS := \
 cxxrtl_sim_trace: CXXRTL_CFLAGS += -DCXXRTL_INCLUDE_VCD_CAPI_IMPL -DVCD_WRITE=1
 
 CXXRTL_LDFLAGS := $(shell sdl2-config --libs)
-CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DFLASH_BLACKBOX -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
+CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alpha_lut.hex"
 
 define write-cxxrtl-sim
 	yosys -p \

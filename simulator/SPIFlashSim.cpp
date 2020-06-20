@@ -1,21 +1,27 @@
-#include "SPIFlash.hpp"
+// SPIFlashSim.cpp
+//
+// Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
+#include "SPIFlashSim.hpp"
 
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
-void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
+void SPIFlashSim::load(const std::vector<uint8_t> &source, size_t offset) {
     size_t source_end_index = source.size() + offset;
     assert(source_end_index < max_size);
-    data.resize(std::min(source_end_index, max_size));
+    data.resize(std::max(source_end_index, data.size()));
 
     defined_ranges.insert(Range(offset, source.size()));
 
     std::copy(source.begin(), source.end(), data.begin() + offset);
 }
 
-uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
+uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
     bool csn_prev = this->csn;
     this->csn = csn;
 
@@ -69,17 +75,17 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output
 }
 
 
-bool SPIFlash::check_conflicts(uint8_t host_output_en) const {
+bool SPIFlashSim::check_conflicts(uint8_t host_output_en) const {
     uint8_t conflict_mask = output_en & host_output_en;
     if (conflict_mask) {
         log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
     }
 
-    return false;
+    return conflict_mask;
 }
 
 // (this will be extended if DDR reads are added, where DATA state must work on posedge too)
-uint8_t SPIFlash::negedge_tick(uint8_t io) {
+uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
     switch (state) {
         case IOState::DATA:
             if (bit_count == 0) {
@@ -92,13 +98,11 @@ uint8_t SPIFlash::negedge_tick(uint8_t io) {
             }
             return send_bits();
         default:
-            break;
+            return 0;
     }
-
-    return 0;
 }
 
-void SPIFlash::handle_new_cmd(uint8_t new_cmd) {
+void SPIFlashSim::handle_new_cmd(uint8_t new_cmd) {
     switch (new_cmd) {
         case 0x03:
             io_mode = IOMode::SPI;
@@ -109,13 +113,14 @@ void SPIFlash::handle_new_cmd(uint8_t new_cmd) {
         default:
             log("unrecognized command (" + format_hex(new_cmd) + ")");
             io_mode = IOMode::SPI;
+            state = IOState::CMD;
             break;
     }
 
     cmd = new_cmd;
 }
 
-uint8_t SPIFlash::posedge_tick(uint8_t io) {
+uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
             read_bits(io, 1);
@@ -159,12 +164,12 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
     return 0;
 }
 
-void SPIFlash::transition_cmd_state(SPIFlash::IOState new_state) {
+void SPIFlashSim::transition_cmd_state(SPIFlashSim::IOState new_state) {
     byte_count = 0;
     state = new_state;
 }
 
-SPIFlash::IOState SPIFlash::state_after_address() {
+SPIFlashSim::IOState SPIFlashSim::state_after_address() {
     switch (cmd) {
         case 0x03:
             return IOState::DATA;
@@ -176,7 +181,7 @@ SPIFlash::IOState SPIFlash::state_after_address() {
     }
 }
 
-bool SPIFlash::index_is_defined(size_t index) {
+bool SPIFlashSim::index_is_defined(size_t index) {
     for (auto range : defined_ranges) {
         if (range.contains(index)) {
             return true;
@@ -186,7 +191,7 @@ bool SPIFlash::index_is_defined(size_t index) {
     return false;
 }
 
-uint8_t SPIFlash::send_bits() {
+uint8_t SPIFlashSim::send_bits() {
     switch (io_mode) {
         case IOMode::SPI:
             return send_bits(1);
@@ -198,12 +203,17 @@ uint8_t SPIFlash::send_bits() {
     }
 }
 
-uint8_t SPIFlash::send_bits(uint8_t count) {
+uint8_t SPIFlashSim::send_bits(uint8_t count) {
     assert(count <= 4);
 
     uint8_t mask = (1 << count) - 1;
     uint8_t shift = 8 - count;
-    uint8_t out = (send_byte & (mask << shift) ) >> shift;
+
+    // SPI transfer goes out on IO[1], not IO[0]
+    uint8_t out_shift = (count == 1 ? 6 : shift);
+    uint8_t out_mask = (count == 1 ? 1 << 1 : mask);
+
+    uint8_t out = (send_byte & (mask << shift)) >> out_shift;
     send_byte <<= count;
     bit_count += count;
 
@@ -212,12 +222,12 @@ uint8_t SPIFlash::send_bits(uint8_t count) {
         bit_count = 0;
     }
 
-    output_en = mask;
+    output_en = out_mask;
 
     return out;
 }
 
-void SPIFlash::read_bits(uint8_t io) {
+void SPIFlashSim::read_bits(uint8_t io) {
     switch (io_mode) {
         case IOMode::SPI:
             read_bits(io, 1);
@@ -230,7 +240,7 @@ void SPIFlash::read_bits(uint8_t io) {
     }
 }
 
-void SPIFlash::read_bits(uint8_t io, uint8_t count) {
+void SPIFlashSim::read_bits(uint8_t io, uint8_t count) {
     assert(count <= 4);
 
     buffer <<= count;
@@ -244,27 +254,27 @@ void SPIFlash::read_bits(uint8_t io, uint8_t count) {
     }
 }
 
-bool SPIFlash::Range::contains(size_t index) const {
+bool SPIFlashSim::Range::contains(size_t index) const {
     return index >= offset && index < (offset + length);
 }
 
-bool SPIFlash::Range::operator < (const Range &other) const {
+bool SPIFlashSim::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
 }
 
-void SPIFlash::log(const std::string &message) const {
+void SPIFlashSim::log(const std::string &message) const {
     std::cerr << "SPI Flash: " << message << std::endl;
 }
 
-std::string SPIFlash::format_hex(uint8_t integer) const {
+std::string SPIFlashSim::format_hex(uint8_t integer) const {
     return format_hex(integer, sizeof(uint8_t) * 2);
 }
 
-template<typename T> std::string SPIFlash::format_hex(T integer) const {
+template<typename T> std::string SPIFlashSim::format_hex(T integer) const {
     return format_hex(integer, sizeof(T) * 2);
 }
 
-std::string SPIFlash::format_hex(uint32_t integer, uint32_t chars) const {
+std::string SPIFlashSim::format_hex(uint32_t integer, uint32_t chars) const {
     std::stringstream stream;
     stream << std::hex << std::setfill('0') << std::setw(chars) << integer;
     return stream.str();

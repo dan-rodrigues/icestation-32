@@ -29,20 +29,7 @@ module ics32_tb(
 
     input btn_1,
     input btn_2,
-    input btn_3,
-
-    // to be extended with i/o for DSPI/QSPI
-    // ...
-
-`ifndef FLASH_BLACKBOX
-    output flash_sck,
-    output flash_csn,
-    output [3:0] flash_out,
-    output [3:0] flash_oe,
-    input [3:0] flash_in,
-
-    input [3:0] flash_in_en
-`endif
+    input btn_3
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
@@ -78,46 +65,44 @@ module ics32_tb(
         .led_r(led_r),
         .led_b(led_b),
 
-        // sort out naming, flash_in_en, flash_out, flash_in ...
-        .flash_sck(flash_sck),
+        .flash_clk(flash_clk),
         .flash_csn(flash_csn),
-        .flash_oe(flash_oe),
+        .flash_in_en(flash_in_en),
         .flash_in(flash_in),
         .flash_out(flash_out)
     );
 
-`ifdef FLASH_BLACKBOX
+    // --- Flash sim blackbox ---
 
-    wire flash_sck;
+    // Parameters could be forwarded to the sim factory functions
+    // This could later be used to assume a certain power-up state (depending on icepack "-s" switch)
+    // Could also apply to any other behaviour change as needed
+
+    wire flash_clk;
     wire flash_csn;
-    wire [3:0] flash_oe;
+    wire [3:0] flash_in_en;
     wire [3:0] flash_in;
     wire [3:0] flash_out;
 
     flash_bb flash(
+        .clk(flash_clk),
         .csn(flash_csn),
-        .clk(flash_sck),
-        .oe(flash_oe), // this is oe from host perspective, could be named better
-        .in(flash_out),
-        .out(flash_in)
+        .in_en(flash_in_en),
+        .in(flash_in),
+        .out(flash_out)
     );
 
-`endif
-
 endmodule
-
-`ifdef FLASH_BLACKBOX
 
 (* cxxrtl_blackbox *)
 module flash_bb(
-    input clk,
-    input csn,
-    input [3:0] oe,
-    input [3:0] in,
-    (* cxxrtl_sync *) output [3:0] out
+    input clk /* verilator public */,
+    input csn /* verilator public */,
+    input [3:0] in_en /* verilator public */,
+    input [3:0] in /* verilator public */,
+    (* cxxrtl_sync *) output [3:0] out /* verilator public */
 );
 
+/* verilator public_module */
+
 endmodule
-
-`endif
-

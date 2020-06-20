@@ -3,18 +3,18 @@
 class SPIFlashBlackBox : public cxxrtl_design::bb_p_flash__bb {
 
 public:
-    SPIFlashBlackBox(SPIFlash flash) : flash(flash) {};
+    SPIFlashBlackBox(SPIFlashSim flash) : flash(flash) {};
 
     bool eval() override {
         uint8_t io = flash.update(p_csn.get<bool>(), p_clk.get<bool>(), p_in.get<uint8_t>());
-        flash.check_conflicts(p_oe.get<uint8_t>());
+        flash.check_conflicts(p_in__en.get<uint8_t>());
         p_out.set(io);
         
-        return true;
+        return bb_p_flash__bb::eval();
     }
 
 private:
-    SPIFlash flash;
+    SPIFlashSim flash;
 };
 
 namespace cxxrtl_design {
@@ -71,7 +71,7 @@ bool CXXRTLSimulation::finished() const {
 }
 
 void CXXRTLSimulation::step(uint64_t time) {
-    // using .set() has a severe performance impact (todo profile and confirm)
+    // using .set() has a severe performance impact (to profile and confirm)
     top.p_clk__1x = value<1>{clk_1x};
     top.p_clk__2x = value<1>{clk_2x};
 

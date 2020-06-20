@@ -5,12 +5,12 @@
 #include <vector>
 #include <stdint.h>
 
-#include "SPIFlash.hpp"
+#include "SPIFlashSim.hpp"
 
 class Simulation {
     
 public:
-    static SPIFlash default_flash;
+    static SPIFlashSim default_flash;
 
     virtual ~Simulation() {}
 
