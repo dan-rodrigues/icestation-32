@@ -8,9 +8,11 @@
 class SPIFlash {
 
 public:
+    SPIFlash(size_t max_size = 0x1000000) : max_size(max_size) {};
+
     void load(const std::vector<uint8_t> &source, size_t offset);
     uint8_t update(bool csn, bool clk, uint8_t io, uint8_t *new_output_en = NULL);
-    bool check_conflicts(uint8_t host_output_en);
+    bool check_conflicts(uint8_t host_output_en) const;
 
 private:
     struct Range {
@@ -21,7 +23,7 @@ private:
         bool contains(size_t index) const;
     };
 
-    enum class State { // CMDState
+    enum class IOState {
         CMD,
         ADDRESS,
         XIP_CMD,
@@ -38,10 +40,11 @@ private:
 
     bool csn = true, clk = false;
 
+    size_t max_size;
     std::vector<uint8_t> data;
     std::set<Range> defined_ranges;
 
-    State state = State::CMD;
+    IOState state = IOState::CMD;
     IOMode io_mode = IOMode::SPI;
     uint8_t io;
     uint8_t cmd = 0;
@@ -65,13 +68,13 @@ private:
 
     bool index_is_defined(size_t index);
 
-    State state_after_address();
+    IOState state_after_address();
+    void transition_cmd_state(IOState new_state);
 
-    void log_if(bool condition, const std::string &message);
-    void log(const std::string &message);
+    void log(const std::string &message) const ;
 
-    std::string format_hex(uint8_t integer);
-    std::string format_hex(uint32_t integer, uint32_t chars);
-    template<typename T> std::string format_hex(T integer);
+    std::string format_hex(uint8_t integer) const ;
+    std::string format_hex(uint32_t integer, uint32_t chars) const ;
+    template<typename T> std::string format_hex(T integer) const ;
 };
 #endif /* SPIFlash_hpp */

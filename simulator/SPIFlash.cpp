@@ -6,22 +6,13 @@
 #include <iomanip>
 
 void SPIFlash::load(const std::vector<uint8_t> &source, size_t offset) {
-    const size_t flash_size = 0x1000000;
-    assert(source.size() + offset < flash_size);
-    data.resize(flash_size);
+    size_t source_end_index = source.size() + offset;
+    assert(source_end_index < max_size);
+    data.resize(std::min(source_end_index, max_size));
 
     defined_ranges.insert(Range(offset, source.size()));
 
-    std::copy(source.begin(), source.end(), &data[offset]);
-}
-
-bool SPIFlash::check_conflicts(uint8_t host_output_en) {
-    uint8_t conflict_mask = output_en & host_output_en;
-    if (conflict_mask) {
-        log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
-    }
-
-    return false;
+    std::copy(source.begin(), source.end(), data.begin() + offset);
 }
 
 uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
@@ -46,12 +37,12 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output
             log("/CS deasserted before transferring a complete byte");
         }
     } else if (should_activate) {
-        state = State::CMD;
+        state = IOState::CMD;
         io_mode = IOMode::SPI;
         read_index = 0;
         buffer = 0;
         byte_count = 0;
-        cmd = 0; // optional?
+        cmd = 0;
         bit_count = 0;
         output_en = 0;
 
@@ -77,10 +68,20 @@ uint8_t SPIFlash::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output
     return io;
 }
 
+
+bool SPIFlash::check_conflicts(uint8_t host_output_en) const {
+    uint8_t conflict_mask = output_en & host_output_en;
+    if (conflict_mask) {
+        log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
+    }
+
+    return false;
+}
+
+// (this will be extended if DDR reads are added, where DATA state must work on posedge too)
 uint8_t SPIFlash::negedge_tick(uint8_t io) {
     switch (state) {
-        case State::DATA:
-            // (bonus assertion: deassertion of CS before complete byte is read)
+        case IOState::DATA:
             if (bit_count == 0) {
                 if (!index_is_defined(read_index)) {
                     log("read index undefined (index: " + format_hex(read_index, 6) + ")");
@@ -116,18 +117,15 @@ void SPIFlash::handle_new_cmd(uint8_t new_cmd) {
 
 uint8_t SPIFlash::posedge_tick(uint8_t io) {
     switch (state) {
-        case State::CMD:
+        case IOState::CMD:
             read_bits(io, 1);
 
             if (byte_count == 1) {
-                // common transition conditions?
-                byte_count = 0;
-                state = State::ADDRESS;
-
                 handle_new_cmd(buffer);
+                transition_cmd_state(IOState::ADDRESS);
             }
             break;
-        case State::ADDRESS:
+        case IOState::ADDRESS:
             read_bits(io);
 
             if (bit_count == 0) {
@@ -136,26 +134,22 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
             }
 
             if (byte_count == 3) {
-                byte_count = 0;
-                state = state_after_address();
+                transition_cmd_state(state_after_address());
             }
             break;
-        case State::XIP_CMD:
+        case IOState::XIP_CMD:
             // (catch M5-4 only)
             read_bits(io);
             if (byte_count == 1) {
-                byte_count = 0;
-
                 // depends on command and whether (eventually) we're in QPI mode
-                state = State::DATA;
+                transition_cmd_state(IOState::DATA);
             }
             break;
-        case State::DUMMY:
-            // (configurable wait time)
+        case IOState::DUMMY:
+            // (configurable wait time...)
             read_bits(io);
             if (byte_count == 1) {
-                byte_count = 0;
-                state = State::DATA;
+                transition_cmd_state(IOState::DATA);
             }
             break;
         default:
@@ -165,15 +159,20 @@ uint8_t SPIFlash::posedge_tick(uint8_t io) {
     return 0;
 }
 
-SPIFlash::State SPIFlash::state_after_address() {
+void SPIFlash::transition_cmd_state(SPIFlash::IOState new_state) {
+    byte_count = 0;
+    state = new_state;
+}
+
+SPIFlash::IOState SPIFlash::state_after_address() {
     switch (cmd) {
         case 0x03:
-            return State::DATA;
+            return IOState::DATA;
         case 0xbb:
-            return State::XIP_CMD;
+            return IOState::XIP_CMD;
         default:
             assert(false);
-            return State::DATA;
+            return IOState::DATA;
     }
 }
 
@@ -253,23 +252,19 @@ bool SPIFlash::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
 }
 
-void SPIFlash::log_if(bool condition, const std::string &message) {
-    std::cerr << message << std::endl;
-}
-
-void SPIFlash::log(const std::string &message) {
+void SPIFlash::log(const std::string &message) const {
     std::cerr << "SPI Flash: " << message << std::endl;
 }
 
-std::string SPIFlash::format_hex(uint8_t integer) {
+std::string SPIFlash::format_hex(uint8_t integer) const {
     return format_hex(integer, sizeof(uint8_t) * 2);
 }
 
-template<typename T> std::string SPIFlash::format_hex(T integer) {
+template<typename T> std::string SPIFlash::format_hex(T integer) const {
     return format_hex(integer, sizeof(T) * 2);
 }
 
-std::string SPIFlash::format_hex(uint32_t integer, uint32_t chars) {
+std::string SPIFlash::format_hex(uint32_t integer, uint32_t chars) const {
     std::stringstream stream;
     stream << std::hex << std::setfill('0') << std::setw(chars) << integer;
     return stream.str();
