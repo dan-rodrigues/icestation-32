@@ -75,8 +75,8 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
 }
 
 
-bool SPIFlashSim::check_conflicts(uint8_t host_output_en) const {
-    uint8_t conflict_mask = output_en & host_output_en;
+bool SPIFlashSim::check_conflicts(uint8_t input_en) const {
+    uint8_t conflict_mask = output_en & input_en;
     if (conflict_mask) {
         log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
     }

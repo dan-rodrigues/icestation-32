@@ -76,7 +76,6 @@ module ics32_tb(
 
     // Parameters could be forwarded to the sim factory functions
     // This could later be used to assume a certain power-up state (depending on icepack "-s" switch)
-    // Could also apply to any other behaviour change as needed
 
     wire flash_clk;
     wire flash_csn;
