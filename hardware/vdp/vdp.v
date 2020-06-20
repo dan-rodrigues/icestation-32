@@ -453,7 +453,7 @@ module vdp #(
         sprites_y_hold_counter <= sprites_y_held ? sprites_y_hold_counter + 1 : 0;
         sprites_y_held <= sprites_y_held && sprites_y_hold_counter != SPRITE_HOLD_TIME;
 
-        if (sprites_y == V_ACTIVE_HEIGHT) begin
+        if (active_frame_ended) begin
             sprites_y_held <= 1;
         end
     end
