@@ -4,7 +4,9 @@
 // changes from the original: quick and dirty DSPI
 // eventually this module can just be rewritten
 
-module icosoc_flashmem(
+module icosoc_flashmem #(
+    parameter ENABLE_DSPI = 1
+) (
     input clk,
     input resetn,
     input continue_reading,
@@ -20,6 +22,9 @@ module icosoc_flashmem(
     output reg [3:0] flash_oe,
     input [3:0] flash_in
 );
+    localparam IO_CYCLES = ENABLE_DSPI ? 4 : 8;
+    localparam READ_CMD = ENABLE_DSPI ? 8'hbb : 8'h03;
+
     reg [7:0] buffer;
     reg [3:0] xfer_cnt;
     reg [3:0] state;
@@ -60,20 +65,20 @@ module icosoc_flashmem(
                 end else begin
                     if (spi_sclk) begin
                         spi_sclk <= 0;
-                        flash_out[1:0] <= buffer[7:6];
-                        flash_oe <= {2'b00, {2{oe_nx}}};
+                        flash_out[1:0] <= (ENABLE_DSPI ? buffer[7:6] : {flash_out[0], buffer[7]});
+                        flash_oe <= (ENABLE_DSPI ? {2'b00, {2{oe_nx}}} : {3'b000, oe_nx});
 
                         oe_count <= oe_count == 0 ? 0 : oe_count - 1;
                     end else begin
                         spi_sclk <= 1;
-                        buffer <= {buffer, flash_in[1:0]};
+                        buffer <= (ENABLE_DSPI ? {buffer, flash_in[1:0]} : {buffer, flash_in[0]});
                         xfer_cnt <= xfer_cnt - 1;
                     end
                 end
             end else
             case (state)
                 0: begin
-                    buffer <= 'hbb;
+                    buffer <= READ_CMD;
                     xfer_cnt <= 8;
                     state <= 1;
                     sending_cmd <= 1;
@@ -82,26 +87,26 @@ module icosoc_flashmem(
                 end
                 1: begin
                     buffer <= addr[23:16];
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 2;
                     sending_cmd <= 0;
-                    oe_count <= 4;
+                    oe_count <= IO_CYCLES;
                     sending <= 1;
                 end
                 2: begin
                     buffer <= addr[15:8];
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 3;
                     sending_cmd <= 0;
-                    oe_count <= 4;
+                    oe_count <= IO_CYCLES;
                     sending <= 1;
                 end
                 3: begin
                     buffer <= addr[7:0];
-                    xfer_cnt <= 4;
-                    state <= 4;
+                    xfer_cnt <= IO_CYCLES;
+                    state <= ENABLE_DSPI ? 4 : 5;
                     sending_cmd <= 0;
-                    oe_count <= 4;
+                    oe_count <= IO_CYCLES;
                     sending <= 1;
                 end
                 4: begin
@@ -114,28 +119,28 @@ module icosoc_flashmem(
                 end
                 5: begin
                     buffer <= 0; // receiving first byte
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 6;
                     sending_cmd <= 0;
                     sending <= 0;
                 end
                 6: begin
                     rdata[7:0] <= buffer;
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 7;
                     sending_cmd <= 0;
                     sending <= 0;
                 end
                 7: begin
                     rdata[15:8] <= buffer;
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 8;
                     sending_cmd <= 0;
                     sending <= 0;
                 end
                 8: begin
                     rdata[23:16] <= buffer;
-                    xfer_cnt <= 4;
+                    xfer_cnt <= IO_CYCLES;
                     state <= 9;
                     sending_cmd <= 0;
                 end
@@ -146,7 +151,7 @@ module icosoc_flashmem(
                     ready <= 1;
 
                     if (continue_reading) begin
-                        xfer_cnt <= 4;
+                        xfer_cnt <= IO_CYCLES;
                         state <= 6;
                     end
                 end
