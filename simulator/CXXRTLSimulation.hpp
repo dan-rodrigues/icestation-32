@@ -37,6 +37,7 @@ public:
 
 private:
     cxxrtl_design::p_ics32__tb top;
+    std::unique_ptr<SPIFlashSim> flash;
 
 #if VCD_WRITE
     cxxrtl::vcd_writer vcd;

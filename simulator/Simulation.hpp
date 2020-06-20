@@ -5,9 +5,13 @@
 #include <vector>
 #include <stdint.h>
 
+#include "SPIFlashSim.hpp"
+
 class Simulation {
     
 public:
+    static SPIFlashSim default_flash;
+
     virtual ~Simulation() {}
 
     void operator = (Simulation const &s) = delete;

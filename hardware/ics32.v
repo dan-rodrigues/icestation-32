@@ -14,7 +14,7 @@ module ics32 #(
     parameter integer RESET_DURATION = 1 << 10,
     parameter ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
-    parameter BOOTLOADER_PATH = `BOOTLOADER
+    parameter BOOTLOADER_PATH = "/Users/dan.rodrigues/hw/ics-published/firmware/boot.hex" //`BOOTLOADER
 `else
     parameter BOOTLOADER_PATH = "boot.hex"
 `endif
@@ -43,14 +43,36 @@ module ics32 #(
     input btn_2,
     input btn_3,
 
-    output flash_sck,
+    output flash_clk,
     output flash_csn,
-    output flash_mosi,
-    input flash_miso
+`ifdef SIMULATOR
+    output [3:0] flash_in,
+    output [3:0] flash_in_en,
+    input [3:0] flash_out
+`else
+    inout [3:0] flash_io
+`endif
 );
     localparam ENABLE_FAST_CPU = !ENABLE_WIDESCREEN || FORCE_FAST_CPU;
 
-    // --- Bootloader --- TODO
+    // --- Flash IO control ---
+
+`ifndef SIMULATOR
+
+    wire [3:0] flash_out;
+    wire [3:0] flash_in_en;
+    wire [3:0] flash_in;
+
+    assign flash_out = flash_io;
+
+    assign flash_io[0] = flash_in_en[0] ? flash_in[0] : 1'bz;
+    assign flash_io[1] = flash_in_en[1] ? flash_in[1] : 1'bz;
+    assign flash_io[2] = flash_in_en[2] ? flash_in[2] : 1'bz;
+    assign flash_io[3] = flash_in_en[3] ? flash_in[3] : 1'bz;
+
+`endif
+
+    // --- Bootloader ---
 
     reg [31:0] bootloader [0:255];
 
@@ -120,6 +142,7 @@ module ics32 #(
     wire pll_locked;
 
 `ifndef EXTERNAL_CLOCKS
+
     pll #(
         .ENABLE_FAST_CLK(ENABLE_WIDESCREEN)
     ) pll (
@@ -129,10 +152,13 @@ module ics32 #(
         .clk_1x(pll_clk_1x),
         .clk_2x(pll_clk_2x)
     );
+
 `else
+
     assign pll_clk_1x = clk_1x;
     assign pll_clk_2x = clk_2x;
     assign pll_locked = 1;
+
 `endif
 
     assign vga_clk = pll_clk_2x;
@@ -567,10 +593,11 @@ module ics32 #(
         .read_en(flash_read_en),
         .read_ready(flash_read_ready),
 
-        .flash_sck(flash_sck),
+        .flash_clk(flash_clk),
         .flash_csn(flash_csn),
-        .flash_mosi(flash_mosi),
-        .flash_miso(flash_miso)
+        .flash_in_en(flash_in_en),
+        .flash_in(flash_in),
+        .flash_out(flash_out)
     );
 
 endmodule

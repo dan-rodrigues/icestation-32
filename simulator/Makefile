@@ -11,7 +11,7 @@ dummy:
 
 ### Common ###
 
-SIM_SRCS = main.cpp
+SIM_SRCS = main.cpp Simulation.cpp SPIFlashSim.cpp
 SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb
@@ -20,7 +20,7 @@ HDL_DIR = ../hardware
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
-HDL_SOURCES += $(HDL_TOP).v sim_spiflash.v
+HDL_SOURCES += $(HDL_TOP).v ice40_spram.v
 
 CXX_OPT = -O3
 
@@ -30,7 +30,7 @@ CXXRTL_OPT = -O6
 cxxrtl_sim_trace: CXXRTL_OPT = -Og
 
 CXXRTL_SRCS = CXXRTLSimulation.cpp
-CXXRTL_SIM_MODELS = ice40_spram.v
+CXXRTL_HEADERS = $(CXXRTL_SRCS:%.cpp=%.hpp)
 CXXRTL_INCLUDES := $(shell yosys-config --datdir/include)
 CXXRTL_CFLAGS := \
 	-Wall \
@@ -57,10 +57,10 @@ define build-sim
 
 endef
 
-cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)
+cxxrtl_sim: cxxrtl_sim.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(CXXRTL_HEADERS) $(SIM_HEADERS)
 	$(build-sim)
 
-cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(SIM_HEADERS)	
+cxxrtl_sim_trace: cxxrtl_sim_trace.cpp $(SIM_SRCS) $(CXXRTL_SRCS) $(CXXRTL_HEADERS) $(SIM_HEADERS)	
 	$(build-sim)
 
 CXXRTL_DEPS = $(HDL_SOURCES) $(BOOT_HEX) $(CXXRTL_SIM_MODELS) alpha_lut.hex
@@ -81,9 +81,7 @@ VLT_FLAGS =	\
 	-I$(HDL_DIR) \
 	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS -DSIMULATOR
 
-ICE40_CELLS_SIM := $(shell yosys-config --datdir/ice40/cells_sim.v)
-
-VLT_CXX_SOURCES = main.cpp ../VerilatorSimulation.cpp
+VLT_CXX_SOURCES = $(SIM_SRCS) ../VerilatorSimulation.cpp
 VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 
@@ -97,7 +95,7 @@ verilator_sim_trace: VLT_FLAGS += --trace
 define build-verilator-sim
 	set -e ;\
 	verilator $(VLT_FLAGS) -o $(VLT_SIM_NAME) \
-		--top-module $(HDL_TOP) $(HDL_SOURCES) $(HDL_TOP).v $(ICE40_CELLS_SIM) \
+		--top-module $(HDL_TOP) $(HDL_SOURCES) $(HDL_TOP).v \
 		-CFLAGS "$(VLT_CFLAGS)" -LDFLAGS "$(VLT_LDFLAGS)" --exe $(VLT_CXX_SOURCES) ;\
 	make -C obj_dir/ -f V$(HDL_TOP).mk ;\
 	cp obj_dir/$(VLT_SIM_NAME) $@

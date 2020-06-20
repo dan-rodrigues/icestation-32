@@ -24,7 +24,7 @@ module cpu_ram(
         wstrb[0], wstrb[0]
     };
 
-    SB_SPRAM256KA cpu_ram_0 (
+    SB_SPRAM256KA cpu_ram_0(
         .ADDRESS(address),
         .DATAIN(write_data[15:0]),
         .MASKWREN(mask_write_en[3:0]),
@@ -37,7 +37,7 @@ module cpu_ram(
         .DATAOUT(read_data[15:0])
     );
 
-    SB_SPRAM256KA cpu_ram_1 (
+    SB_SPRAM256KA cpu_ram_1(
         .ADDRESS(address),
         .DATAIN(write_data[31:16]),
         .MASKWREN(mask_write_en[7:4]),
