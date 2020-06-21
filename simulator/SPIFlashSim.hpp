@@ -51,6 +51,7 @@ private:
     enum class CMD: uint8_t {
         UNDEFINED = 0x00,
         READ_DATA = 0x03, FAST_READ_DUAL = 0xbb,
+        WRITE_ENABLE_VOLATILE = 0x50,
         READ_STATUS_REG_2 = 0x35,
         WRITE_STATUS_REG_2 = 0x31
         // ...
@@ -99,6 +100,7 @@ private:
     void read_bits(uint8_t io, uint8_t count);
     void handle_new_cmd(uint8_t new_cmd);
 
+    bool status_volatile_write_enable = false;
     uint8_t status_1, status_2, status_3;
     void write_status_reg();
 

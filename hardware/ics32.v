@@ -502,6 +502,7 @@ module ics32 #(
         .status_en(status_en),
         .pad_en(pad_en),
         .cop_en(cop_ram_write_en),
+        .flash_ctrl_en(flash_ctrl_en),
 
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
@@ -512,6 +513,7 @@ module ics32 #(
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
         .pad_read_data(pad_read_data),
+        .flash_ctrl_read_data(flash_ctrl_read_data),
 
         // outputs
 
@@ -615,7 +617,7 @@ module ics32 #(
         .flash_out(flash_out)
     );
 
-    // --- Flash CPU control (to extract, possinly with the above two blocks) ---
+    // --- Flash CPU control (to extract, possibly with the above two blocks) ---
 
     reg flash_ctrl_active;
 
@@ -630,6 +632,12 @@ module ics32 #(
     wire flash_ctrl_clk_data = cpu_write_data[8];
     wire flash_ctrl_csn_data = cpu_write_data[9];
 
+    reg [3:0] flash_ctrl_read_data;
+
+    always @(posedge vdp_clk) begin
+        flash_ctrl_read_data <= flash_out;
+    end
+
     always @(posedge vdp_clk) begin
         if (flash_ctrl_write_en) begin
             flash_ctrl_in <= flash_ctrl_in_data;
@@ -642,7 +650,7 @@ module ics32 #(
     always @(posedge vdp_clk) begin
         if (vdp_reset) begin
             flash_ctrl_active <= 0;
-        end else if(flash_ctrl_write_en) begin
+        end else if (flash_ctrl_write_en) begin
             flash_ctrl_active <= flash_ctrl_active_data;
         end
     end

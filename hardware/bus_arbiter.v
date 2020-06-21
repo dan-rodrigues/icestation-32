@@ -29,6 +29,7 @@ module bus_arbiter #(
     input status_en,
     input pad_en,
     input cop_en,
+    input flash_ctrl_en,
 
     // ready inputs from read sources
     input flash_read_ready,
@@ -41,6 +42,7 @@ module bus_arbiter #(
     input [15:0] vdp_read_data,
     input [31:0] dsp_read_data,
     input [1:0] pad_read_data,
+    input [3:0] flash_ctrl_read_data,
 
     // CPU outputs
     output reg cpu_mem_ready,
@@ -48,7 +50,7 @@ module bus_arbiter #(
 );
     wire cpu_ram_ready, peripheral_ready;
     
-    wire any_peripheral_ready = ((vdp_en && vdp_ready) || status_en || dsp_en || pad_en || cop_en || bootloader_en);
+    wire any_peripheral_ready = ((vdp_en && vdp_ready) || flash_ctrl_en || status_en || dsp_en || pad_en || cop_en || bootloader_en);
 
     generate
         // using !cpu_mem_ready only works in CPU clk is full speed
@@ -100,6 +102,8 @@ module bus_arbiter #(
             cpu_read_data_ps = bootloader_read_data;
         end else if (cpu_ram_en && (READ_SOURCES & `BA_CPU_RAM)) begin
             cpu_read_data_ps = cpu_ram_read_data;
+        end else if (flash_ctrl_en /* && ... */) begin
+            cpu_read_data_ps[3:0] = flash_ctrl_read_data;
         end
     end
 

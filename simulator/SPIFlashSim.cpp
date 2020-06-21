@@ -44,6 +44,9 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
             log("/CS deasserted before transferring a complete byte");
         }
     } else if (should_activate) {
+        // one-off write enable (to extend...)
+        status_volatile_write_enable = (cmd == CMD::WRITE_ENABLE_VOLATILE);
+
         state = IOState::CMD;
         io_mode = IOMode::SPI;
         read_index = 0;
@@ -109,6 +112,7 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
 SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     static const std::set<CMD> supported_cmds = {
         CMD::READ_DATA, CMD::FAST_READ_DUAL,
+        CMD::WRITE_ENABLE_VOLATILE,
         CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2
     };
 
@@ -132,6 +136,10 @@ SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
 }
 
 void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
+    if (new_cmd_op != 0xbb) {
+        log("CMD received: " + format_hex(new_cmd_op));
+    }
+
     cmd = cmd_from_op(new_cmd_op);
     switch (cmd) {
         case CMD::READ_DATA:
@@ -142,16 +150,25 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
             io_mode = IOMode::DSPI;
             transition_io_state(IOState::ADDRESS);
             break;
+        case CMD::WRITE_ENABLE_VOLATILE:
+            log("volatile write enable cmd received..");
+            break;
         case CMD::READ_STATUS_REG_2:
             io_mode = IOMode::SPI;
             transition_io_state(IOState::REG_READ);
             // TODO: actual data
             // ---to be read and confirmed working by bootloader
-            send_byte = 0x5a;
+            send_byte = 0xfd; // 0x58;
+            log("SR2 byte to read: " + format_hex(send_byte));
+
             break;
         case CMD::WRITE_STATUS_REG_2:
-            io_mode = IOMode::SPI;
-            transition_io_state(IOState::REG_WRITE);
+            if (status_volatile_write_enable) {
+                io_mode = IOMode::SPI;
+                transition_io_state(IOState::REG_WRITE);
+            } else {
+                log("ignoring attempt to write SR2 without write-enabling first");
+            }
             break;
         default:
             log("unrecognized command (" + format_hex(new_cmd_op) + ")");
@@ -215,6 +232,8 @@ void SPIFlashSim::write_status_reg() {
         case CMD::WRITE_STATUS_REG_2:
             // (reject attempts to set the QE bit if already in QPI mode)
             // (optional info log upon enabling quad io)
+            log("SR2 written: " + format_hex(buffer));
+
             status_2 = buffer;
             break;
         default:
