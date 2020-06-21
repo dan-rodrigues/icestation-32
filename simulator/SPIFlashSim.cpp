@@ -50,6 +50,7 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
         status_volatile_write_enable = (cmd == CMD::WRITE_ENABLE_VOLATILE);
 
         state = IOState::CMD;
+        dummy_cycles = 0;
         io_mode = IOMode::SPI;
         read_index = 0;
         buffer = 0;
@@ -100,6 +101,7 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
                     log("read index undefined (index: " + format_hex(read_index, 6) + ")");
                     send_byte = 0x00;
                 } else {
+                    log("...sent byte: " + format_hex(data[read_index - 1]));
                     send_byte = data[read_index++];
                 }
             }
@@ -113,7 +115,7 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
 
 SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     static const std::set<CMD> supported_cmds = {
-        CMD::READ_DATA, CMD::FAST_READ_DUAL,
+        CMD::READ_DATA, CMD::FAST_READ_DUAL, CMD::FAST_READ_QUAD,
         CMD::WRITE_ENABLE_VOLATILE,
         CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2
     };
@@ -150,6 +152,12 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
             break;
         case CMD::FAST_READ_DUAL:
             io_mode = IOMode::DSPI;
+            transition_io_state(IOState::ADDRESS);
+            break;
+        case CMD::FAST_READ_QUAD:
+            io_mode = IOMode::QSPI;
+            // (this needs to be made configurable)
+            dummy_cycles = 4;
             transition_io_state(IOState::ADDRESS);
             break;
         case CMD::WRITE_ENABLE_VOLATILE:
@@ -198,6 +206,8 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             }
 
             if (byte_count == 3) {
+                log("...set address to: " + format_hex(read_index));
+
                 transition_io_state(state_after_address());
             }
             break;
@@ -206,13 +216,12 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             read_bits(io);
             if (byte_count == 1) {
                 // depends on command and whether (eventually) we're in QPI mode
-                transition_io_state(IOState::DATA);
+                transition_io_state(dummy_cycles ? IOState::DUMMY : IOState::DATA);
             }
             break;
         case IOState::DUMMY:
-            // (configurable wait time...)
-            read_bits(io);
-            if (byte_count == 1) {
+            dummy_cycles--;
+            if (!dummy_cycles) {
                 transition_io_state(IOState::DATA);
             }
             break;
@@ -255,6 +264,8 @@ SPIFlashSim::IOState SPIFlashSim::state_after_address() {
             return IOState::DATA;
         case CMD::FAST_READ_DUAL:
             return IOState::XIP_CMD;
+        case CMD::FAST_READ_QUAD: // !
+            return IOState::XIP_CMD;
         default:
             assert(false);
             return IOState::DATA;
@@ -277,6 +288,8 @@ uint8_t SPIFlashSim::send_bits() {
             return send_bits(1);
         case IOMode::DSPI:
             return send_bits(2);
+        case IOMode::QSPI:
+            return send_bits(4);
         default:
             assert(false);
             return 0;
@@ -314,6 +327,9 @@ void SPIFlashSim::read_bits(uint8_t io) {
             break;
         case IOMode::DSPI:
             read_bits(io, 2);
+            break;
+        case IOMode::QSPI:
+            read_bits(io, 4);
             break;
         default:
             assert(false);

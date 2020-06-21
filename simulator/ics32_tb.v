@@ -99,7 +99,8 @@ module flash_bb(
     input csn /* verilator public */,
     input [3:0] in_en /* verilator public */,
     input [3:0] in /* verilator public */,
-    (* cxxrtl_sync *) output [3:0] out /* verilator public */
+    (* cxxrtl_sync *) output [3:0] out /* verilator public */,
+    (* cxxrtl_sync *) output [3:0] out_en /* verilator public */
 );
 
 /* verilator public_module */

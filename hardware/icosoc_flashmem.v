@@ -6,7 +6,7 @@
 // eventually this module can just be rewritten
 
 module icosoc_flashmem #(
-    parameter ENABLE_DSPI = 1
+    parameter ENABLE_QSPI = 1
 ) (
     input clk,
     input resetn,
@@ -23,8 +23,8 @@ module icosoc_flashmem #(
     output reg [3:0] flash_in_en,
     input [3:0] flash_out
 );
-    localparam IO_CYCLES = ENABLE_DSPI ? 4 : 8;
-    localparam READ_CMD = ENABLE_DSPI ? 8'hbb : 8'h03;
+    localparam IO_CYCLES = ENABLE_QSPI ? 2 : 8;
+    localparam READ_CMD = ENABLE_QSPI ? 8'heb : 8'h03;
 
     reg [7:0] buffer;
     reg [3:0] xfer_cnt;
@@ -66,13 +66,13 @@ module icosoc_flashmem #(
                 end else begin
                     if (flash_clk) begin
                         flash_clk <= 0;
-                        flash_in[1:0] <= (ENABLE_DSPI ? buffer[7:6] : {1'b0, buffer[7]});
-                        flash_in_en <= (ENABLE_DSPI ? {2'b00, {2{oe_nx}}} : {3'b000, oe_nx});
+                        flash_in <= (ENABLE_QSPI ? buffer[7:4] : {3'b0, buffer[7]});
+                        flash_in_en <= (ENABLE_QSPI ? {4{oe_nx}} : {3'b000, oe_nx});
 
                         oe_count <= |oe_count ? oe_count - 1 : 0;
                     end else begin
                         flash_clk <= 1;
-                        buffer <= (ENABLE_DSPI ? {buffer, flash_out[1:0]} : {buffer, flash_out[1]});
+                        buffer <= (ENABLE_QSPI ? {buffer, flash_out} : {buffer, flash_out[1]});
                         xfer_cnt <= xfer_cnt - 1;
                     end
                 end
@@ -105,17 +105,21 @@ module icosoc_flashmem #(
                 3: begin
                     buffer <= addr[7:0];
                     xfer_cnt <= IO_CYCLES;
-                    state <= ENABLE_DSPI ? 4 : 5;
+                    state <= ENABLE_QSPI ? 4 : 5;
                     sending_cmd <= 0;
                     oe_count <= IO_CYCLES;
                     sending <= 1;
                 end
                 4: begin
                     buffer <= 0; // M7-0
-                    xfer_cnt <= 4;
+                    // xfer_cnt <= 4; // !
+                    xfer_cnt <= 2 + 4; // building the dummy part into this
                     state <= 5;
                     sending_cmd <= 0;
+
+                    // oe_count <= 3;
                     oe_count <= 3;
+
                     sending <= 1;
                 end
                 5: begin

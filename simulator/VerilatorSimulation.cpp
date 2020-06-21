@@ -40,11 +40,15 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_3 = button_3;
 
     auto flash_bb = tb->ics32_tb->flash;
-    uint8_t io = flash.update(flash_bb->csn, flash_bb->clk, flash_bb->in);
+    uint8_t out_en;
+    uint8_t io = flash.update(flash_bb->csn, flash_bb->clk, flash_bb->in, &out_en);
     flash.check_conflicts(flash_bb->in_en);
 
-    tb->eval();
     flash_bb->out = io;
+    flash_bb->out_en = out_en;
+
+    tb->eval();
+
 
 #if VCD_WRITE
     trace_update(time);

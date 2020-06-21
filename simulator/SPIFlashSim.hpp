@@ -50,7 +50,7 @@ private:
 
     enum class CMD: uint8_t {
         UNDEFINED = 0x00,
-        READ_DATA = 0x03, FAST_READ_DUAL = 0xbb,
+        READ_DATA = 0x03, FAST_READ_DUAL = 0xbb, FAST_READ_QUAD = 0xeb,
         WRITE_ENABLE_VOLATILE = 0x50,
         READ_STATUS_REG_2 = 0x35,
         WRITE_STATUS_REG_2 = 0x31
@@ -70,8 +70,8 @@ private:
 
     enum class IOMode {
         SPI,
-        DSPI
-        // QSPI ...
+        DSPI,
+        QSPI
     };
 
     bool csn = true, clk = false;
@@ -91,6 +91,7 @@ private:
     uint8_t bit_count = 0;
     uint8_t byte_count = 0;
     uint32_t read_index = 0;
+    uint8_t dummy_cycles = 0;
     bool clk_on_deactivate = false;
     bool activated_previously = false;
 
