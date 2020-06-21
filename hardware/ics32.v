@@ -292,6 +292,7 @@ module ics32 #(
         .status_en(0),
         .pad_en(0),
         .cop_en(0),
+        .flash_ctrl_en(0),
 
         .flash_read_ready(0),
         .vdp_ready(0),
@@ -302,6 +303,7 @@ module ics32 #(
         .dsp_read_data(0),
         .vdp_read_data(0),
         .pad_read_data(0),
+        .flash_ctrl_read_data(0),
 
         // outputs
 
@@ -599,7 +601,7 @@ module ics32 #(
 
     wire flash_dma_clk, flash_dma_csn;
     wire [3:0] flash_dma_in_en;
-    wire [3:0] flash_dma_in, flash_dma_out;
+    wire [3:0] flash_dma_in;
 
     flash_dma flash_dma(
         .clk(vdp_clk),
@@ -614,6 +616,7 @@ module ics32 #(
         .flash_csn(flash_dma_csn),
         .flash_in_en(flash_dma_in_en),
         .flash_in(flash_dma_in),
+
         .flash_out(flash_out)
     );
 

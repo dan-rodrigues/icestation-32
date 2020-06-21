@@ -45,6 +45,8 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
         }
     } else if (should_activate) {
         // one-off write enable (to extend...)
+        // this needs to be moved, it is persisted and then cleared after a write
+        // "Note  that  the  WEL  bitis  automatically  reset  after  Power-up  and  upon completion  of  the  Write  Status  Register, Erase/Program  Security  Registers, Page  Program, Quad  Page Program, Sector Erase, Block Erase, Chip Erase and Reset instructions"
         status_volatile_write_enable = (cmd == CMD::WRITE_ENABLE_VOLATILE);
 
         state = IOState::CMD;
