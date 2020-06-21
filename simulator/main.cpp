@@ -56,6 +56,8 @@ int main(int argc, const char * argv[]) {
     // prepare flash before initializing the core sim instance
 
     SPIFlashSim flash_sim;
+    flash_sim.enable_info_logging = true;
+    
     cpu_program.resize(flash_ipl_size);
     flash_sim.load(cpu_program, flash_user_base);
     Simulation::default_flash = flash_sim;

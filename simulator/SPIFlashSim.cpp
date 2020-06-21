@@ -41,14 +41,9 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
         clk_on_deactivate = clk;
 
         if (bit_count != 0) {
-            log("/CS deasserted before transferring a complete byte");
+            log_error("/CS deasserted before transferring a complete byte");
         }
     } else if (should_activate) {
-        // one-off write enable (to extend...)
-        // this needs to be moved, it is persisted and then cleared after a write
-        // "Note  that  the  WEL  bitis  automatically  reset  after  Power-up  and  upon completion  of  the  Write  Status  Register, Erase/Program  Security  Registers, Page  Program, Quad  Page Program, Sector Erase, Block Erase, Chip Erase and Reset instructions"
-        status_volatile_write_enable = (cmd == CMD::WRITE_ENABLE_VOLATILE);
-
         state = IOState::CMD;
         dummy_cycles = 0;
         io_mode = IOMode::SPI;
@@ -61,7 +56,7 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
         output_en = 0;
 
         if (activated_previously && clk_on_deactivate != clk) {
-            log("Activated clock state doesn't match previous deactivation state");
+            log_error("Activated clock state doesn't match previous deactivation state");
         }
 
         activated_previously = true;
@@ -86,7 +81,7 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
 bool SPIFlashSim::check_conflicts(uint8_t input_en) const {
     uint8_t conflict_mask = output_en & input_en;
     if (conflict_mask) {
-        log("IO conflict (" + format_hex(conflict_mask, 1) + ")");
+        log_error("IO conflict (" + format_hex(conflict_mask, 1) + ")");
     }
 
     return conflict_mask;
@@ -98,10 +93,10 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
         case IOState::DATA:
             if (bit_count == 0) {
                 if (!index_is_defined(read_index)) {
-                    log("read index undefined (index: " + format_hex(read_index, 6) + ")");
+                    log_error("Read index undefined (index: " + format_hex(read_index, 6) + ")");
                     send_byte = 0x00;
                 } else {
-                    log("...sent byte: " + format_hex(data[read_index - 1]));
+                    log_info("...sent byte: " + format_hex(data[read_index - 1]));
                     send_byte = data[read_index++];
                 }
             }
@@ -140,9 +135,8 @@ SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
 }
 
 void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
-    if (new_cmd_op != 0xbb) {
-        log("CMD received: " + format_hex(new_cmd_op));
-    }
+    // (nicer formatting, proper op names)
+    log_info("CMD received: " + format_hex(new_cmd_op));
 
     cmd = cmd_from_op(new_cmd_op);
     switch (cmd) {
@@ -161,15 +155,15 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
             transition_io_state(IOState::ADDRESS);
             break;
         case CMD::WRITE_ENABLE_VOLATILE:
-            log("volatile write enable cmd received..");
+            log_info("Volatile write-enable bit set...");
+            status_volatile_write_enable = true;
             break;
         case CMD::READ_STATUS_REG_2:
             io_mode = IOMode::SPI;
             transition_io_state(IOState::REG_READ);
-            // TODO: actual data
-            // ---to be read and confirmed working by bootloader
+            // TODO: actual representation of reg
             send_byte = 0xfd; // 0x58;
-            log("SR2 byte to read: " + format_hex(send_byte));
+            log_info("SR2 byte to read: " + format_hex(send_byte));
 
             break;
         case CMD::WRITE_STATUS_REG_2:
@@ -177,11 +171,11 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
                 io_mode = IOMode::SPI;
                 transition_io_state(IOState::REG_WRITE);
             } else {
-                log("ignoring attempt to write SR2 without write-enabling first");
+                log_error("Ignoring attempt to write SR2 without write-enabling first");
             }
             break;
         default:
-            log("unrecognized command (" + format_hex(new_cmd_op) + ")");
+            log_error("Unrecognized command (" + format_hex(new_cmd_op) + ")");
             io_mode = IOMode::SPI;
             transition_io_state(IOState::CMD);
             break;
@@ -206,7 +200,7 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             }
 
             if (byte_count == 3) {
-                log("...set address to: " + format_hex(read_index));
+                log_info("Address set to: " + format_hex(read_index));
 
                 transition_io_state(state_after_address());
             }
@@ -239,11 +233,13 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
 }
 
 void SPIFlashSim::write_status_reg() {
+    status_volatile_write_enable = false;
+
     switch (cmd) {
         case CMD::WRITE_STATUS_REG_2:
             // (reject attempts to set the QE bit if already in QPI mode)
             // (optional info log upon enabling quad io)
-            log("SR2 written: " + format_hex(buffer));
+            log_info("SR2 updated to: " + format_hex(buffer));
 
             status_2 = buffer;
             break;
@@ -358,8 +354,16 @@ bool SPIFlashSim::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
 }
 
-void SPIFlashSim::log(const std::string &message) const {
-    std::cerr << "SPI Flash: " << message << std::endl;
+void SPIFlashSim::log_info(const std::string &message) const {
+    if (enable_info_logging) {
+        std::cout << "SPIFlashSim: " << message << std::endl;
+    }
+}
+
+void SPIFlashSim::log_error(const std::string &message) const {
+    if (enable_error_logging) {
+        std::cerr << "SPIFlashSim error: " << message << std::endl;
+    }
 }
 
 std::string SPIFlashSim::format_hex(uint8_t integer) const {

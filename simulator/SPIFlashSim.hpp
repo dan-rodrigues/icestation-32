@@ -39,6 +39,9 @@ public:
     /// Returns true if there was a conflict.
     bool check_conflicts(uint8_t input_en) const;
 
+    bool enable_info_logging = false;
+    bool enable_error_logging = true;
+
 private:
     struct Range {
         Range(size_t offset, size_t length) : offset(offset), length(length) {}
@@ -115,7 +118,8 @@ private:
     IOState state_after_address();
     void transition_io_state(IOState new_state);
 
-    void log(const std::string &message) const ;
+    void log_error(const std::string &message) const;
+    void log_info(const std::string &message) const;
 
     std::string format_hex(uint8_t integer) const ;
     std::string format_hex(uint32_t integer, uint32_t chars) const ;
