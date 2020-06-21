@@ -48,12 +48,22 @@ private:
         bool contains(size_t index) const;
     };
 
+    enum class CMD: uint8_t {
+        UNDEFINED = 0x00,
+        READ_DATA = 0x03, FAST_READ_DUAL = 0xbb,
+        READ_STATUS_REG_2 = 0x35,
+        WRITE_STATUS_REG_2 = 0x31
+        // ...
+    };
+
     enum class IOState {
         CMD,
         ADDRESS,
         XIP_CMD,
         DUMMY,
-        DATA
+        DATA,
+        REG_READ,
+        REG_WRITE
         // OFF ...
     };
 
@@ -72,7 +82,10 @@ private:
     IOState state = IOState::CMD;
     IOMode io_mode = IOMode::SPI;
     uint8_t io;
-    uint8_t cmd = 0;
+
+    CMD cmd = CMD::UNDEFINED;
+    CMD cmd_from_op(uint8_t cmd_op);
+
     uint8_t buffer = 0;
     uint8_t bit_count = 0;
     uint8_t byte_count = 0;
@@ -86,6 +99,9 @@ private:
     void read_bits(uint8_t io, uint8_t count);
     void handle_new_cmd(uint8_t new_cmd);
 
+    uint8_t status_1, status_2, status_3;
+    void write_status_reg();
+
     uint8_t output_en = 0;
     uint8_t send_byte = 0;
     uint8_t send_bits();
@@ -94,7 +110,7 @@ private:
     bool index_is_defined(size_t index);
 
     IOState state_after_address();
-    void transition_cmd_state(IOState new_state);
+    void transition_io_state(IOState new_state);
 
     void log(const std::string &message) const ;
 

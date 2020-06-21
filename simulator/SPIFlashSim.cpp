@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <map>
 
 void SPIFlashSim::load(const std::vector<uint8_t> &source, size_t offset) {
     size_t source_end_index = source.size() + offset;
@@ -48,7 +49,8 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
         read_index = 0;
         buffer = 0;
         byte_count = 0;
-        cmd = 0;
+        // this may need to be kept for CRM
+        cmd = CMD::UNDEFINED;
         bit_count = 0;
         output_en = 0;
 
@@ -97,27 +99,66 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
                 }
             }
             return send_bits();
+        case IOState::REG_READ:
+            return send_bits();
         default:
             return 0;
     }
 }
 
-void SPIFlashSim::handle_new_cmd(uint8_t new_cmd) {
-    switch (new_cmd) {
-        case 0x03:
+SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
+    static const std::set<CMD> supported_cmds = {
+        CMD::READ_DATA, CMD::FAST_READ_DUAL,
+        CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2
+    };
+
+    static const std::map<uint8_t, SPIFlashSim::CMD> cmd_op_map = []() {
+        std::map<uint8_t, SPIFlashSim::CMD> map;
+        for (auto cmd : supported_cmds) {
+            uint8_t cmd_op = static_cast<uint8_t>(cmd);
+            map.emplace(cmd_op, cmd);
+        }
+
+        return map;
+    }();
+
+
+    auto cmd = cmd_op_map.find(cmd_op);
+    if (cmd != cmd_op_map.end()) {
+        return cmd->second;
+    } else {
+        return CMD::UNDEFINED;
+    }
+}
+
+void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
+    cmd = cmd_from_op(new_cmd_op);
+    switch (cmd) {
+        case CMD::READ_DATA:
             io_mode = IOMode::SPI;
+            transition_io_state(IOState::ADDRESS);
             break;
-        case 0xbb:
+        case CMD::FAST_READ_DUAL:
             io_mode = IOMode::DSPI;
+            transition_io_state(IOState::ADDRESS);
+            break;
+        case CMD::READ_STATUS_REG_2:
+            io_mode = IOMode::SPI;
+            transition_io_state(IOState::REG_READ);
+            // TODO: actual data
+            // ---to be read and confirmed working by bootloader
+            send_byte = 0x5a;
+            break;
+        case CMD::WRITE_STATUS_REG_2:
+            io_mode = IOMode::SPI;
+            transition_io_state(IOState::REG_WRITE);
             break;
         default:
-            log("unrecognized command (" + format_hex(new_cmd) + ")");
+            log("unrecognized command (" + format_hex(new_cmd_op) + ")");
             io_mode = IOMode::SPI;
-            state = IOState::CMD;
+            transition_io_state(IOState::CMD);
             break;
     }
-
-    cmd = new_cmd;
 }
 
 uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
@@ -127,7 +168,6 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
 
             if (byte_count == 1) {
                 handle_new_cmd(buffer);
-                transition_cmd_state(IOState::ADDRESS);
             }
             break;
         case IOState::ADDRESS:
@@ -139,7 +179,7 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             }
 
             if (byte_count == 3) {
-                transition_cmd_state(state_after_address());
+                transition_io_state(state_after_address());
             }
             break;
         case IOState::XIP_CMD:
@@ -147,14 +187,20 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             read_bits(io);
             if (byte_count == 1) {
                 // depends on command and whether (eventually) we're in QPI mode
-                transition_cmd_state(IOState::DATA);
+                transition_io_state(IOState::DATA);
             }
             break;
         case IOState::DUMMY:
             // (configurable wait time...)
             read_bits(io);
             if (byte_count == 1) {
-                transition_cmd_state(IOState::DATA);
+                transition_io_state(IOState::DATA);
+            }
+            break;
+        case IOState::REG_WRITE:
+            read_bits(io);
+            if (byte_count == 1) {
+                write_status_reg();
             }
             break;
         default:
@@ -164,16 +210,29 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     return 0;
 }
 
-void SPIFlashSim::transition_cmd_state(SPIFlashSim::IOState new_state) {
+void SPIFlashSim::write_status_reg() {
+    switch (cmd) {
+        case CMD::WRITE_STATUS_REG_2:
+            // (reject attempts to set the QE bit if already in QPI mode)
+            // (optional info log upon enabling quad io)
+            status_2 = buffer;
+            break;
+        default:
+            assert(false);
+            break;
+    }
+}
+
+void SPIFlashSim::transition_io_state(SPIFlashSim::IOState new_state) {
     byte_count = 0;
     state = new_state;
 }
 
 SPIFlashSim::IOState SPIFlashSim::state_after_address() {
     switch (cmd) {
-        case 0x03:
+        case CMD::READ_DATA:
             return IOState::DATA;
-        case 0xbb:
+        case CMD::FAST_READ_DUAL:
             return IOState::XIP_CMD;
         default:
             assert(false);
