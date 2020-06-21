@@ -90,6 +90,7 @@ private:
     CMD cmd = CMD::UNDEFINED;
     bool crm_enabled = false;
     CMD cmd_from_op(uint8_t cmd_op);
+    uint8_t dummy_cycles_for_cmd();
 
     uint8_t buffer = 0;
     uint8_t bit_count = 0;

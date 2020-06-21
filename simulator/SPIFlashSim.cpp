@@ -44,14 +44,18 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
             log_error("/CS deasserted before transferring a complete byte");
         }
     } else if (should_activate) {
-        state = IOState::CMD;
-        dummy_cycles = 0;
-        io_mode = IOMode::SPI;
+        state = (crm_enabled ? IOState::ADDRESS : IOState::CMD);
+
+        if (!crm_enabled) {
+            cmd = CMD::UNDEFINED;
+            io_mode = IOMode::SPI;
+        }
+
         read_index = 0;
         buffer = 0;
         byte_count = 0;
         // this may need to be kept for CRM
-        cmd = CMD::UNDEFINED;
+
         bit_count = 0;
         output_en = 0;
 
@@ -150,8 +154,6 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
             break;
         case CMD::FAST_READ_QUAD:
             io_mode = IOMode::QSPI;
-            // (this needs to be made configurable)
-            dummy_cycles = 4;
             transition_io_state(IOState::ADDRESS);
             break;
         case CMD::WRITE_ENABLE_VOLATILE:
@@ -182,6 +184,21 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
     }
 }
 
+// (QPI mode has configurable latency..)
+uint8_t SPIFlashSim::dummy_cycles_for_cmd() {
+    switch (cmd) {
+        case CMD::READ_DATA:
+            return 0;
+        case CMD::FAST_READ_DUAL:
+            return 0;
+        case CMD::FAST_READ_QUAD:
+            return 4;
+        default:
+            assert(false);
+            return 0;
+    }
+}
+
 uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
@@ -207,18 +224,25 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             }
             break;
         case IOState::XIP_CMD:
-            // (catch M5-4 only)
             read_bits(io);
             if (byte_count == 1) {
                 const uint8_t crm_mask = 0x30;
                 const uint8_t crm_byte = 0x20;
-                crm_enabled = (buffer & crm_mask) == crm_byte;
-                if (crm_enabled) {
+                bool new_crm_state = (buffer & crm_mask) == crm_byte;
+
+                if (crm_enabled && !new_crm_state) {
+                    log_info("CRM disabled");
+                } else if (!crm_enabled && new_crm_state) {
                     log_info("CRM enabled for command: " + format_hex(static_cast<uint8_t>(cmd)));
+                } else if (new_crm_state) {
+                    log_info("...CRM still enabled...");
                 }
 
-                // depends on command and whether (eventually) we're in QPI mode
-                transition_io_state(dummy_cycles ? IOState::DUMMY : IOState::DATA);
+                crm_enabled = new_crm_state;
+
+                uint8_t cmd_dummy_cycles = dummy_cycles_for_cmd();
+                transition_io_state(cmd_dummy_cycles ? IOState::DUMMY : IOState::DATA);
+                dummy_cycles = cmd_dummy_cycles;
             }
             break;
         case IOState::DUMMY:

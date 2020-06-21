@@ -6,7 +6,8 @@
 // eventually this module can just be rewritten
 
 module icosoc_flashmem #(
-    parameter ENABLE_QSPI = 1
+    parameter ENABLE_QSPI = 1,
+    parameter ASSUME_CRM = 1
 ) (
     input clk,
     input resetn,
@@ -25,6 +26,7 @@ module icosoc_flashmem #(
 );
     localparam IO_CYCLES = ENABLE_QSPI ? 2 : 8;
     localparam READ_CMD = ENABLE_QSPI ? 8'heb : 8'h03;
+    localparam INITIAL_STATE = ASSUME_CRM ? 1 : 0;
 
     reg [7:0] buffer;
     reg [3:0] xfer_cnt;
@@ -42,7 +44,7 @@ module icosoc_flashmem #(
             flash_csn <= 1;
             flash_clk <= 1;
             xfer_cnt <= 0;
-            state <= 0;
+            state <= INITIAL_STATE;
 
             flash_in_en <= 0;
             flash_in <= 0;
@@ -79,6 +81,7 @@ module icosoc_flashmem #(
             end else
             case (state)
                 0: begin
+                    // to be eliminated with CRM
                     buffer <= READ_CMD;
                     xfer_cnt <= 8;
                     state <= 1;
@@ -111,15 +114,12 @@ module icosoc_flashmem #(
                     sending <= 1;
                 end
                 4: begin
-                    buffer <= 0; // M7-0
-                    // xfer_cnt <= 4; // !
+                    buffer <= ASSUME_CRM ? 8'h20 : 0; // M7-0
+                    // xfer_cnt <= 4; // ! mind this for the different modes
                     xfer_cnt <= 2 + 4; // building the dummy part into this
                     state <= 5;
                     sending_cmd <= 0;
-
-                    // oe_count <= 3;
                     oe_count <= 3;
-
                     sending <= 1;
                 end
                 5: begin

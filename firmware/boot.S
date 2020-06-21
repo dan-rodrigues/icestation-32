@@ -21,7 +21,7 @@
 
 _start:
 
-// QSPI flash config:
+// Enable QE bit:
 
     la a2, FLASH_CTRL_BASE
 
@@ -52,7 +52,7 @@ _start:
     jal spi_transfer
     jal spi_complete_cmd
 
-// TODO: setup for CRM
+// CRM setup
 
     // Quad read (setup for hardware flash controller)
     li a0, 0xeb
@@ -167,6 +167,8 @@ loop_send_spi:
     mv a0, t2
 
     ret
+
+// deasserts, then reasserts CSN to make the flash ready for another command
 
 spi_complete_cmd:
     li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
