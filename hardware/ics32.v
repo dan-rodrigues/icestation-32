@@ -83,7 +83,7 @@ module ics32 #(
     end
 
     always @(posedge cpu_clk) begin
-        bootloader_read_data <= bootloader[cpu_address_1x[7:2]];
+        bootloader_read_data <= bootloader[cpu_address_1x[9:2]];
     end
 
     // --- LEDs ---
@@ -486,7 +486,7 @@ module ics32 #(
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU),
-        .READ_SOURCES(`BA_VDP | `BA_FLASH | `BA_DSP | `BA_PAD)
+        .READ_SOURCES(`BA_VDP | `BA_FLASH | `BA_DSP | `BA_PAD | `BA_FLASH_CTRL)
     ) bus_arbiter (
         .clk(vdp_clk),
 

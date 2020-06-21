@@ -20,6 +20,9 @@
 # .equ FLASH_WP_HOLD_DEFAULT, (0 << 2 | 1 << 3)
 
 _start:
+
+// QSPI flash config:
+
     la a2, FLASH_CTRL_BASE
 
     li a0, (~FLASH_CTRL_ACTIVE & FLASH_CTRL_ACTIVE) | FLASH_CTRL_CLK
@@ -29,39 +32,46 @@ _start:
     li a0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
     sh a0, (a2)
 
-    // 1. read SR2
+    // read SR2
     li a0, 0x35
-    jal ra, spi_transfer
-
-    // 2. load SR2 contents, set QE bit and save it for later
-    jal ra, spi_transfer
+    jal spi_transfer
+    jal spi_transfer
+    // SR2 |= QE
     ori s0, a0, FLASH_SR2_QE
-
-    // complete cmd
-    li a1, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
-    sh a1, (a2)
-    li a1, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
-    sh a1, (a2)
+    jal spi_complete_cmd
 
     // volatile status reg write enable, immediately before the write
     li a0, 0x50
-    jal ra, spi_transfer
-    
-    // complete cmd (TODO reuse)
-    li a1, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
-    sh a1, (a2)
-    li a1, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
-    sh a1, (a2)
+    jal spi_transfer
+    jal spi_complete_cmd
 
-    // write SR2
+    // write updated SR2
     li a0, 0x31
-    jal ra, spi_transfer
-
-    // send updated SR2
+    jal spi_transfer
     mv a0, s0
-    jal ra, spi_transfer
+    jal spi_transfer
+    jal spi_complete_cmd
 
-    // QE bit now set, deassert /CS, hand back flash to flash controller
+// TODO: setup for CRM
+
+    // Quad read (setup for hardware flash controller)
+    li a0, 0xeb
+    jal spi_transfer
+    // dummy address
+    li a0, 0x10 // (0x100000, in defined range)
+    jal qpi_transfer
+    li a0, 0
+    jal qpi_transfer
+    li a0, 0
+    jal qpi_transfer
+    // M5-4 = 2'b10 to enable CRM
+    li a0, 0x20
+    jal qpi_transfer
+    // 4x dummy bytes
+    jal qpi_transfer
+    jal qpi_transfer
+
+    // CPU has finished flash config, deassert /CS, hand back flash to flash controller
     li a1, FLASH_CTRL_CSN | FLASH_CTRL_CLK
     sh a1, (a2)
 
@@ -80,6 +90,42 @@ loop_ipl:
 
 loop:
     j CPU_RAM_BASE
+
+// a0: byte to send
+// returns: (nothing)
+
+qpi_transfer:
+    li t0, 0
+    li t1, 2
+    li t2, 0
+loop_send_qpi:
+    // negedge..
+
+    // lower clk
+    li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
+
+    // set output nybble
+    andi t3, a0, 0xf0
+    slli a0, a0, 4
+    srli t3, t3, 4
+    or a1, a1, t3
+    sh a1, (a2)
+
+    // posedge..
+    // nothing to read as IOs are all output
+
+    // raise clk
+    ori a1, a1, FLASH_CTRL_CLK
+    sh a1, (a2)
+
+    add t0, t0, 1
+    bne t0, t1, loop_send_qpi
+
+    // disable outputs
+    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    sh t0, (a2)
+
+    ret
 
 // a0: byte to send
 // returns: byte received
@@ -119,6 +165,14 @@ loop_send_spi:
 
     // a0 = read byte
     mv a0, t2
+
+    ret
+
+spi_complete_cmd:
+    li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    sh t0, (a2)
+    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    sh t0, (a2)
 
     ret
 

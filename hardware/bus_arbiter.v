@@ -102,7 +102,7 @@ module bus_arbiter #(
             cpu_read_data_ps = bootloader_read_data;
         end else if (cpu_ram_en && (READ_SOURCES & `BA_CPU_RAM)) begin
             cpu_read_data_ps = cpu_ram_read_data;
-        end else if (flash_ctrl_en /* && ... */) begin
+        end else if (flash_ctrl_en  && (READ_SOURCES & `BA_FLASH_CTRL)) begin
             cpu_read_data_ps[3:0] = flash_ctrl_read_data;
         end
     end

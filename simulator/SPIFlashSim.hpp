@@ -88,6 +88,7 @@ private:
     uint8_t io;
 
     CMD cmd = CMD::UNDEFINED;
+    bool crm_enabled = false;
     CMD cmd_from_op(uint8_t cmd_op);
 
     uint8_t buffer = 0;

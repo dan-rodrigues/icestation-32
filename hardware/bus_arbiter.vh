@@ -7,7 +7,8 @@
 `define BA_PAD (1 << 3)
 `define BA_BOOT (1 << 4)
 `define BA_FLASH (1 << 5)
+`define BA_FLASH_CTRL (1 << 6)
 
-`define BA_ALL (`BA_CPU_RAM | `BA_VDP | `BA_DSP | `BA_PAD | `BA_BOOT | `BA_FLASH)
+`define BA_ALL (`BA_CPU_RAM | `BA_VDP | `BA_DSP | `BA_PAD | `BA_BOOT | `BA_FLASH | `BA_FLASH_CTRL)
 
 `endif

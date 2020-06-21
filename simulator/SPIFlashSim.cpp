@@ -185,6 +185,7 @@ void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
 uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
+            // (QPI mode: 4 bits to be read at a time)
             read_bits(io, 1);
 
             if (byte_count == 1) {
@@ -209,6 +210,13 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             // (catch M5-4 only)
             read_bits(io);
             if (byte_count == 1) {
+                const uint8_t crm_mask = 0x30;
+                const uint8_t crm_byte = 0x20;
+                crm_enabled = (buffer & crm_mask) == crm_byte;
+                if (crm_enabled) {
+                    log_info("CRM enabled for command: " + format_hex(static_cast<uint8_t>(cmd)));
+                }
+
                 // depends on command and whether (eventually) we're in QPI mode
                 transition_io_state(dummy_cycles ? IOState::DUMMY : IOState::DATA);
             }
