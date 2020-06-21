@@ -37,7 +37,10 @@ module address_decoder #(
     output reg pad_en,
     output reg pad_write_en,
 
-    output reg cop_ram_write_en
+    output reg cop_ram_write_en,
+
+    output reg flash_ctrl_en,
+    output reg flash_ctrl_write_en
 );
     wire [19:0] cpu_address_s;
     wire cpu_mem_valid_s;
@@ -83,6 +86,8 @@ module address_decoder #(
         pad_write_en = 0;
         cop_ram_en = 0;
         cop_ram_write_en = 0;
+        flash_ctrl_en = 0;
+        flash_ctrl_write_en = 0;
 
         if (cpu_mem_valid_s && !reset) begin
             if (cpu_address_s[19]) begin
@@ -96,9 +101,7 @@ module address_decoder #(
                     4: pad_en = 1;
                     5: cop_ram_en = 1;
                     6: bootloader_en = 1;
-                    7: begin
-                        `stop($display("unexepcted address: %x", cpu_address_s))
-                    end
+                    7: flash_ctrl_en = 1;
                 endcase    
             end
 
@@ -108,6 +111,7 @@ module address_decoder #(
             dsp_write_en = dsp_en && cpu_wstrb_s;
             pad_write_en = pad_en && cpu_wstrb_s;
             cop_ram_write_en = cop_ram_en && cpu_wstrb_s;
+            flash_ctrl_write_en = flash_ctrl_en && cpu_wstrb_s;
         end
     end
  

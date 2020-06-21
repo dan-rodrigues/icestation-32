@@ -190,6 +190,7 @@ module ics32 #(
     wire dsp_en, dsp_write_en;
     wire pad_en, pad_write_en;
     wire cop_ram_write_en;
+    wire flash_ctrl_en, flash_ctrl_write_en;
 
     address_decoder #(
         .REGISTERED_INPUTS(!ENABLE_FAST_CPU)
@@ -215,7 +216,10 @@ module ics32 #(
 
         .cop_ram_write_en(cop_ram_write_en),
 
-        .flash_read_en(flash_read_en)
+        .flash_read_en(flash_read_en),
+
+        .flash_ctrl_en(flash_ctrl_en),
+        .flash_ctrl_write_en(flash_ctrl_write_en)
     );
 
     wire active_display;
@@ -579,10 +583,21 @@ module ics32 #(
     
     // verilator lint_restore
 
+    // --- Flash IO selection ---
+
+    assign flash_clk = flash_ctrl_active ? flash_ctrl_clk : flash_dma_clk;
+    assign flash_csn = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
+    assign flash_in = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
+    assign flash_in_en = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
+
     // --- Flash interface ---
 
     wire flash_read_ready;
     wire [31:0] flash_read_data;
+
+    wire flash_dma_clk, flash_dma_csn;
+    wire [3:0] flash_dma_in_en;
+    wire [3:0] flash_dma_in, flash_dma_out;
 
     flash_dma flash_dma(
         .clk(vdp_clk),
@@ -593,11 +608,43 @@ module ics32 #(
         .read_en(flash_read_en),
         .read_ready(flash_read_ready),
 
-        .flash_clk(flash_clk),
-        .flash_csn(flash_csn),
-        .flash_in_en(flash_in_en),
-        .flash_in(flash_in),
+        .flash_clk(flash_dma_clk),
+        .flash_csn(flash_dma_csn),
+        .flash_in_en(flash_dma_in_en),
+        .flash_in(flash_dma_in),
         .flash_out(flash_out)
     );
+
+    // --- Flash CPU control (to extract, possinly with the above two blocks) ---
+
+    reg flash_ctrl_active;
+
+    reg [3:0] flash_ctrl_in;
+    reg [3:0] flash_ctrl_in_en;
+    reg flash_ctrl_clk;
+    reg flash_ctrl_csn;
+
+    wire flash_ctrl_active_data = cpu_write_data[15];
+    wire [3:0] flash_ctrl_in_data = cpu_write_data[3:0];
+    wire [3:0] flash_ctrl_in_en_data = cpu_write_data[7:4];
+    wire flash_ctrl_clk_data = cpu_write_data[8];
+    wire flash_ctrl_csn_data = cpu_write_data[9];
+
+    always @(posedge vdp_clk) begin
+        if (flash_ctrl_write_en) begin
+            flash_ctrl_in <= flash_ctrl_in_data;
+            flash_ctrl_in_en <= flash_ctrl_in_en_data;
+            flash_ctrl_clk <= flash_ctrl_clk_data;
+            flash_ctrl_csn <= flash_ctrl_csn_data;
+        end
+    end
+
+    always @(posedge vdp_clk) begin
+        if (vdp_reset) begin
+            flash_ctrl_active <= 0;
+        end else if(flash_ctrl_write_en) begin
+            flash_ctrl_active <= flash_ctrl_active_data;
+        end
+    end
 
 endmodule
