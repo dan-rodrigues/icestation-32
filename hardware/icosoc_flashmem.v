@@ -27,6 +27,7 @@ module icosoc_flashmem #(
     localparam IO_CYCLES = ENABLE_QSPI ? 2 : 8;
     localparam READ_CMD = ENABLE_QSPI ? 8'heb : 8'h03;
     localparam INITIAL_STATE = ASSUME_CRM ? 1 : 0;
+    localparam EXTRA_DUMMY_CLOCKS = 0; // 4 for SPI mode
 
     reg [7:0] buffer;
     reg [3:0] xfer_cnt;
@@ -115,11 +116,10 @@ module icosoc_flashmem #(
                 end
                 4: begin
                     buffer <= ASSUME_CRM ? 8'h20 : 0; // M7-0
-                    // xfer_cnt <= 4; // ! mind this for the different modes
-                    xfer_cnt <= 2 + 4; // building the dummy part into this
+                    xfer_cnt <= 2 + EXTRA_DUMMY_CLOCKS;
                     state <= 5;
                     sending_cmd <= 0;
-                    oe_count <= 3;
+                    oe_count <= ENABLE_QSPI ? 1 : 3;
                     sending <= 1;
                 end
                 5: begin

@@ -39,6 +39,9 @@ public:
     /// Returns true if there was a conflict.
     bool check_conflicts(uint8_t input_en) const;
 
+    /// If true, RELEASE_POWER_DOWN must be sent before using the flash
+    bool powered_down = true;
+
     bool enable_info_logging = false;
     bool enable_error_logging = true;
 
@@ -52,29 +55,26 @@ private:
     };
 
     enum class CMD: uint8_t {
-        UNDEFINED = 0x00,
-        READ_DATA = 0x03, FAST_READ_DUAL = 0xbb, FAST_READ_QUAD = 0xeb,
+        READ_DATA = 0x03, FAST_READ_DUAL_IO = 0xbb, FAST_READ_QUAD_IO = 0xeb,
         WRITE_ENABLE_VOLATILE = 0x50,
-        READ_STATUS_REG_2 = 0x35,
-        WRITE_STATUS_REG_2 = 0x31
-        // ...
+        READ_STATUS_REG_2 = 0x35, WRITE_STATUS_REG_2 = 0x31,
+        ENTER_QPI = 0x38, EXIT_QPI = 0xff,
+        RELEASE_POWER_DOWN = 0xab, POWER_DOWN = 0xb9,
+        UNDEFINED = 0x00
+    };
+
+    enum class CMDMode {
+        SPI, QPI
     };
 
     enum class IOState {
-        CMD,
-        ADDRESS,
-        XIP_CMD,
-        DUMMY,
-        DATA,
-        REG_READ,
-        REG_WRITE
-        // OFF ...
+        CMD, ADDRESS, XIP_CMD, DUMMY, DATA,
+        REG_READ, REG_WRITE,
+        IDLE
     };
 
     enum class IOMode {
-        SPI,
-        DSPI,
-        QSPI
+        SINGLE, DUAL, QUAD
     };
 
     bool csn = true, clk = false;
@@ -84,15 +84,20 @@ private:
     std::set<Range> defined_ranges;
 
     IOState state = IOState::CMD;
-    IOMode io_mode = IOMode::SPI;
+    IOMode io_mode = IOMode::SINGLE;
+    CMDMode cmd_mode = CMDMode::SPI;
     uint8_t io;
+    uint8_t bit_count_for_mode();
 
     CMD cmd = CMD::UNDEFINED;
     bool crm_enabled = false;
+
     CMD cmd_from_op(uint8_t cmd_op);
     uint8_t dummy_cycles_for_cmd();
+    void handle_new_cmd();
+    const std::string cmd_name(CMD cmd);
 
-    uint8_t buffer = 0;
+    uint8_t read_buffer = 0;
     uint8_t bit_count = 0;
     uint8_t byte_count = 0;
     uint32_t read_index = 0;
@@ -104,14 +109,19 @@ private:
     uint8_t negedge_tick(uint8_t io);
     void read_bits(uint8_t io);
     void read_bits(uint8_t io, uint8_t count);
-    void handle_new_cmd(uint8_t new_cmd);
+
+    uint8_t qpi_extra_dummy_cycles = 0;
 
     bool status_volatile_write_enable = false;
-    uint8_t status_1, status_2, status_3;
+    uint8_t /*status_1 = 0x00,*/ status_2 = 0x00/*, status_3 = 0x00*/;
+
     void write_status_reg();
+    uint8_t status_for_cmd();
+    bool quad_enabled();
 
     uint8_t output_en = 0;
-    uint8_t send_byte = 0;
+    uint8_t send_buffer = 0;
+
     uint8_t send_bits();
     uint8_t send_bits(uint8_t count);
 

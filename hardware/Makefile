@@ -30,7 +30,7 @@ count: $(SOURCES) $(BOOT_HEX)
 	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --placer heap --pcf $< --asc $@ --pre-pack timing.py --seed 0
 
 %.bit: %.asc
-	icepack -s $< $@
+	icepack $< $@
 
 prog: $(PROJ).bit
 	iceprog $<

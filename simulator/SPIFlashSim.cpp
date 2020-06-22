@@ -48,14 +48,12 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
 
         if (!crm_enabled) {
             cmd = CMD::UNDEFINED;
-            io_mode = IOMode::SPI;
+            io_mode = (cmd_mode == CMDMode::QPI ? IOMode::QUAD : IOMode::SINGLE);
         }
 
         read_index = 0;
-        buffer = 0;
+        read_buffer = 0;
         byte_count = 0;
-        // this may need to be kept for CRM
-
         bit_count = 0;
         output_en = 0;
 
@@ -97,15 +95,20 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
         case IOState::DATA:
             if (bit_count == 0) {
                 if (!index_is_defined(read_index)) {
+                    send_buffer = 0x00;
                     log_error("Read index undefined (index: " + format_hex(read_index, 6) + ")");
-                    send_byte = 0x00;
                 } else {
-                    log_info("...sent byte: " + format_hex(data[read_index - 1]));
-                    send_byte = data[read_index++];
+                    uint8_t byte_to_send = data[read_index++];
+                    send_buffer = byte_to_send;
+                    log_info("...sending byte: " + format_hex(byte_to_send));
                 }
             }
             return send_bits();
         case IOState::REG_READ:
+            if (bit_count == 0) {
+                send_buffer = status_for_cmd();
+                log_info("...sending register byte: " + format_hex(send_buffer));
+            }
             return send_bits();
         default:
             return 0;
@@ -114,9 +117,11 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
 
 SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     static const std::set<CMD> supported_cmds = {
-        CMD::READ_DATA, CMD::FAST_READ_DUAL, CMD::FAST_READ_QUAD,
+        CMD::READ_DATA, CMD::FAST_READ_DUAL_IO, CMD::FAST_READ_QUAD_IO,
         CMD::WRITE_ENABLE_VOLATILE,
-        CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2
+        CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2,
+        CMD::RELEASE_POWER_DOWN, CMD::POWER_DOWN,
+        CMD::ENTER_QPI, CMD::EXIT_QPI
     };
 
     static const std::map<uint8_t, SPIFlashSim::CMD> cmd_op_map = []() {
@@ -138,50 +143,118 @@ SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     }
 }
 
-void SPIFlashSim::handle_new_cmd(uint8_t new_cmd_op) {
-    // (nicer formatting, proper op names)
-    log_info("CMD received: " + format_hex(new_cmd_op));
+void SPIFlashSim::handle_new_cmd() {
+    uint8_t new_cmd_op = read_buffer;
 
     cmd = cmd_from_op(new_cmd_op);
+    log_info("CMD received: " + format_hex(new_cmd_op) + ": " + cmd_name(cmd));
+
+    if (powered_down && cmd != CMD::RELEASE_POWER_DOWN) {
+        log_error("Ignoring CMD as flash is in powered-down state");
+        return;
+    }
+
     switch (cmd) {
         case CMD::READ_DATA:
-            io_mode = IOMode::SPI;
+            io_mode = IOMode::SINGLE;
             transition_io_state(IOState::ADDRESS);
             break;
-        case CMD::FAST_READ_DUAL:
-            io_mode = IOMode::DSPI;
+        case CMD::FAST_READ_DUAL_IO:
+            io_mode = IOMode::DUAL;
             transition_io_state(IOState::ADDRESS);
             break;
-        case CMD::FAST_READ_QUAD:
-            io_mode = IOMode::QSPI;
-            transition_io_state(IOState::ADDRESS);
+        case CMD::FAST_READ_QUAD_IO:
+            if (quad_enabled()) {
+                io_mode = IOMode::QUAD;
+                transition_io_state(IOState::ADDRESS);
+            } else {
+                log_error("Ignoring Quad CMD: QE bit must be set first");
+                transition_io_state(IOState::IDLE);
+            }
             break;
         case CMD::WRITE_ENABLE_VOLATILE:
-            log_info("Volatile write-enable bit set...");
+            log_info("...volatile write-enable bit set...");
             status_volatile_write_enable = true;
+            transition_io_state(IOState::IDLE);
             break;
         case CMD::READ_STATUS_REG_2:
-            io_mode = IOMode::SPI;
+            io_mode = IOMode::SINGLE;
             transition_io_state(IOState::REG_READ);
-            // TODO: actual representation of reg
-            send_byte = 0xfd; // 0x58;
-            log_info("SR2 byte to read: " + format_hex(send_byte));
-
             break;
         case CMD::WRITE_STATUS_REG_2:
             if (status_volatile_write_enable) {
-                io_mode = IOMode::SPI;
+                io_mode = IOMode::SINGLE;
                 transition_io_state(IOState::REG_WRITE);
             } else {
                 log_error("Ignoring attempt to write SR2 without write-enabling first");
             }
             break;
+        case CMD::ENTER_QPI:
+            if (cmd_mode != CMDMode::QPI) {
+                log_info("Transitioning to QPI mode");
+            } else {
+                log_info("Attempted to re-enter QPI mode");
+            }
+            cmd_mode = CMDMode::QPI;
+            transition_io_state(IOState::IDLE);
+            break;
+        case CMD::EXIT_QPI:
+            if (cmd_mode != CMDMode::QPI) {
+                log_info("Transitioning to SPI mode");
+            } else {
+                log_info("Attempted to re-enter SPI mode");
+            }
+            cmd_mode = CMDMode::SPI;
+            transition_io_state(IOState::IDLE);
+            break;
+        case CMD::RELEASE_POWER_DOWN:
+            if (powered_down) {
+                log_info("Transitioning to powered-up state");
+            }
+            powered_down = false;
+            transition_io_state(IOState::IDLE);
+            break;
+        case CMD::POWER_DOWN:
+            if (!powered_down) {
+                log_info("Transitioning to powered-down state");
+            }
+            powered_down = true;
+            transition_io_state(IOState::IDLE);
+            break;
         default:
             log_error("Unrecognized command (" + format_hex(new_cmd_op) + ")");
-            io_mode = IOMode::SPI;
-            transition_io_state(IOState::CMD);
+            io_mode = IOMode::SINGLE;
+            transition_io_state(IOState::IDLE);
             break;
     }
+}
+
+const std::string SPIFlashSim::cmd_name(CMD cmd) {
+    static const std::map<CMD, const std::string> map = {
+        {CMD::UNDEFINED, "Undefined (this shouldn't be seen in normal use)"},
+        {CMD::READ_DATA, "Read Data"},
+        {CMD::FAST_READ_DUAL_IO, "Fast Read Dual I/O"},
+        {CMD::FAST_READ_QUAD_IO, "Fast Read Quad I/O"},
+        {CMD::WRITE_ENABLE_VOLATILE, "Write Enable (volatile)"},
+        {CMD::READ_STATUS_REG_2, "Read Status Register 2"},
+        {CMD::WRITE_STATUS_REG_2, "Write Status Register 2"},
+        {CMD::RELEASE_POWER_DOWN, "Release Power-Down"},
+        {CMD::POWER_DOWN, "Power-Down"},
+        {CMD::ENTER_QPI, "Enter QPI"},
+        {CMD::EXIT_QPI, "Exit QPI"}
+    };
+    
+    auto name = map.find(cmd);
+    if (name != map.end()) {
+        return name->second;
+    } else {
+        assert(false);
+        return "Unrecognized CMD";
+    }
+}
+
+bool SPIFlashSim::quad_enabled() {
+    return status_2 & 0x02;
 }
 
 // (QPI mode has configurable latency..)
@@ -189,10 +262,10 @@ uint8_t SPIFlashSim::dummy_cycles_for_cmd() {
     switch (cmd) {
         case CMD::READ_DATA:
             return 0;
-        case CMD::FAST_READ_DUAL:
+        case CMD::FAST_READ_DUAL_IO:
             return 0;
-        case CMD::FAST_READ_QUAD:
-            return 4;
+        case CMD::FAST_READ_QUAD_IO:
+            return (cmd_mode == CMDMode::QPI ? qpi_extra_dummy_cycles : 4);
         default:
             assert(false);
             return 0;
@@ -202,11 +275,9 @@ uint8_t SPIFlashSim::dummy_cycles_for_cmd() {
 uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
-            // (QPI mode: 4 bits to be read at a time)
-            read_bits(io, 1);
-
+            read_bits(io, cmd_mode == CMDMode::QPI ? 4 : 1);
             if (byte_count == 1) {
-                handle_new_cmd(buffer);
+                handle_new_cmd();
             }
             break;
         case IOState::ADDRESS:
@@ -214,7 +285,7 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
 
             if (bit_count == 0) {
                 read_index <<= 8;
-                read_index |= buffer;
+                read_index |= read_buffer;
             }
 
             if (byte_count == 3) {
@@ -228,7 +299,7 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             if (byte_count == 1) {
                 const uint8_t crm_mask = 0x30;
                 const uint8_t crm_byte = 0x20;
-                bool new_crm_state = (buffer & crm_mask) == crm_byte;
+                bool new_crm_state = (read_buffer & crm_mask) == crm_byte;
 
                 if (crm_enabled && !new_crm_state) {
                     log_info("CRM disabled");
@@ -255,6 +326,13 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
             read_bits(io);
             if (byte_count == 1) {
                 write_status_reg();
+                transition_io_state(IOState::IDLE);
+            }
+            break;
+        case IOState::IDLE:
+            if (cmd == CMD::POWER_DOWN && powered_down) {
+                log_error("Ignoring previous power-down CMD as /CS wasn't deasserted after");
+                powered_down = false;
             }
             break;
         default:
@@ -264,6 +342,16 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     return 0;
 }
 
+uint8_t SPIFlashSim::status_for_cmd() {
+    switch (cmd) {
+        case CMD::READ_STATUS_REG_2:
+            return status_2;
+        default:
+            assert(false);
+            return 0;
+    }
+}
+
 void SPIFlashSim::write_status_reg() {
     status_volatile_write_enable = false;
 
@@ -271,9 +359,9 @@ void SPIFlashSim::write_status_reg() {
         case CMD::WRITE_STATUS_REG_2:
             // (reject attempts to set the QE bit if already in QPI mode)
             // (optional info log upon enabling quad io)
-            log_info("SR2 updated to: " + format_hex(buffer));
+            log_info("SR2 updated to: " + format_hex(read_buffer));
 
-            status_2 = buffer;
+            status_2 = read_buffer;
             break;
         default:
             assert(false);
@@ -290,9 +378,7 @@ SPIFlashSim::IOState SPIFlashSim::state_after_address() {
     switch (cmd) {
         case CMD::READ_DATA:
             return IOState::DATA;
-        case CMD::FAST_READ_DUAL:
-            return IOState::XIP_CMD;
-        case CMD::FAST_READ_QUAD: // !
+        case CMD::FAST_READ_DUAL_IO: case CMD::FAST_READ_QUAD_IO:
             return IOState::XIP_CMD;
         default:
             assert(false);
@@ -310,18 +396,23 @@ bool SPIFlashSim::index_is_defined(size_t index) {
     return false;
 }
 
-uint8_t SPIFlashSim::send_bits() {
+uint8_t SPIFlashSim::bit_count_for_mode() {
+    // !
     switch (io_mode) {
-        case IOMode::SPI:
-            return send_bits(1);
-        case IOMode::DSPI:
-            return send_bits(2);
-        case IOMode::QSPI:
-            return send_bits(4);
+        case IOMode::SINGLE:
+            return 1;
+        case IOMode::DUAL:
+            return 2;
+        case IOMode::QUAD:
+            return 4;
         default:
             assert(false);
             return 0;
     }
+}
+
+uint8_t SPIFlashSim::send_bits() {
+    return send_bits(bit_count_for_mode());
 }
 
 uint8_t SPIFlashSim::send_bits(uint8_t count) {
@@ -334,8 +425,8 @@ uint8_t SPIFlashSim::send_bits(uint8_t count) {
     uint8_t out_shift = (count == 1 ? 6 : shift);
     uint8_t out_mask = (count == 1 ? 1 << 1 : mask);
 
-    uint8_t out = (send_byte & (mask << shift)) >> out_shift;
-    send_byte <<= count;
+    uint8_t out = (send_buffer & (mask << shift)) >> out_shift;
+    send_buffer <<= count;
     bit_count += count;
 
     if (bit_count >= 8) {
@@ -349,26 +440,14 @@ uint8_t SPIFlashSim::send_bits(uint8_t count) {
 }
 
 void SPIFlashSim::read_bits(uint8_t io) {
-    switch (io_mode) {
-        case IOMode::SPI:
-            read_bits(io, 1);
-            break;
-        case IOMode::DSPI:
-            read_bits(io, 2);
-            break;
-        case IOMode::QSPI:
-            read_bits(io, 4);
-            break;
-        default:
-            assert(false);
-    }
+    read_bits(io, bit_count_for_mode());
 }
 
 void SPIFlashSim::read_bits(uint8_t io, uint8_t count) {
     assert(count <= 4);
 
-    buffer <<= count;
-    buffer |= io & ((1 << count) - 1);
+    read_buffer <<= count;
+    read_buffer |= io & ((1 << count) - 1);
     bit_count += count;
 
     if (bit_count >= 8) {
