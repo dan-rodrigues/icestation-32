@@ -24,7 +24,7 @@ _start:
 
     la a2, FLASH_CTRL_BASE
 
-    li a0, (~FLASH_CTRL_ACTIVE & FLASH_CTRL_ACTIVE) | FLASH_CTRL_CLK
+    li a0, FLASH_CTRL_CSN | FLASH_CTRL_CLK
     sh a0, (a2)
 
     // CSN low, clock high
