@@ -20,7 +20,7 @@ module flash_dma (
     output reg read_ready,
 
     // SPI flash
-    output flash_clk,
+    output flash_clk_en,
     output flash_csn,
     output [3:0] flash_in,
     output [3:0] flash_in_en,
@@ -87,8 +87,8 @@ module flash_dma (
         .addr(cpu_read_address),
         .rdata(flash_data_out),
         
+        .flash_dma_clk_en(flash_clk_en),
         .flash_csn(flash_csn),
-        .flash_clk(flash_clk),
         .flash_out(flash_out),
         .flash_in(flash_in),
         .flash_in_en(flash_in_en)

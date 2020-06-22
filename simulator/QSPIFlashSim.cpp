@@ -67,9 +67,9 @@ uint8_t QSPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_ou
     bool clk_rose = clk && !clk_prev;
     bool clk_fell = !clk && clk_prev;
     if (!csn && clk_rose) {
-        io = posedge_tick(new_io);
+        posedge_tick(new_io);
     } else if (!csn && clk_fell) {
-        io = negedge_tick(new_io);
+        negedge_tick(new_io);
     }
 
     if (new_output_en) {
@@ -90,7 +90,7 @@ bool QSPIFlashSim::check_conflicts(uint8_t input_en) const {
 }
 
 // (this will be extended if DDR reads are added, where DATA state must work on posedge too)
-uint8_t QSPIFlashSim::negedge_tick(uint8_t io) {
+void QSPIFlashSim::negedge_tick(uint8_t io) {
     switch (state) {
         case IOState::DATA:
             if (bit_count == 0) {
@@ -103,15 +103,17 @@ uint8_t QSPIFlashSim::negedge_tick(uint8_t io) {
                     log_info("...sending byte: " + format_hex(byte_to_send));
                 }
             }
-            return send_bits();
+            send_bits();
+            break;
         case IOState::REG_READ:
             if (bit_count == 0) {
                 send_buffer = status_for_cmd();
                 log_info("...sending register byte: " + format_hex(send_buffer));
             }
-            return send_bits();
+            send_bits();
+            break;
         default:
-            return 0;
+            break;
     }
 }
 
@@ -272,7 +274,7 @@ uint8_t QSPIFlashSim::dummy_cycles_for_cmd() {
     }
 }
 
-uint8_t QSPIFlashSim::posedge_tick(uint8_t io) {
+void QSPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
             read_bits(io, cmd_mode == CMDMode::QPI ? 4 : 1);
@@ -338,8 +340,6 @@ uint8_t QSPIFlashSim::posedge_tick(uint8_t io) {
         default:
             break;
     }
-
-    return 0;
 }
 
 uint8_t QSPIFlashSim::status_for_cmd() {
@@ -434,6 +434,7 @@ uint8_t QSPIFlashSim::send_bits(uint8_t count) {
     }
 
     output_en = out_mask;
+    io = out;
 
     return out;
 }

@@ -589,7 +589,24 @@ module ics32 #(
 
     // --- Flash IO selection ---
 
-    assign flash_clk = flash_ctrl_active ? flash_ctrl_clk : flash_dma_clk;
+    // TODO: DDR output for configurable clock
+    SB_IO #(
+        .PIN_TYPE(6'b010001),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b1),
+        .IO_STANDARD("SB_LVCMOS")
+    ) flash_clk_io (
+        .PACKAGE_PIN(flash_clk),
+        .CLOCK_ENABLE(1'b1), // !
+        .OUTPUT_CLK(vdp_clk),
+        .D_OUT_0(flash_clk_out[0]),
+        .D_OUT_1(flash_clk_out[1])
+    );
+
+    // need to make sure the clk / active state is set BEFORE enabling the flash
+    wire [1:0] flash_clk_out = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b1, !flash_dma_clk_en};
+    wire flash_dma_clk_en;
+
     assign flash_csn = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
     assign flash_in = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
     assign flash_in_en = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
@@ -612,7 +629,7 @@ module ics32 #(
         .read_en(flash_read_en),
         .read_ready(flash_read_ready),
 
-        .flash_clk(flash_dma_clk),
+        .flash_clk_en(flash_dma_clk_en),
         .flash_csn(flash_dma_csn),
         .flash_in_en(flash_dma_in_en),
         .flash_in(flash_dma_in),

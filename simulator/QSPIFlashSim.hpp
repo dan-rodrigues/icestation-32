@@ -102,8 +102,8 @@ private:
     bool clk_on_deactivate = false;
     bool activated_previously = false;
 
-    uint8_t posedge_tick(uint8_t io);
-    uint8_t negedge_tick(uint8_t io);
+    void posedge_tick(uint8_t io);
+    void negedge_tick(uint8_t io);
     void read_bits(uint8_t io);
     void read_bits(uint8_t io, uint8_t count);
 
