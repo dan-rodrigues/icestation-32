@@ -3,7 +3,7 @@
 class SPIFlashBlackBox : public cxxrtl_design::bb_p_flash__bb {
 
 public:
-    SPIFlashBlackBox(SPIFlashSim flash) : flash(flash) {};
+    SPIFlashBlackBox(QSPIFlashSim flash) : flash(flash) {};
 
     bool eval() override {
         uint8_t io = flash.update(p_csn.get<bool>(), p_clk.get<bool>(), p_in.get<uint8_t>());
@@ -14,7 +14,7 @@ public:
     }
 
 private:
-    SPIFlashSim flash;
+    QSPIFlashSim flash;
 };
 
 namespace cxxrtl_design {

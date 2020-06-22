@@ -37,7 +37,7 @@ public:
 
 private:
     std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
-    SPIFlashSim flash;
+    QSPIFlashSim flash;
 
 #if VCD_WRITE
     std::unique_ptr<VerilatedVcdC> tfp;

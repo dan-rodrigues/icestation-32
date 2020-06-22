@@ -1,30 +1,27 @@
-// SPIFlashSim.hpp
+// QSPIFlashSim.hpp
 //
 // Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
 // SPDX-License-Identifier: MIT
 
 // This is a minimal SPI/DSPI and eventually QSPI flash model
-
-// Only read commands 0x03 and 0xbb are supported for now
-// Eventually the status read/write and QSPI reads along with QPI mode will be added
-// "XIP" or "CRM" config bits are currently ignored, to be added later
+// The list of supported commands is defined below in CMD
 
 // Modelled after the W25Q128JV-DTR
 // https://www.winbond.com/resource-files/w25q128jv_dtr%20revc%2003272018%20plus.pdf
 
-#ifndef SPIFlashSim_hpp
-#define SPIFlashSim_hpp
+#ifndef QSPIFlashSim_hpp
+#define QSPIFlashSim_hpp
 
 #include <stdint.h>
 #include <vector>
 #include <set>
 
-class SPIFlashSim {
+class QSPIFlashSim {
 
 public:
     /// Initializes the flash model with a given maximum size.
-    SPIFlashSim(size_t max_size = 0x1000000) : max_size(max_size) {};
+    QSPIFlashSim(size_t max_size = 0x1000000) : max_size(max_size) {};
 
     /// Loads the entire contents of source into the given offset in flash memory.
     /// By default, errors are logged on attempts to access flash memory outside of the loaded regions.
@@ -137,4 +134,4 @@ private:
     std::string format_hex(uint32_t integer, uint32_t chars) const ;
     template<typename T> std::string format_hex(T integer) const ;
 };
-#endif /* SPIFlashSim_hpp */
+#endif /* QSPIFlashSim_hpp */

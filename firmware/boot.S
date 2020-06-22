@@ -16,10 +16,7 @@
 
 .equ FLASH_SR2_QE, (1 << 1)
 
-#define QPI_MODE 1
-
-// When QE=1, the /WP pin becomes IO2 and /HOLD pin becomes IO3. 
-# .equ FLASH_WP_HOLD_DEFAULT, (0 << 2 | 1 << 3)
+#define QPI_MODE 0
 
 _start:
 
@@ -59,16 +56,26 @@ _start:
     jal spi_transfer
     jal spi_complete_cmd
 
+#if QPI_MODE
+
     // enter QPI mode prior to the initial CRM command
     li a0, 0x38
     jal spi_transfer
     jal spi_complete_cmd
 
+#endif
+
 // CRM setup
 
     // Quad read (setup for hardware flash controller)
     li a0, 0xeb
+
+#if QPI_MODE
     jal qpi_transfer
+#else
+    jal spi_transfer
+#endif
+
     // dummy address
     li a0, 0x10 // (0x100000, in defined range)
     jal qpi_transfer

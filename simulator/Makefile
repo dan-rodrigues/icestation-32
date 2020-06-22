@@ -11,7 +11,7 @@ dummy:
 
 ### Common ###
 
-SIM_SRCS = main.cpp Simulation.cpp SPIFlashSim.cpp
+SIM_SRCS = main.cpp Simulation.cpp QSPIFlashSim.cpp
 SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb

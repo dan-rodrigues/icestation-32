@@ -1,10 +1,10 @@
-// SPIFlashSim.cpp
+// QSPIFlashSim.cpp
 //
 // Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
 // SPDX-License-Identifier: MIT
 
-#include "SPIFlashSim.hpp"
+#include "QSPIFlashSim.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <map>
 
-void SPIFlashSim::load(const std::vector<uint8_t> &source, size_t offset) {
+void QSPIFlashSim::load(const std::vector<uint8_t> &source, size_t offset) {
     size_t source_end_index = source.size() + offset;
     assert(source_end_index < max_size);
     data.resize(std::max(source_end_index, data.size()));
@@ -22,7 +22,7 @@ void SPIFlashSim::load(const std::vector<uint8_t> &source, size_t offset) {
     std::copy(source.begin(), source.end(), data.begin() + offset);
 }
 
-uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
+uint8_t QSPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_output_en) {
     bool csn_prev = this->csn;
     this->csn = csn;
 
@@ -80,7 +80,7 @@ uint8_t SPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_out
 }
 
 
-bool SPIFlashSim::check_conflicts(uint8_t input_en) const {
+bool QSPIFlashSim::check_conflicts(uint8_t input_en) const {
     uint8_t conflict_mask = output_en & input_en;
     if (conflict_mask) {
         log_error("IO conflict (" + format_hex(conflict_mask, 1) + ")");
@@ -90,7 +90,7 @@ bool SPIFlashSim::check_conflicts(uint8_t input_en) const {
 }
 
 // (this will be extended if DDR reads are added, where DATA state must work on posedge too)
-uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
+uint8_t QSPIFlashSim::negedge_tick(uint8_t io) {
     switch (state) {
         case IOState::DATA:
             if (bit_count == 0) {
@@ -115,7 +115,7 @@ uint8_t SPIFlashSim::negedge_tick(uint8_t io) {
     }
 }
 
-SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
+QSPIFlashSim::CMD QSPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     static const std::set<CMD> supported_cmds = {
         CMD::READ_DATA, CMD::FAST_READ_DUAL_IO, CMD::FAST_READ_QUAD_IO,
         CMD::WRITE_ENABLE_VOLATILE,
@@ -124,8 +124,8 @@ SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
         CMD::ENTER_QPI, CMD::EXIT_QPI
     };
 
-    static const std::map<uint8_t, SPIFlashSim::CMD> cmd_op_map = []() {
-        std::map<uint8_t, SPIFlashSim::CMD> map;
+    static const std::map<uint8_t, QSPIFlashSim::CMD> cmd_op_map = []() {
+        std::map<uint8_t, QSPIFlashSim::CMD> map;
         for (auto cmd : supported_cmds) {
             uint8_t cmd_op = static_cast<uint8_t>(cmd);
             map.emplace(cmd_op, cmd);
@@ -143,7 +143,7 @@ SPIFlashSim::CMD SPIFlashSim::cmd_from_op(uint8_t cmd_op) {
     }
 }
 
-void SPIFlashSim::handle_new_cmd() {
+void QSPIFlashSim::handle_new_cmd() {
     uint8_t new_cmd_op = read_buffer;
 
     cmd = cmd_from_op(new_cmd_op);
@@ -229,7 +229,7 @@ void SPIFlashSim::handle_new_cmd() {
     }
 }
 
-const std::string SPIFlashSim::cmd_name(CMD cmd) {
+const std::string QSPIFlashSim::cmd_name(CMD cmd) {
     static const std::map<CMD, const std::string> map = {
         {CMD::UNDEFINED, "Undefined (this shouldn't be seen in normal use)"},
         {CMD::READ_DATA, "Read Data"},
@@ -253,12 +253,12 @@ const std::string SPIFlashSim::cmd_name(CMD cmd) {
     }
 }
 
-bool SPIFlashSim::quad_enabled() {
+bool QSPIFlashSim::quad_enabled() {
     return status_2 & 0x02;
 }
 
 // (QPI mode has configurable latency..)
-uint8_t SPIFlashSim::dummy_cycles_for_cmd() {
+uint8_t QSPIFlashSim::dummy_cycles_for_cmd() {
     switch (cmd) {
         case CMD::READ_DATA:
             return 0;
@@ -272,7 +272,7 @@ uint8_t SPIFlashSim::dummy_cycles_for_cmd() {
     }
 }
 
-uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
+uint8_t QSPIFlashSim::posedge_tick(uint8_t io) {
     switch (state) {
         case IOState::CMD:
             read_bits(io, cmd_mode == CMDMode::QPI ? 4 : 1);
@@ -342,7 +342,7 @@ uint8_t SPIFlashSim::posedge_tick(uint8_t io) {
     return 0;
 }
 
-uint8_t SPIFlashSim::status_for_cmd() {
+uint8_t QSPIFlashSim::status_for_cmd() {
     switch (cmd) {
         case CMD::READ_STATUS_REG_2:
             return status_2;
@@ -352,7 +352,7 @@ uint8_t SPIFlashSim::status_for_cmd() {
     }
 }
 
-void SPIFlashSim::write_status_reg() {
+void QSPIFlashSim::write_status_reg() {
     status_volatile_write_enable = false;
 
     switch (cmd) {
@@ -369,12 +369,12 @@ void SPIFlashSim::write_status_reg() {
     }
 }
 
-void SPIFlashSim::transition_io_state(SPIFlashSim::IOState new_state) {
+void QSPIFlashSim::transition_io_state(QSPIFlashSim::IOState new_state) {
     byte_count = 0;
     state = new_state;
 }
 
-SPIFlashSim::IOState SPIFlashSim::state_after_address() {
+QSPIFlashSim::IOState QSPIFlashSim::state_after_address() {
     switch (cmd) {
         case CMD::READ_DATA:
             return IOState::DATA;
@@ -386,7 +386,7 @@ SPIFlashSim::IOState SPIFlashSim::state_after_address() {
     }
 }
 
-bool SPIFlashSim::index_is_defined(size_t index) {
+bool QSPIFlashSim::index_is_defined(size_t index) {
     for (auto range : defined_ranges) {
         if (range.contains(index)) {
             return true;
@@ -396,8 +396,7 @@ bool SPIFlashSim::index_is_defined(size_t index) {
     return false;
 }
 
-uint8_t SPIFlashSim::bit_count_for_mode() {
-    // !
+uint8_t QSPIFlashSim::bit_count_for_mode() {
     switch (io_mode) {
         case IOMode::SINGLE:
             return 1;
@@ -411,11 +410,11 @@ uint8_t SPIFlashSim::bit_count_for_mode() {
     }
 }
 
-uint8_t SPIFlashSim::send_bits() {
+uint8_t QSPIFlashSim::send_bits() {
     return send_bits(bit_count_for_mode());
 }
 
-uint8_t SPIFlashSim::send_bits(uint8_t count) {
+uint8_t QSPIFlashSim::send_bits(uint8_t count) {
     assert(count <= 4);
 
     uint8_t mask = (1 << count) - 1;
@@ -439,11 +438,11 @@ uint8_t SPIFlashSim::send_bits(uint8_t count) {
     return out;
 }
 
-void SPIFlashSim::read_bits(uint8_t io) {
+void QSPIFlashSim::read_bits(uint8_t io) {
     read_bits(io, bit_count_for_mode());
 }
 
-void SPIFlashSim::read_bits(uint8_t io, uint8_t count) {
+void QSPIFlashSim::read_bits(uint8_t io, uint8_t count) {
     assert(count <= 4);
 
     read_buffer <<= count;
@@ -457,35 +456,35 @@ void SPIFlashSim::read_bits(uint8_t io, uint8_t count) {
     }
 }
 
-bool SPIFlashSim::Range::contains(size_t index) const {
+bool QSPIFlashSim::Range::contains(size_t index) const {
     return index >= offset && index < (offset + length);
 }
 
-bool SPIFlashSim::Range::operator < (const Range &other) const {
+bool QSPIFlashSim::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
 }
 
-void SPIFlashSim::log_info(const std::string &message) const {
+void QSPIFlashSim::log_info(const std::string &message) const {
     if (enable_info_logging) {
         std::cout << "SPIFlashSim: " << message << std::endl;
     }
 }
 
-void SPIFlashSim::log_error(const std::string &message) const {
+void QSPIFlashSim::log_error(const std::string &message) const {
     if (enable_error_logging) {
         std::cerr << "SPIFlashSim error: " << message << std::endl;
     }
 }
 
-std::string SPIFlashSim::format_hex(uint8_t integer) const {
+std::string QSPIFlashSim::format_hex(uint8_t integer) const {
     return format_hex(integer, sizeof(uint8_t) * 2);
 }
 
-template<typename T> std::string SPIFlashSim::format_hex(T integer) const {
+template<typename T> std::string QSPIFlashSim::format_hex(T integer) const {
     return format_hex(integer, sizeof(T) * 2);
 }
 
-std::string SPIFlashSim::format_hex(uint32_t integer, uint32_t chars) const {
+std::string QSPIFlashSim::format_hex(uint32_t integer, uint32_t chars) const {
     std::stringstream stream;
     stream << std::hex << std::setfill('0') << std::setw(chars) << integer;
     return stream.str();

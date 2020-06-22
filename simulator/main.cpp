@@ -6,7 +6,7 @@
 #include <iostream>
 #include <memory>
 
-#include "SPIFlashSim.hpp"
+#include "QSPIFlashSim.hpp"
 
 #ifdef SIM_VERILATOR
 
@@ -55,7 +55,7 @@ int main(int argc, const char * argv[]) {
 
     // prepare flash before initializing the core sim instance
 
-    SPIFlashSim flash_sim;
+    QSPIFlashSim flash_sim;
     flash_sim.enable_info_logging = true;
 
     cpu_program.resize(flash_ipl_size);

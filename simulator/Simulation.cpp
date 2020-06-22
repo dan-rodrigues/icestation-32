@@ -1,3 +1,3 @@
 #include "Simulation.hpp"
 
-SPIFlashSim Simulation::default_flash = SPIFlashSim();
+QSPIFlashSim Simulation::default_flash = QSPIFlashSim();

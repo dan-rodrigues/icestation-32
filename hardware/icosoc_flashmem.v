@@ -7,6 +7,7 @@
 
 module icosoc_flashmem #(
     parameter ENABLE_QSPI = 1,
+    parameter ASSUME_QPI = 0,
     parameter ASSUME_CRM = 1
 ) (
     input clk,
@@ -27,7 +28,7 @@ module icosoc_flashmem #(
     localparam IO_CYCLES = ENABLE_QSPI ? 2 : 8;
     localparam READ_CMD = ENABLE_QSPI ? 8'heb : 8'h03;
     localparam INITIAL_STATE = ASSUME_CRM ? 1 : 0;
-    localparam EXTRA_DUMMY_CLOCKS = 0; // 4 for SPI mode
+    localparam EXTRA_DUMMY_CLOCKS = ASSUME_QPI ? 0 : 4;
 
     reg [7:0] buffer;
     reg [3:0] xfer_cnt;
