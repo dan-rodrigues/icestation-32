@@ -64,7 +64,7 @@ module ics32 #(
     wire [3:0] flash_in;
 
     SB_IO #(
-        .PIN_TYPE(6'b110001),
+        .PIN_TYPE(6'b101001),
         .PULLUP(1'b0),
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
