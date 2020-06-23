@@ -48,7 +48,7 @@ void VerilatorSimulation::step(uint64_t time) {
 
     flash_bb->out = io;
     flash_bb->out_en = out_en;
-    
+
 #if VCD_WRITE
     trace_update(time);
 #endif

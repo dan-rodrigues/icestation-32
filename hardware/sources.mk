@@ -11,7 +11,8 @@
  	bus_arbiter.v \
  	reset_generator.v \
  	cpu_peripheral_sync.v \
- 	cop_ram.v
+ 	cop_ram.v \
+ 	flash_reader.v
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \

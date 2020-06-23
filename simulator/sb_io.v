@@ -51,16 +51,13 @@ module SB_IO (
 	end
 
 	// work around simulation glitches on dout in DDR mode
-	// is this still bneeded?
-	// reg outclk_delayed_1;
-	// reg outclk_delayed_2;
-	// always @* outclk_delayed_1 <= OUTPUT_CLK;
-	// always @* outclk_delayed_2 <= outclk_delayed_1;
-	// always @* outclk_delayed_1 <= OUTPUT_CLK;
-	// always @* outclk_delayed_2 <= outclk_delayed_1;
-
-	wire outclk_delayed_1 = OUTPUT_CLK;
-	wire outclk_delayed_2 = OUTPUT_CLK;
+	// is this still needed?
+	reg outclk_delayed_1;
+	reg outclk_delayed_2;
+	always @* outclk_delayed_1 <= OUTPUT_CLK;
+	always @* outclk_delayed_2 <= outclk_delayed_1;
+	always @* outclk_delayed_1 <= OUTPUT_CLK;
+	always @* outclk_delayed_2 <= outclk_delayed_1;
 
 	always @* begin
 		if (PIN_TYPE[3])

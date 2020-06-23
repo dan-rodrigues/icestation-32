@@ -77,17 +77,16 @@ module flash_dma (
     // the flash controller will hold rdata for a while as it reads the next 8bits from flash
     assign read_data = flash_data_out;
 
-    icosoc_flashmem flash(
+    flash_reader flash_reader(
         .clk(clk),
-        .resetn(!reset),
+        .reset(reset),
 
-        .continue_reading(0),
         .valid(cpu_needs_read),
         .ready(flash_ready),
-        .addr(cpu_read_address),
-        .rdata(flash_data_out),
+        .address(cpu_read_address),
+        .data(flash_data_out),
         
-        .flash_dma_clk_en(flash_clk_en),
+        .flash_clk_en(flash_clk_en),
         .flash_csn(flash_csn),
         .flash_out(flash_out),
         .flash_in(flash_in),

@@ -24,11 +24,11 @@ _start:
 
     la a2, FLASH_CTRL_BASE
 
-    li a0, FLASH_CTRL_CSN | FLASH_CTRL_CLK
+    li a0, FLASH_CTRL_CSN
     sh a0, (a2)
 
-    // CSN low, clock high
-    li a0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    // CSN low, clock low
+    li a0, FLASH_CTRL_ACTIVE
     sh a0, (a2)
 
     // power up
@@ -96,7 +96,7 @@ _start:
 #endif
 
     // CPU has finished flash config, deassert /CS, hand back flash to flash controller
-    li a1, FLASH_CTRL_CSN | FLASH_CTRL_CLK
+    li a1, FLASH_CTRL_CSN
     sh a1, (a2)
 
 // IPL:
@@ -122,12 +122,16 @@ qpi_transfer:
     li t0, 0
     li t1, 2
     li t2, 0
+
+    li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
+    j enter_qpi
 loop_send_qpi:
     // negedge..
 
     // lower clk
     li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
 
+enter_qpi:
     // set output nybble
     andi t3, a0, 0xf0
     slli a0, a0, 4
@@ -146,7 +150,7 @@ loop_send_qpi:
     bne t0, t1, loop_send_qpi
 
     // disable outputs
-    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    li t0, FLASH_CTRL_ACTIVE
     sh t0, (a2)
 
     ret
@@ -158,12 +162,17 @@ spi_transfer:
     li t0, 0
     li t1, 8
     li t2, 0
+
+    li a1, FLASH_CTRL_ACTIVE | (0x1 << FLASH_CTRL_IN_EN_SHIFT)
+    j enter_spi
+
 loop_send_spi:
     // negedge..
 
     // lower clk
     li a1, FLASH_CTRL_ACTIVE | (1 << FLASH_CTRL_IN_EN_SHIFT)
 
+enter_spi:
     // set output bit
     andi t3, a0, 0x80
     add a0, a0, a0
@@ -187,6 +196,10 @@ loop_send_spi:
     add t0, t0, 1
     bne t0, t1, loop_send_spi
 
+    // disable outputs
+    li t0, FLASH_CTRL_ACTIVE
+    sh t0, (a2)
+
     // a0 = read byte
     mv a0, t2
 
@@ -195,9 +208,9 @@ loop_send_spi:
 // deasserts, then reasserts CSN to make the flash ready for another command
 
 spi_complete_cmd:
-    li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE
     sh t0, (a2)
-    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    li t0, FLASH_CTRL_ACTIVE
     sh t0, (a2)
 
     ret
