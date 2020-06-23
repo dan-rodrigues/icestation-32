@@ -4,10 +4,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+// This flash controller assumes QPI (or QSPI) and CRM have been preenabled
+// The assumed CRM command is 0xeb (Fast Read Quad I/O)
+// It will keep CRM enabled after every read
+
 `default_nettype none
 
 module flash_reader #(
-    parameter ASSUME_QPI = 0
+    parameter [0:0] ASSUME_QPI = 0
 ) (
     input clk,
     input reset,
@@ -90,7 +94,7 @@ module flash_reader #(
             state <= state + 1;
             flash_clk_en <= 1;
 
-            if (state == (5'h10 + DUMMY_CYCLES)) begin
+            if (state == (5'h0f + DUMMY_CYCLES)) begin
                 ready <= 1;
             end
         end

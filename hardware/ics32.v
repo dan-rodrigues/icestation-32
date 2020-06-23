@@ -589,6 +589,8 @@ module ics32 #(
 
     // --- Flash IO selection ---
 
+`ifndef SIMULATOR
+
     SB_IO #(
         .PIN_TYPE(6'b010001),
         .PULLUP(1'b0),
@@ -601,6 +603,17 @@ module ics32 #(
         .D_OUT_0(flash_clk_out[0]),
         .D_OUT_1(flash_clk_out[1])
     );
+
+`else
+
+    reg flash_clk_r;
+    assign flash_clk = flash_clk_r;
+
+    always @(vdp_clk) begin
+        flash_clk_r <= vdp_clk ? flash_clk_out[0] : flash_clk_out[1];
+    end
+
+`endif
 
     wire [1:0] flash_clk_out = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b0, flash_dma_clk_en};
     wire flash_dma_clk_en;
