@@ -6,7 +6,9 @@
 
 `default_nettype none
 
-module flash_reader(
+module flash_reader #(
+    parameter ASSUME_QPI = 0
+) (
     input clk,
     input reset,
 
@@ -21,6 +23,8 @@ module flash_reader(
     output reg [3:0] flash_in_en,
     input [3:0] flash_out
 );
+    localparam DUMMY_CYCLES = ASSUME_QPI ? 0 : 4;
+
     localparam CRM_BYTE = 8'h20;
 
     reg [4:0] state;
@@ -40,7 +44,7 @@ module flash_reader(
     end
 
     reg [7:0] selected_byte;
-    
+
     always @* begin
         case (byte_state)
             0: selected_byte = address[23:16];
@@ -52,11 +56,11 @@ module flash_reader(
 
     always @(posedge clk) begin
         if (!nybble_state) begin
-            case (byte_state)
-                7: data[7:0] <= read_byte;
-                8: data[15:8] <= read_byte;
-                9: data[23:16] <= read_byte;
-                10: data[31:24] <= read_byte;
+            case (byte_state - (DUMMY_CYCLES / 2))
+                5: data[7:0] <= read_byte;
+                6: data[15:8] <= read_byte;
+                7: data[23:16] <= read_byte;
+                8: data[31:24] <= read_byte;
             endcase
         end
     end
@@ -86,7 +90,7 @@ module flash_reader(
             state <= state + 1;
             flash_clk_en <= 1;
 
-            if (state == 5'h14) begin
+            if (state == (5'h10 + DUMMY_CYCLES)) begin
                 ready <= 1;
             end
         end
