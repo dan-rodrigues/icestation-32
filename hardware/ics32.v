@@ -68,7 +68,7 @@ module ics32 #(
         .PULLUP(1'b0),
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
-    ) flash_clk_io[3:0] (
+    ) flash_inout [3:0] (
         .PACKAGE_PIN(flash_io),
         .OUTPUT_ENABLE(flash_in_en),
         .CLOCK_ENABLE(1'b1),
@@ -600,7 +600,7 @@ module ics32 #(
 `ifndef SIMULATOR
 
     SB_IO #(
-        .PIN_TYPE(6'b010001),
+        .PIN_TYPE(6'b010000),
         .PULLUP(1'b0),
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
