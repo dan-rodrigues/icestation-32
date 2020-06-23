@@ -63,12 +63,20 @@ module ics32 #(
     wire [3:0] flash_in_en;
     wire [3:0] flash_in;
 
-    assign flash_out = flash_io;
-
-    assign flash_io[0] = flash_in_en[0] ? flash_in[0] : 1'bz;
-    assign flash_io[1] = flash_in_en[1] ? flash_in[1] : 1'bz;
-    assign flash_io[2] = flash_in_en[2] ? flash_in[2] : 1'bz;
-    assign flash_io[3] = flash_in_en[3] ? flash_in[3] : 1'bz;
+    SB_IO #(
+        .PIN_TYPE(6'b110001),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) flash_clk_io[3:0] (
+        .PACKAGE_PIN(flash_io),
+        .OUTPUT_ENABLE(flash_in_en),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(vdp_clk),
+        .D_OUT_0(flash_in),
+        .D_OUT_1(flash_in),
+        .D_IN_0(flash_out)
+    );
 
 `endif
 
