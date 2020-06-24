@@ -42,6 +42,10 @@ public:
     bool enable_info_logging = false;
     bool enable_error_logging = true;
 
+    /// Opt-in cases for info logging
+    bool enable_incomplete_byte_logging = true;
+    bool enable_idle_clock_state_mismatch_logging = true;
+
 private:
     struct Range {
         Range(size_t offset, size_t length) : offset(offset), length(length) {}
@@ -65,7 +69,7 @@ private:
     };
 
     enum class IOState {
-        CMD, ADDRESS, XIP_CMD, DUMMY, DATA,
+        CMD, ADDRESS, CRM_CMD, DUMMY, DATA,
         REG_READ, REG_WRITE,
         IDLE
     };
@@ -102,8 +106,8 @@ private:
     bool clk_on_deactivate = false;
     bool activated_previously = false;
 
-    uint8_t posedge_tick(uint8_t io);
-    uint8_t negedge_tick(uint8_t io);
+    void posedge_tick(uint8_t io);
+    void negedge_tick(uint8_t io);
     void read_bits(uint8_t io);
     void read_bits(uint8_t io, uint8_t count);
 
@@ -129,6 +133,7 @@ private:
 
     void log_error(const std::string &message) const;
     void log_info(const std::string &message) const;
+    void log_if(bool condition, const std::string &message) const;
 
     std::string format_hex(uint8_t integer) const ;
     std::string format_hex(uint32_t integer, uint32_t chars) const ;
