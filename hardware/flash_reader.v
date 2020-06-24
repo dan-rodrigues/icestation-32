@@ -100,8 +100,8 @@ module flash_reader #(
 
             flash_clk_en <= 1;
 
-            // (review the necessary number of cycles, probably don't need this many)
-            if (state == (5'h11 + DUMMY_CYCLES)) begin
+            // (review the necessary number of cycles)
+            if (state == (5'h0f + DUMMY_CYCLES)) begin
                 ready <= 1;
             end
         end

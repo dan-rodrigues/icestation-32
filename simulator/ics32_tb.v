@@ -67,9 +67,9 @@ module ics32_tb(
 
         .flash_clk(flash_clk),
         .flash_csn(flash_csn),
-        .flash_in_en(flash_in_en),
-        .flash_in(flash_in),
-        .flash_out(flash_out)
+        .flash_in_en_bb(flash_in_en),
+        .flash_in_bb(flash_in),
+        .flash_out_bb(flash_out)
     );
 
     // --- Flash sim blackbox ---

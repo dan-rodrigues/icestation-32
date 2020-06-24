@@ -46,9 +46,9 @@ module ics32 #(
     output flash_clk,
     output flash_csn,
 `ifdef SIMULATOR
-    output [3:0] flash_in,
-    output [3:0] flash_in_en,
-    input [3:0] flash_out
+    output [3:0] flash_in_bb,
+    output [3:0] flash_in_en_bb,
+    input [3:0] flash_out_bb
 `else
     inout [3:0] flash_io
 `endif
@@ -587,10 +587,10 @@ module ics32 #(
         .IO_STANDARD("SB_LVCMOS")
     ) flash_inout [3:0] (
         .PACKAGE_PIN(flash_io),
-        .OUTPUT_ENABLE(flash_in_en),
+        .OUTPUT_ENABLE(flash_in_en_selected),
         .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(vdp_clk),
-        .D_OUT_0(flash_in),
+        .D_OUT_0(flash_in_selected),
         .INPUT_CLK(vdp_clk),
         .D_IN_0(flash_out)
     );
@@ -626,22 +626,35 @@ module ics32 #(
 
 `else
 
+    reg [3:0] flash_in_r;
+    reg [3:0] flash_out_r;
+    reg flash_csn_r;
+
+    assign flash_csn = flash_csn_r;
+    assign flash_in_bb = flash_in_r;
+    assign flash_in_en_bb = flash_in_en_selected;
+    wire [3:0] flash_out = flash_out_r;
+    
+    always @(posedge vdp_clk) begin
+        flash_in_r <= flash_in_selected;
+        flash_out_r <= flash_out_bb;
+        flash_csn_r <= flash_csn_selected;
+    end
+
     reg flash_clk_r;
     assign flash_clk = flash_clk_r;
 
-    always @(vdp_clk) begin
+    always @(posedge vdp_clk or negedge vdp_clk) begin
         flash_clk_r <= vdp_clk ? flash_clk_out[0] : flash_clk_out[1];
     end
-
-    assign flash_csn = flash_csn_selected;
 
 `endif
 
     wire [1:0] flash_clk_out = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b0, flash_dma_clk_en};
     wire flash_dma_clk_en;
 
-    assign flash_in = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
-    assign flash_in_en = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
+    wire [3:0] flash_in_selected = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
+    wire [3:0] flash_in_en_selected = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
 
     wire flash_csn_selected = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
 

@@ -100,7 +100,7 @@ void CXXRTLSimulation::trace(const std::string &filename) {
     // for now, just filter to a few signals of interest
     const std::vector<std::string> filter_names = {"pico", "clk", "reset", "valid", "ready"};
 
-    vcd.add(debug, [&](const std::string &name, const debug_item &item) {
+    vcd.add(debug), [&](const std::string &name, const debug_item &item) {
         for (auto filter_name : filter_names) {
             if (name.find(filter_name) != std::string::npos) {
                 return true;

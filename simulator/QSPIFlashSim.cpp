@@ -467,13 +467,13 @@ bool QSPIFlashSim::Range::operator < (const Range &other) const {
 
 void QSPIFlashSim::log_info(const std::string &message) const {
     if (enable_info_logging) {
-        std::cout << "SPIFlashSim: " << message << std::endl;
+        std::cout << "QSPIFlashSim: " << message << std::endl;
     }
 }
 
 void QSPIFlashSim::log_error(const std::string &message) const {
     if (enable_error_logging) {
-        std::cerr << "SPIFlashSim error: " << message << std::endl;
+        std::cerr << "QSPIFlashSim error: " << message << std::endl;
     }
 }
 
