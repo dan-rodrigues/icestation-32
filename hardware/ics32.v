@@ -11,7 +11,7 @@
 module ics32 #(
     parameter ENABLE_WIDESCREEN = 1,
     parameter FORCE_FAST_CPU = 0,
-    parameter integer RESET_DURATION = 1 << 10,
+    parameter integer RESET_DURATION = 1 << 24,
     parameter ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
@@ -54,31 +54,6 @@ module ics32 #(
 `endif
 );
     localparam ENABLE_FAST_CPU = !ENABLE_WIDESCREEN || FORCE_FAST_CPU;
-
-    // --- Flash IO control ---
-
-`ifndef SIMULATOR
-
-    wire [3:0] flash_out;
-    wire [3:0] flash_in_en;
-    wire [3:0] flash_in;
-
-    SB_IO #(
-        .PIN_TYPE(6'b101001),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) flash_inout [3:0] (
-        .PACKAGE_PIN(flash_io),
-        .OUTPUT_ENABLE(flash_in_en),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(vdp_clk),
-        .D_OUT_0(flash_in),
-        .D_OUT_1(flash_in),
-        .D_IN_0(flash_out)
-    );
-
-`endif
 
     // --- Bootloader ---
 
@@ -595,9 +570,46 @@ module ics32 #(
     
     // verilator lint_restore
 
-    // --- Flash IO selection ---
+    // --- Flash IO control ---
 
 `ifndef SIMULATOR
+
+    wire [3:0] flash_out;
+    wire [3:0] flash_in_en;
+    wire [3:0] flash_in;
+
+    // IO
+
+    SB_IO #(
+        .PIN_TYPE(6'b110100),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) flash_inout [3:0] (
+        .PACKAGE_PIN(flash_io),
+        .OUTPUT_ENABLE(flash_in_en),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(vdp_clk),
+        .D_OUT_0(flash_in),
+        .INPUT_CLK(vdp_clk),
+        .D_IN_0(flash_out)
+    );
+
+    // CSN
+
+    SB_IO #(
+        .PIN_TYPE(6'b010100),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) flash_csn_io (
+        .PACKAGE_PIN(flash_csn),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(vdp_clk),
+        .D_OUT_0(flash_csn_selected)
+    );
+
+    // CLK
 
     SB_IO #(
         .PIN_TYPE(6'b010000),
@@ -621,14 +633,17 @@ module ics32 #(
         flash_clk_r <= vdp_clk ? flash_clk_out[0] : flash_clk_out[1];
     end
 
+    assign flash_csn = flash_csn_selected;
+
 `endif
 
     wire [1:0] flash_clk_out = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b0, flash_dma_clk_en};
     wire flash_dma_clk_en;
 
-    assign flash_csn = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
     assign flash_in = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
     assign flash_in_en = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
+
+    wire flash_csn_selected = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
 
     // --- Flash interface ---
 
@@ -678,6 +693,11 @@ module ics32 #(
     end
 
     always @(posedge vdp_clk) begin
+        if (vdp_reset) begin
+            flash_ctrl_clk <= 0;
+            flash_ctrl_in_en <= 0;
+        end
+
         if (flash_ctrl_write_en) begin
             flash_ctrl_in <= flash_ctrl_in_data;
             flash_ctrl_in_en <= flash_ctrl_in_en_data;

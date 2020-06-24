@@ -10,6 +10,9 @@
 
 `default_nettype none
 
+// Note flash_in and flash_in_en are not registered in this module
+// They are registered externally (SB_IO instances for up5k)
+
 module flash_reader #(
     parameter [0:0] ASSUME_QPI = 0
 ) (
@@ -36,8 +39,6 @@ module flash_reader #(
     wire [3:0] byte_state = state[4:1];
     wire nybble_state = state[0];
 
-    reg [7:0] buffer;
-
     reg [3:0] read_buffer;
     wire [7:0] read_byte = {read_buffer, flash_out};
 
@@ -58,6 +59,10 @@ module flash_reader #(
         endcase
     end
 
+    always @* begin
+        flash_in = nybble_state ? selected_byte[3:0] : selected_byte[7:4];
+    end
+
     always @(posedge clk) begin
         if (!nybble_state) begin
             case (byte_state - (DUMMY_CYCLES / 2))
@@ -69,32 +74,34 @@ module flash_reader #(
         end
     end
 
-    always @(posedge clk) begin
+    always @* begin
         if (reset || !valid || ready) begin
-            flash_in <= 0;
-            flash_in_en <= 0;
+            flash_in_en = 0;
+            flash_csn = 1;
         end else begin
-            case (byte_state)
-                0, 1, 2, 3: flash_in_en <= 4'hf;
-                default: flash_in_en <= 0;
-            endcase
+            flash_csn = 0;
 
-            flash_in <= nybble_state ? selected_byte[3:0] : selected_byte[7:4];
+            case (byte_state)
+                0, 1, 2, 3: flash_in_en = 4'hf;
+                default: flash_in_en = 0;
+            endcase
         end
     end
 
     always @(posedge clk) begin
         if (reset || !valid || ready) begin
             flash_clk_en <= 0;
-            flash_csn <= 1;
             state <= 0;
             ready <= 0;
         end else begin
-            flash_csn <= 0;
-            state <= state + 1;
+            if (flash_clk_en) begin
+                state <= state + 1;
+            end
+
             flash_clk_en <= 1;
 
-            if (state == (5'h0f + DUMMY_CYCLES)) begin
+            // (review the necessary number of cycles, probably don't need this many)
+            if (state == (5'h11 + DUMMY_CYCLES)) begin
                 ready <= 1;
             end
         end
