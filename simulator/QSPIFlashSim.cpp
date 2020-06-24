@@ -41,7 +41,8 @@ uint8_t QSPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_ou
         clk_on_deactivate = clk;
 
         if (bit_count != 0) {
-            log_error("/CS deasserted before transferring a complete byte");
+            log_if(enable_incomplete_byte_logging,
+                   "/CS deasserted before transferring a complete byte");
         }
     } else if (should_activate) {
         state = (crm_enabled ? IOState::ADDRESS : IOState::CMD);
@@ -58,7 +59,8 @@ uint8_t QSPIFlashSim::update(bool csn, bool clk, uint8_t new_io, uint8_t *new_ou
         output_en = 0;
 
         if (activated_previously && clk_on_deactivate != clk) {
-            log_error("Activated clock state doesn't match previous deactivation state");
+            log_if(enable_idle_clock_state_mismatch_logging,
+                   "Activated clock state doesn't match previous deactivation state");
         }
 
         activated_previously = true;
@@ -296,7 +298,7 @@ void QSPIFlashSim::posedge_tick(uint8_t io) {
                 transition_io_state(state_after_address());
             }
             break;
-        case IOState::XIP_CMD:
+        case IOState::CRM_CMD:
             read_bits(io);
             if (byte_count == 1) {
                 const uint8_t crm_mask = 0x30;
@@ -357,10 +359,7 @@ void QSPIFlashSim::write_status_reg() {
 
     switch (cmd) {
         case CMD::WRITE_STATUS_REG_2:
-            // (reject attempts to set the QE bit if already in QPI mode)
-            // (optional info log upon enabling quad io)
             log_info("SR2 updated to: " + format_hex(read_buffer));
-
             status_2 = read_buffer;
             break;
         default:
@@ -379,7 +378,7 @@ QSPIFlashSim::IOState QSPIFlashSim::state_after_address() {
         case CMD::READ_DATA:
             return IOState::DATA;
         case CMD::FAST_READ_DUAL_IO: case CMD::FAST_READ_QUAD_IO:
-            return IOState::XIP_CMD;
+            return IOState::CRM_CMD;
         default:
             assert(false);
             return IOState::DATA;
@@ -463,6 +462,12 @@ bool QSPIFlashSim::Range::contains(size_t index) const {
 
 bool QSPIFlashSim::Range::operator < (const Range &other) const {
     return offset < other.offset || length < other.length;
+}
+
+void QSPIFlashSim::log_if(bool condition, const std::string &message) const {
+    if (condition) {
+        log_info(message);
+    };
 }
 
 void QSPIFlashSim::log_info(const std::string &message) const {

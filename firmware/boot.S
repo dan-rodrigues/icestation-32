@@ -20,14 +20,15 @@
 
 _start:
 
-// Enable QE bit:
+// Flash configuration:
 
     la a2, FLASH_CTRL_BASE
 
+    // begin with deactivated flash
     li a0, FLASH_CTRL_CSN
     sh a0, (a2)
 
-    // CSN low, clock low
+    // activate flash, clock low
     li a0, FLASH_CTRL_ACTIVE
     sh a0, (a2)
 
@@ -123,24 +124,14 @@ qpi_transfer:
     li t1, 2
     li t2, 0
 
-    li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
-    j enter_qpi
 loop_send_qpi:
-    // negedge..
-
-    // lower clk
+    // lower clk, set output nybble
     li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
-
-enter_qpi:
-    // set output nybble
     andi t3, a0, 0xf0
     slli a0, a0, 4
     srli t3, t3, 4
     or a1, a1, t3
     sh a1, (a2)
-
-    // posedge..
-    // nothing to read as IOs are all output
 
     // raise clk
     ori a1, a1, FLASH_CTRL_CLK
@@ -149,7 +140,7 @@ enter_qpi:
     add t0, t0, 1
     bne t0, t1, loop_send_qpi
 
-    // disable outputs
+    // disable outputs, lower clk
     li t0, FLASH_CTRL_ACTIVE
     sh t0, (a2)
 
@@ -163,24 +154,14 @@ spi_transfer:
     li t1, 8
     li t2, 0
 
-    li a1, FLASH_CTRL_ACTIVE | (0x1 << FLASH_CTRL_IN_EN_SHIFT)
-    j enter_spi
-
 loop_send_spi:
-    // negedge..
-
-    // lower clk
+    // lower clk, set output bit
     li a1, FLASH_CTRL_ACTIVE | (1 << FLASH_CTRL_IN_EN_SHIFT)
-
-enter_spi:
-    // set output bit
     andi t3, a0, 0x80
     add a0, a0, a0
     srli t3, t3, 7
     or a1, a1, t3
     sh a1, (a2)
-
-    // posedge..
 
     // read input bit
     add t2, t2, t2
@@ -205,7 +186,7 @@ enter_spi:
 
     ret
 
-// deasserts, then reasserts CSN to make the flash ready for another command
+// deasserts, then reasserts CSN to make the flash ready for next command
 
 spi_complete_cmd:
     li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE
