@@ -10,7 +10,7 @@
 
 `default_nettype none
 
-// Note flash_in and flash_in_en are not registered in this module
+// Note flash_in, flash_in_en and flash_csn are not registered in this module
 // They are registered externally (SB_IO instances for up5k)
 
 module flash_reader #(

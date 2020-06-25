@@ -641,21 +641,19 @@ module ics32 #(
         flash_csn_r <= flash_csn_selected;
     end
 
-    reg flash_clk_r;
-    assign flash_clk = flash_clk_r;
-
     // This isn't quite what SB_IO does in DDR mode
     // Since we're not actually pushing out DDR data streams, this could be replaced with a reimplementation of flash_clk_out
     // There might be also a simpler way to do this in a way that works in both sims
 
-`ifdef CXXRTL
+    reg flash_clk_l, flash_clk_h;
+    assign flash_clk = vdp_clk ? flash_clk_h : flash_clk_l;
 
-    // (needs investigating..)
-    always @(vdp_clk) begin
-`else
-    always @(posedge vdp_clk or negedge vdp_clk) begin
-`endif
-        flash_clk_r <= vdp_clk ? flash_clk_out[0] : flash_clk_out[1];
+    always @(posedge vdp_clk) begin
+        flash_clk_h <= flash_clk_out[0];
+    end
+
+    always @(negedge vdp_clk) begin
+        flash_clk_l <= flash_clk_out[1];
     end
 
 `endif

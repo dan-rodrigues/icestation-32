@@ -4,7 +4,6 @@
  	cpu_ram.v \
  	vram.v \
  	address_decoder.v \
- 	icosoc_flashmem.v \
  	delay_ff.v \
  	flash_dma.v \
  	pll.v \
