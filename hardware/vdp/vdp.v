@@ -138,7 +138,7 @@ module vdp #(
 
     // --- Host interface ---
 
-    wire [5:0] register_write_address, register_read_address;
+    wire [4:0] register_write_address, register_read_address;
     wire [15:0] register_write_data;
     wire register_write_en;
 
@@ -165,7 +165,7 @@ module vdp #(
 
     // --- Copper ---
 
-    wire [5:0] cop_write_address;
+    wire [4:0] cop_write_address;
     wire [15:0] cop_write_data;
     wire copper_write_en;
     wire cop_write_ready;
@@ -195,30 +195,49 @@ module vdp #(
 
     wire affine_enabled = layer_enable[5];
 
-    reg [13:0] scroll_tile_base [0:3];
-    reg [13:0] scroll_map_base [0:3];
+    reg [15:0] scroll_tile_base;
+    reg [15:0] scroll_map_base;
+
     reg [15:0] scroll_x [0:3];
     reg [15:0] scroll_y [0:3];
 
     reg [3:0] scroll_use_wide_map;
 
-    reg [13:0] sprite_tile_base;
+    reg [3:0] sprite_tile_base;
+    wire [13:0] full_sprite_tile_base = {sprite_tile_base, 10'b0};
 
-    reg [13:0] vram_write_address_16b;
     reg [15:0] vram_write_data_16b;
-
     reg [1:0] vram_port_write_en_mask;
-    reg [14:0] vram_write_address_full = 0;
+    reg [14:0] vram_write_address_full;
+    wire [13:0] vram_write_address_16b = vram_write_address_full[14:1];
     reg [7:0] vram_port_address_increment;
-
+    reg vram_write_pending;
+    
     reg cop_enable;
+
+    // --- Writes: comb. ---
+
+    always @* begin
+        palette_write_en = 0;
+
+        if (register_write_en) begin
+            if (!register_write_address[4]) begin
+                case (register_write_address[3:0])
+                    3: begin
+                        palette_write_en = 1;
+                    end
+                endcase
+            end
+        end
+    end
+
+    // --- Writes: clocked ---
 
     always @(posedge clk) begin
         if (reset) begin
             cop_enable <= 0;
         end
 
-        palette_write_en <= 0;
         sprite_metadata_write_en <= 0;
 
         sprite_metadata_block_select <= sprite_metadata_block_select_nx;
@@ -231,8 +250,13 @@ module vdp #(
             palette_write_address <= palette_write_address + 1;
         end
 
+        if (vram_write_pending && vram_written) begin
+            vram_write_pending <= 0;
+            vram_write_address_full <= vram_write_address_full + vram_port_address_increment;
+        end
+
         if (register_write_en) begin
-            if (register_write_address[5:4] == 2'b00) begin
+            if (!register_write_address[4]) begin
                 case (register_write_address[3:0])
                     0: begin
                         sprite_metadata_address <= register_write_data[7:0];
@@ -246,50 +270,50 @@ module vdp #(
                         palette_write_address <= register_write_data[7:0];
                     end
                     3: begin
-                        pal_write_data <= register_write_data;
-                        palette_write_en <= 1;
+                        // (palette write, which is handed separately above)
                     end
                     4: begin
                         vram_write_address_full <= register_write_data;
                         vram_port_write_en_mask <= 2'b00;
                     end
                     5: begin
-                        // TODO: optimise this so the address doesn't need duplicating
-                        // can get a vram_written input from sequencer below
                         vram_write_data_16b <= register_write_data;
-                        vram_write_address_16b <= vram_write_address_full[14:1];
                         vram_port_write_en_mask <= vram_write_address_full[0] ? 2'b10 : 2'b01;
-                        vram_write_address_full <= vram_write_address_full + vram_port_address_increment;
+
+                        vram_write_pending <= 1;
                     end
                     6: begin
                         vram_port_address_increment <= register_write_data[7:0];
                     end
                     7: begin
-                        sprite_tile_base <= register_write_data;
+                        sprite_tile_base <= register_write_data[13:10];
                     end
                     8: begin
                         cop_enable <= register_write_data[0];
                     end
+                    9: begin
+                        scroll_tile_base <= register_write_data;
+                    end
+                    10: begin
+                        scroll_map_base <= register_write_data;
+                    end
+                    11: begin
+                        layer_enable <= register_write_data[5:0];
+                    end
+                    12: begin
+                        layer_enable_alpha_over <= register_write_data[7:0];
+                    end
+                    13: begin
+                        scroll_use_wide_map <= register_write_data[3:0];
+                    end
                     default: begin
                         `stop($display("unimplemented register: %x", register_write_address);)
                     end
                 endcase
-            end else if (register_write_address[5:4] == 2'b01) begin
+            end else if (register_write_address[4]) begin
                 case (register_write_address[3:2])
-                    // can save LUTs by packing this into a single reg and write all at once
-                    0: scroll_tile_base[register_write_address[1:0]] <= register_write_data;
-                    1: scroll_x[register_write_address[1:0]] <= register_write_data;
-                    2: scroll_y[register_write_address[1:0]] <= register_write_data;
-                    3: scroll_map_base[register_write_address[1:0]] <= register_write_data;
-                endcase
-            end else if (register_write_address[5:4] == 2'b10) begin
-                case (register_write_address[3:0])
-                    0: layer_enable <= register_write_data[5:0];
-                    1: layer_enable_alpha_over <= register_write_data[7:0];
-                    2: scroll_use_wide_map <= register_write_data[3:0];
-                    default: begin
-                        `stop($display("unimplemented register: %x", register_write_address);)
-                    end
+                    0: scroll_x[register_write_address[1:0]] <= register_write_data;
+                    1: scroll_y[register_write_address[1:0]] <= register_write_data;
                 endcase
             end
         end
@@ -344,9 +368,9 @@ module vdp #(
 
     // --- Palette RAM ---
 
-    reg [7:0] palette_write_address = 0;
-    reg [15:0] pal_write_data;
-    reg palette_write_en = 0;
+    reg [7:0] palette_write_address;
+    wire [15:0] pal_write_data = register_write_data;
+    reg palette_write_en;
 
     reg [15:0] palette_ram [0:255];
     reg [15:0] palette_output;
@@ -491,23 +515,23 @@ module vdp #(
             // 0
             gen_even_hscroll = scroll_x[0];
             gen_even_scroll_y = scroll_y[0];
-            gen_even_map_base = map_base_coarse_to_address(scroll_map_base[0]);
+            gen_even_map_base = full_scroll_map_base(0);
             gen_even_use_wide_map = scroll_use_wide_map[0];
             // 1
             gen_odd_hscroll = scroll_x[1];
             gen_odd_scroll_y = scroll_y[1];
-            gen_odd_map_base = map_base_coarse_to_address(scroll_map_base[1]);
+            gen_odd_map_base = full_scroll_map_base(1);
             gen_odd_use_wide_map = scroll_use_wide_map[1];
         end else begin
             // 2
             gen_even_hscroll = scroll_x[2];
             gen_even_scroll_y = scroll_y[2];
-            gen_even_map_base = map_base_coarse_to_address(scroll_map_base[2]);
+            gen_even_map_base = full_scroll_map_base(2);
             gen_even_use_wide_map = scroll_use_wide_map[2];
             // 3
             gen_odd_hscroll = scroll_x[3];
             gen_odd_scroll_y = scroll_y[3];
-            gen_odd_map_base = map_base_coarse_to_address(scroll_map_base[3]);
+            gen_odd_map_base = full_scroll_map_base(3);
             gen_odd_use_wide_map = scroll_use_wide_map[3];
         end
     end
@@ -667,6 +691,7 @@ module vdp #(
     reg [3:0] scroll_char_load;
 
     reg load_all_scroll_row_data;
+    reg vram_written;
 
     always @* begin
         scroll_meta_load = 0;
@@ -679,6 +704,7 @@ module vdp #(
         gen_toggle_nx = 0;
         vram_address_even_nx = 0;
         vram_address_odd_nx = 0;
+        vram_written = 0;
 
         tile_address_gen_scroll_y_granular = 0;
         tile_address_gen_map_data_in = 0;
@@ -699,7 +725,7 @@ module vdp #(
                 // next next: s1 prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y[1][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[1];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[1]);
+                tile_address_gen_base_address = full_scroll_tile_base(1);
             end
             1: begin
                 // now: sprite row data available
@@ -712,7 +738,7 @@ module vdp #(
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y[2][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[2];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[2]);
+                tile_address_gen_base_address = full_scroll_tile_base(2);
             end
             2: begin
                 // now: nothing, because this was a CPU write
@@ -724,7 +750,7 @@ module vdp #(
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y[3][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[3];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[3]);
+                tile_address_gen_base_address = full_scroll_tile_base(3);
             end
             3: begin
                 gen_toggle_nx = 0;
@@ -770,6 +796,7 @@ module vdp #(
                 vram_address_even_nx = vram_write_address_16b;
                 vram_address_odd_nx = vram_write_address_16b;
                 vram_write_data_nx = {2{vram_write_data_16b}};
+                vram_written = 1;
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
 
                 // now: s0/s1 map data
@@ -778,7 +805,7 @@ module vdp #(
                 // s0: prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y[0][2:0];
                 tile_address_gen_map_data_in = vram_read_data_even_r;
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[0]);
+                tile_address_gen_base_address = full_scroll_tile_base(0);
             end
         endcase
     end
@@ -805,7 +832,7 @@ module vdp #(
         .meta_block_select(sprite_metadata_block_select),
         .meta_we(sprite_metadata_write_en),
 
-        .vram_base_address(tile_base_coarse_to_address(sprite_tile_base)),
+        .vram_base_address(full_sprite_tile_base),
         .vram_read_address(vram_sprite_address),
         .vram_read_data(vram_read_data_r),
         .vram_data_valid(vram_sprite_read_data_valid),
@@ -826,16 +853,19 @@ module vdp #(
     wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 7);
 
     // NOTE: this may effect sprite fillrate so this should probably be wound back a bit with pipeline delay etc.
-    wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+
+    // wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+    wire affine_x_end = line_ended;
 
     reg affine_offscreen;
-    localparam affine_x_initial = -2;
+
+    localparam AFFINE_X_INITIAL = -2;
 
     always @(posedge clk) begin
         affine_x <= affine_x + 1;
 
         if (affine_x_start) begin
-            affine_x <= affine_x_initial;
+            affine_x <= AFFINE_X_INITIAL;
             affine_offscreen <= 0;
         end else if (affine_x_end) begin
             affine_offscreen <= 1;
@@ -888,29 +918,22 @@ module vdp #(
         vram_we_odd <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[1];
     end
 
-    // convenience functions for address mapping, these could be combined to a single function
-    // but the ability to configure BASE_BITS is being removed eventually so not going to bother with that
+    // --- VRAM base address mapping functions ---
 
-    function [13:0] tile_base_coarse_to_address;
-        input [13:0] tile_base;
+    function [13:0] full_scroll_tile_base;
+        input [1:0] layer;
 
         begin
-            tile_base_coarse_to_address = {
-                tile_base[13:13 - CHAR_BASE_BITS + 1],
-                {(14 - CHAR_BASE_BITS){1'b0}}
-            };
+            full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 10'b0};
         end
 
     endfunction
         
-    function [13:0] map_base_coarse_to_address;
-        input [13:0] map_base;
+    function [13:0] full_scroll_map_base;
+        input [1:0] layer;
 
         begin
-            map_base_coarse_to_address = {
-                map_base[13:13 - MAP_BASE_BITS + 1],
-                {(14 - MAP_BASE_BITS){1'b0}}
-            };
+            full_scroll_map_base = {scroll_map_base >> (layer * 4), 10'b0};
         end
 
     endfunction

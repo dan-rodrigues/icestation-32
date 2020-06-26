@@ -14,8 +14,8 @@ module vdp_host_interface #(
     input clk,
     input reset,
 
-    input [6:0] host_address,
-    output reg [5:0] register_write_address,
+    input [5:0] host_address,
+    output reg [4:0] register_write_address,
 
     // writes
 
@@ -31,13 +31,13 @@ module vdp_host_interface #(
     // ..from copper
 
     input cop_write_en,
-    input [5:0] cop_write_address,
+    input [4:0] cop_write_address,
     input [15:0] cop_write_data,
 
     // CPU reads
 
     input host_read_en,
-    output reg [5:0] read_address
+    output reg [4:0] read_address
 );
     reg host_write_en_r, host_write_en_d;
     reg host_read_en_r, host_read_en_d;
@@ -99,7 +99,7 @@ module vdp_host_interface #(
             if (host_write_en_r) begin
                 if (host_address_r[0]) begin
                     register_write_data <= {host_write_data_r[7:0], data_t};
-                    register_write_address <= host_address_r[6:1];
+                    register_write_address <= host_address_r[5:1];
                     register_write_en <= 1;
 
                     data_t <= 0;

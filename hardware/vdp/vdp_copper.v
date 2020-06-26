@@ -27,7 +27,7 @@ module vdp_copper(
 
     // Register interface
 
-    output reg [5:0] reg_write_address,
+    output reg [4:0] reg_write_address,
     output reg [15:0] reg_write_data,
     output reg reg_write_en
 );
@@ -79,7 +79,7 @@ module vdp_copper(
 
     // REG_WRITE
 
-    // ooiiynnn nnrrrrrr
+    // ooiiynnn nn-rrrrr
     //
     // r: target register
     // n: number of batches write
@@ -89,12 +89,12 @@ module vdp_copper(
     //      2: reg[0], reg[1], reg[2], reg[3], repeat
     // y: autoincrement target Y and wait between batches
 
-    wire [5:0] op_write_target_reg = ram_read_data[5:0];
+    wire [4:0] op_write_target_reg = ram_read_data[4:0];
     wire [4:0] op_write_batch_count = ram_read_data[10:6];
     wire op_write_auto_wait = ram_read_data[11];
     wire [1:0] op_write_increment_mode = ram_read_data[13:12];
 
-    reg [5:0] op_write_target_reg_r;
+    reg [4:0] op_write_target_reg_r;
     reg [4:0] op_write_batch_count_r;
     reg op_write_auto_wait_r;
     reg [1:0] op_write_increment_mode_r;
