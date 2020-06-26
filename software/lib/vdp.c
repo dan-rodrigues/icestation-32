@@ -61,14 +61,14 @@ void vdp_set_layer_map_base(uint8_t layer, uint16_t address) {
     static uint16_t combined_base = 0;
 
     update_layer_address(layer, address, &combined_base);
-    VDP_SCROLL_MAP_ADDRESS_BASE[0] = combined_base;
+    VDP_SCROLL_MAP_ADDRESS_BASE = combined_base;
 }
 
 void vdp_set_layer_tile_base(uint8_t layer, uint16_t address) {
     static uint16_t combined_base = 0;
 
     update_layer_address(layer, address, &combined_base);
-    VDP_SCROLL_TILE_ADDRESS_BASE[0] = combined_base;
+    VDP_SCROLL_TILE_ADDRESS_BASE = combined_base;
 }
 
 void vdp_set_alpha_over_layers(VDPLayer layers) {

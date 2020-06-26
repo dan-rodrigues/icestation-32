@@ -291,6 +291,12 @@ module vdp #(
                     8: begin
                         cop_enable <= register_write_data[0];
                     end
+                    9: begin
+                        scroll_tile_base <= register_write_data;
+                    end
+                    10: begin
+                        scroll_map_base <= register_write_data;
+                    end
                     // (move the regs here, space available now)
                     default: begin
                         `stop($display("unimplemented register: %x", register_write_address);)
@@ -298,11 +304,8 @@ module vdp #(
                 endcase
             end else if (register_write_address[5:4] == 2'b01) begin
                 case (register_write_address[3:2])
-                    // can save LUTs by packing this into a single reg and write all at once
-                    0: scroll_tile_base <= register_write_data;
-                    1: scroll_x[register_write_address[1:0]] <= register_write_data;
-                    2: scroll_y[register_write_address[1:0]] <= register_write_data;
-                    3: scroll_map_base <= register_write_data;
+                    0: scroll_x[register_write_address[1:0]] <= register_write_data;
+                    1: scroll_y[register_write_address[1:0]] <= register_write_data;
                 endcase
             end else if (register_write_address[5:4] == 2'b10) begin
                 case (register_write_address[3:0])
