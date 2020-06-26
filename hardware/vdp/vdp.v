@@ -205,7 +205,6 @@ module vdp #(
     reg [13:0] sprite_tile_base;
 
     reg [15:0] vram_write_data_16b;
-
     reg [1:0] vram_port_write_en_mask;
     reg [14:0] vram_write_address_full;
     wire [13:0] vram_write_address_16b = vram_write_address_full[14:1];
@@ -214,12 +213,29 @@ module vdp #(
     
     reg cop_enable;
 
+    // --- Writes: comb. ---
+
+    always @* begin
+        palette_write_en = 0;
+
+        if (register_write_en) begin
+            if (register_write_address[5:4] == 2'b00) begin
+                case (register_write_address[3:0])
+                    3: begin
+                        palette_write_en = 1;
+                    end
+                endcase
+            end
+        end
+    end
+
+    // --- Writes: clocked ---
+
     always @(posedge clk) begin
         if (reset) begin
             cop_enable <= 0;
         end
 
-        palette_write_en <= 0;
         sprite_metadata_write_en <= 0;
 
         sprite_metadata_block_select <= sprite_metadata_block_select_nx;
@@ -252,8 +268,7 @@ module vdp #(
                         palette_write_address <= register_write_data[7:0];
                     end
                     3: begin
-                        pal_write_data <= register_write_data;
-                        palette_write_en <= 1;
+                        // (palette write, which is handed separately above)
                     end
                     4: begin
                         vram_write_address_full <= register_write_data;
@@ -348,9 +363,9 @@ module vdp #(
 
     // --- Palette RAM ---
 
-    reg [7:0] palette_write_address = 0;
-    reg [15:0] pal_write_data;
-    reg palette_write_en = 0;
+    reg [7:0] palette_write_address;
+    wire [15:0] pal_write_data = register_write_data;
+    reg palette_write_en;
 
     reg [15:0] palette_ram [0:255];
     reg [15:0] palette_output;
@@ -833,16 +848,19 @@ module vdp #(
     wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 7);
 
     // NOTE: this may effect sprite fillrate so this should probably be wound back a bit with pipeline delay etc.
-    wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+
+    // wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+    wire affine_x_end = line_ended;
 
     reg affine_offscreen;
-    localparam affine_x_initial = -2;
 
+    localparam AFFINE_X_INITIAL = -2;
+    
     always @(posedge clk) begin
         affine_x <= affine_x + 1;
 
         if (affine_x_start) begin
-            affine_x <= affine_x_initial;
+            affine_x <= AFFINE_X_INITIAL;
             affine_offscreen <= 0;
         end else if (affine_x_end) begin
             affine_offscreen <= 1;
