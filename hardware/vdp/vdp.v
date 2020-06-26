@@ -195,14 +195,16 @@ module vdp #(
 
     wire affine_enabled = layer_enable[5];
 
-    reg [13:0] scroll_tile_base [0:3];
-    reg [13:0] scroll_map_base [0:3];
+    reg [15:0] scroll_tile_base;
+    reg [15:0] scroll_map_base;
+
     reg [15:0] scroll_x [0:3];
     reg [15:0] scroll_y [0:3];
 
     reg [3:0] scroll_use_wide_map;
 
-    reg [13:0] sprite_tile_base;
+    reg [3:0] sprite_tile_base;
+    wire [13:0] full_sprite_tile_base = {sprite_tile_base, 10'b0};
 
     reg [15:0] vram_write_data_16b;
     reg [1:0] vram_port_write_en_mask;
@@ -284,11 +286,12 @@ module vdp #(
                         vram_port_address_increment <= register_write_data[7:0];
                     end
                     7: begin
-                        sprite_tile_base <= register_write_data;
+                        sprite_tile_base <= register_write_data[13:10];
                     end
                     8: begin
                         cop_enable <= register_write_data[0];
                     end
+                    // (move the regs here, space available now)
                     default: begin
                         `stop($display("unimplemented register: %x", register_write_address);)
                     end
@@ -296,10 +299,10 @@ module vdp #(
             end else if (register_write_address[5:4] == 2'b01) begin
                 case (register_write_address[3:2])
                     // can save LUTs by packing this into a single reg and write all at once
-                    0: scroll_tile_base[register_write_address[1:0]] <= register_write_data;
+                    0: scroll_tile_base <= register_write_data;
                     1: scroll_x[register_write_address[1:0]] <= register_write_data;
                     2: scroll_y[register_write_address[1:0]] <= register_write_data;
-                    3: scroll_map_base[register_write_address[1:0]] <= register_write_data;
+                    3: scroll_map_base <= register_write_data;
                 endcase
             end else if (register_write_address[5:4] == 2'b10) begin
                 case (register_write_address[3:0])
@@ -510,23 +513,23 @@ module vdp #(
             // 0
             gen_even_hscroll = scroll_x[0];
             gen_even_scroll_y = scroll_y[0];
-            gen_even_map_base = map_base_coarse_to_address(scroll_map_base[0]);
+            gen_even_map_base = full_scroll_map_base(0);
             gen_even_use_wide_map = scroll_use_wide_map[0];
             // 1
             gen_odd_hscroll = scroll_x[1];
             gen_odd_scroll_y = scroll_y[1];
-            gen_odd_map_base = map_base_coarse_to_address(scroll_map_base[1]);
+            gen_odd_map_base = full_scroll_map_base(1);
             gen_odd_use_wide_map = scroll_use_wide_map[1];
         end else begin
             // 2
             gen_even_hscroll = scroll_x[2];
             gen_even_scroll_y = scroll_y[2];
-            gen_even_map_base = map_base_coarse_to_address(scroll_map_base[2]);
+            gen_even_map_base = full_scroll_map_base(2);
             gen_even_use_wide_map = scroll_use_wide_map[2];
             // 3
             gen_odd_hscroll = scroll_x[3];
             gen_odd_scroll_y = scroll_y[3];
-            gen_odd_map_base = map_base_coarse_to_address(scroll_map_base[3]);
+            gen_odd_map_base = full_scroll_map_base(3);
             gen_odd_use_wide_map = scroll_use_wide_map[3];
         end
     end
@@ -720,7 +723,7 @@ module vdp #(
                 // next next: s1 prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y[1][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[1];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[1]);
+                tile_address_gen_base_address = full_scroll_tile_base(1);
             end
             1: begin
                 // now: sprite row data available
@@ -733,7 +736,7 @@ module vdp #(
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y[2][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[2];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[2]);
+                tile_address_gen_base_address = full_scroll_tile_base(2);
             end
             2: begin
                 // now: nothing, because this was a CPU write
@@ -745,7 +748,7 @@ module vdp #(
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y[3][2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[3];
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[3]);
+                tile_address_gen_base_address = full_scroll_tile_base(3);
             end
             3: begin
                 gen_toggle_nx = 0;
@@ -800,7 +803,7 @@ module vdp #(
                 // s0: prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y[0][2:0];
                 tile_address_gen_map_data_in = vram_read_data_even_r;
-                tile_address_gen_base_address = tile_base_coarse_to_address(scroll_tile_base[0]);
+                tile_address_gen_base_address = full_scroll_tile_base(0);
             end
         endcase
     end
@@ -827,7 +830,7 @@ module vdp #(
         .meta_block_select(sprite_metadata_block_select),
         .meta_we(sprite_metadata_write_en),
 
-        .vram_base_address(tile_base_coarse_to_address(sprite_tile_base)),
+        .vram_base_address(full_sprite_tile_base),
         .vram_read_address(vram_sprite_address),
         .vram_read_data(vram_read_data_r),
         .vram_data_valid(vram_sprite_read_data_valid),
@@ -855,7 +858,7 @@ module vdp #(
     reg affine_offscreen;
 
     localparam AFFINE_X_INITIAL = -2;
-    
+
     always @(posedge clk) begin
         affine_x <= affine_x + 1;
 
@@ -916,6 +919,15 @@ module vdp #(
     // convenience functions for address mapping, these could be combined to a single function
     // but the ability to configure BASE_BITS is being removed eventually so not going to bother with that
 
+    function [13:0] full_scroll_tile_base;
+        input [1:0] layer;
+
+        begin
+            full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 10'b0};
+        end
+
+    endfunction
+
     function [13:0] tile_base_coarse_to_address;
         input [13:0] tile_base;
 
@@ -928,14 +940,11 @@ module vdp #(
 
     endfunction
         
-    function [13:0] map_base_coarse_to_address;
-        input [13:0] map_base;
+    function [13:0] full_scroll_map_base;
+        input [1:0] layer;
 
         begin
-            map_base_coarse_to_address = {
-                map_base[13:13 - MAP_BASE_BITS + 1],
-                {(14 - MAP_BASE_BITS){1'b0}}
-            };
+            full_scroll_map_base = {scroll_map_base >> (layer * 4), 10'b0};
         end
 
     endfunction

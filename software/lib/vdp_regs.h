@@ -14,6 +14,7 @@
 
 static VDP_REG VDP_RENDER_CTRL_BASE = VDP_BASE + 0x20;
 
+// (these base regs are no longer separate, should be combined and relocated)
 static VDP_REG VDP_SCROLL_TILE_ADDRESS_BASE = VDP_BASE + 0x10;
 static VDP_REG VDP_HSCROLL_BASE = VDP_BASE + 0x14;
 static VDP_REG VDP_VSCROLL_BASE = VDP_BASE + 0x18;
