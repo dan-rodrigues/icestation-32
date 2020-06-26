@@ -138,7 +138,7 @@ module vdp #(
 
     // --- Host interface ---
 
-    wire [5:0] register_write_address, register_read_address;
+    wire [4:0] register_write_address, register_read_address;
     wire [15:0] register_write_data;
     wire register_write_en;
 
@@ -165,7 +165,7 @@ module vdp #(
 
     // --- Copper ---
 
-    wire [5:0] cop_write_address;
+    wire [4:0] cop_write_address;
     wire [15:0] cop_write_data;
     wire copper_write_en;
     wire cop_write_ready;
@@ -221,7 +221,7 @@ module vdp #(
         palette_write_en = 0;
 
         if (register_write_en) begin
-            if (register_write_address[5:4] == 2'b00) begin
+            if (!register_write_address[4]) begin
                 case (register_write_address[3:0])
                     3: begin
                         palette_write_en = 1;
@@ -256,7 +256,7 @@ module vdp #(
         end
 
         if (register_write_en) begin
-            if (register_write_address[5:4] == 2'b00) begin
+            if (!register_write_address[4]) begin
                 case (register_write_address[3:0])
                     0: begin
                         sprite_metadata_address <= register_write_data[7:0];
@@ -297,24 +297,23 @@ module vdp #(
                     10: begin
                         scroll_map_base <= register_write_data;
                     end
-                    // (move the regs here, space available now)
+                    11: begin
+                        layer_enable <= register_write_data[5:0];
+                    end
+                    12: begin
+                        layer_enable_alpha_over <= register_write_data[7:0];
+                    end
+                    13: begin
+                        scroll_use_wide_map <= register_write_data[3:0];
+                    end
                     default: begin
                         `stop($display("unimplemented register: %x", register_write_address);)
                     end
                 endcase
-            end else if (register_write_address[5:4] == 2'b01) begin
+            end else if (register_write_address[4]) begin
                 case (register_write_address[3:2])
                     0: scroll_x[register_write_address[1:0]] <= register_write_data;
                     1: scroll_y[register_write_address[1:0]] <= register_write_data;
-                endcase
-            end else if (register_write_address[5:4] == 2'b10) begin
-                case (register_write_address[3:0])
-                    0: layer_enable <= register_write_data[5:0];
-                    1: layer_enable_alpha_over <= register_write_data[7:0];
-                    2: scroll_use_wide_map <= register_write_data[3:0];
-                    default: begin
-                        `stop($display("unimplemented register: %x", register_write_address);)
-                    end
                 endcase
             end
         end
@@ -919,26 +918,13 @@ module vdp #(
         vram_we_odd <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[1];
     end
 
-    // convenience functions for address mapping, these could be combined to a single function
-    // but the ability to configure BASE_BITS is being removed eventually so not going to bother with that
+    // --- VRAM base address mapping functions ---
 
     function [13:0] full_scroll_tile_base;
         input [1:0] layer;
 
         begin
             full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 10'b0};
-        end
-
-    endfunction
-
-    function [13:0] tile_base_coarse_to_address;
-        input [13:0] tile_base;
-
-        begin
-            tile_base_coarse_to_address = {
-                tile_base[13:13 - CHAR_BASE_BITS + 1],
-                {(14 - CHAR_BASE_BITS){1'b0}}
-            };
         end
 
     endfunction
