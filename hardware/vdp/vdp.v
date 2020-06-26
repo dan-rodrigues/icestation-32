@@ -204,13 +204,14 @@ module vdp #(
 
     reg [13:0] sprite_tile_base;
 
-    reg [13:0] vram_write_address_16b;
     reg [15:0] vram_write_data_16b;
 
     reg [1:0] vram_port_write_en_mask;
-    reg [14:0] vram_write_address_full = 0;
+    reg [14:0] vram_write_address_full;
+    wire [13:0] vram_write_address_16b = vram_write_address_full[14:1];
     reg [7:0] vram_port_address_increment;
-
+    reg vram_write_pending;
+    
     reg cop_enable;
 
     always @(posedge clk) begin
@@ -229,6 +230,11 @@ module vdp #(
 
         if (palette_write_en) begin
             palette_write_address <= palette_write_address + 1;
+        end
+
+        if (vram_write_pending && vram_written) begin
+            vram_write_pending <= 0;
+            vram_write_address_full <= vram_write_address_full + vram_port_address_increment;
         end
 
         if (register_write_en) begin
@@ -254,12 +260,10 @@ module vdp #(
                         vram_port_write_en_mask <= 2'b00;
                     end
                     5: begin
-                        // TODO: optimise this so the address doesn't need duplicating
-                        // can get a vram_written input from sequencer below
                         vram_write_data_16b <= register_write_data;
-                        vram_write_address_16b <= vram_write_address_full[14:1];
                         vram_port_write_en_mask <= vram_write_address_full[0] ? 2'b10 : 2'b01;
-                        vram_write_address_full <= vram_write_address_full + vram_port_address_increment;
+
+                        vram_write_pending <= 1;
                     end
                     6: begin
                         vram_port_address_increment <= register_write_data[7:0];
@@ -667,6 +671,7 @@ module vdp #(
     reg [3:0] scroll_char_load;
 
     reg load_all_scroll_row_data;
+    reg vram_written;
 
     always @* begin
         scroll_meta_load = 0;
@@ -679,6 +684,7 @@ module vdp #(
         gen_toggle_nx = 0;
         vram_address_even_nx = 0;
         vram_address_odd_nx = 0;
+        vram_written = 0;
 
         tile_address_gen_scroll_y_granular = 0;
         tile_address_gen_map_data_in = 0;
@@ -770,6 +776,7 @@ module vdp #(
                 vram_address_even_nx = vram_write_address_16b;
                 vram_address_odd_nx = vram_write_address_16b;
                 vram_write_data_nx = {2{vram_write_data_16b}};
+                vram_written = 1;
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
 
                 // now: s0/s1 map data
