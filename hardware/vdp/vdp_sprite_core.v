@@ -227,8 +227,15 @@ module vdp_sprite_core(
     assign line_buffer_display_data = line_buffer_select ?
         line_buffer_data_out_1 : line_buffer_data_out_0;
 
-     // offset position needed because 0 in offset is where the active region actually starts
+     // yosys hangs on the "make count" target with x_r removed:
+     // > 28.39. Executing DFF2DFFE pass (transform $dff to $dffe where applicable).
+     // ...
+     // need to investigate this, leaving this commented out until then
+     // It would save on LCs though
+     // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
+
     assign line_buffer_display_read_address = x_r;
+    // assign line_buffer_display_read_address = x;
 
     // These are registered in the sprite_line_buffer module
 

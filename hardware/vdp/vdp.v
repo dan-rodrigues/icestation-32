@@ -222,7 +222,7 @@ module vdp #(
 
         // This block has the same structure as the below one, for consistency
         // Looks odd while only one case is handled for the time being
-        
+
         if (register_write_en) begin
             if (!register_write_address[4]) begin
                 case (register_write_address[3:0])
@@ -460,7 +460,7 @@ module vdp #(
         end
     end
 
-    // alternatively instead fo comparing all bits in raster_x, just check for all 1-bits
+    // alternatively instead of comparing all bits in raster_x, just check for all 1-bits
     // since it counts up and resets to 0 predictably
     wire sprites_x_start = (raster_x == (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME - 1));
     wire sprites_x_reset = line_ended;
