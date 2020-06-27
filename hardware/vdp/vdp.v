@@ -256,6 +256,7 @@ module vdp #(
         if (vram_write_pending && vram_written) begin
             vram_write_pending <= 0;
             vram_write_address_full <= vram_write_address_full + vram_port_address_increment;
+            vram_port_write_en_mask <= 2'b00;
         end
 
         if (register_write_en) begin
@@ -576,9 +577,9 @@ module vdp #(
 
     vdp_map_address_generator odd_generator(
         .raster_y(raster_y),
-        .raster_x_coarse(raster_x_offset[9:3]),
+        .raster_x_coarse(raster_x_offset[9:3] + 1),
 
-        .scroll_x_coarse(gen_odd_hscroll[9:3] + 1),
+        .scroll_x_coarse(gen_odd_hscroll[9:3]),
         .scroll_y(gen_odd_scroll_y),
 
         .map_base_address(gen_odd_map_base),
