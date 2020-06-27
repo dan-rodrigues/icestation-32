@@ -488,6 +488,10 @@ module vdp #(
 
     // --- Scroll pixel generators ---
 
+    // relocate somewhere better
+    localparam LAYERS_TOTAL = 3; // 4;
+    localparam LAYER_LAST = LAYERS_TOTAL - 1;
+
     wire [31:0] scroll_output_pixel;
 
     wire [7:0] scroll0_output_pixel = scroll_output_pixel[7:0];
@@ -497,9 +501,9 @@ module vdp #(
 
     generate
         genvar i;
-        for (i = 0; i < 4; i = i + 1) begin : scroll_pixel_gen
+        for (i = 0; i < LAYERS_TOTAL; i = i + 1) begin : scroll_pixel_gen
             vdp_scroll_pixel_generator #(
-                .STAGE_PIXEL_ROW(i != 3)
+                .STAGE_PIXEL_ROW(i != LAYER_LAST)
             ) scroll_pixel_generator(
                 .clk(clk),
 
@@ -518,6 +522,9 @@ module vdp #(
     endgenerate
 
     // --- Priority control --- 
+
+    // !
+    localparam [5:0] LAYER_ENABLE_MASK = (1 << (LAYERS_TOTAL)) - 1 | `LAYER_SPRITES_OHE;
 
     wire [7:0] prioritized_pixel;
     wire [4:0] prioritized_masked_layer;
@@ -542,7 +549,7 @@ module vdp #(
         .sprite_pixel(sprite_pixel),
         .sprite_priority(sprite_pixel_priority),
 
-        .layer_enable(layer_enable[4:0] & (affine_enabled ? 5'b10001 : 5'b11111)),
+        .layer_enable(layer_enable[4:0] & (affine_enabled ? 5'b10001 : LAYER_ENABLE_MASK)),
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),
@@ -570,7 +577,7 @@ module vdp #(
     wire [15:0] scroll_gen_palette;
     wire [3:0] scroll_gen_hflip;
 
-    vdp_vram_bus_arbiter_interleaved bus_arbiter(
+    vdp_vram_bus_arbiter_standard bus_arbiter(
         .clk(clk),
 
         .raster_x_offset(raster_x_offset),
