@@ -27,19 +27,49 @@ module vdp_vram_bus_arbiter_interleaved(
     input [3:0] scroll_tile_base_0, scroll_tile_base_1, scroll_tile_base_2, scroll_tile_base_3,
 
     // 4 layers combined
-    input [3:0] scroll_use_wide_map,
+    input [15:0] scroll_tile_base,
+    input [15:0] scroll_map_base,
 
-    // VRAM read data
-    input [15:0] vram_read_data_even, vram_read_data_odd,
+    // Affine attributes
+
+    input affine_enabled,
+    input affine_offscreen,
+    input [13:0] affine_vram_address_even, affine_vram_address_odd,
+
+    // Sprite attributes
+
+    input [13:0] vram_sprite_address,
+
+    // 4 layers combined
+    input [3:0] scroll_use_wide_map,
 
     // Output scroll attributes
 
     output [3:0] scroll_palette_0, scroll_palette_1, scroll_palette_2, scroll_palette_3,
     output scroll_x_flip_0, scroll_x_flip_1, scroll_x_flip_2, scroll_x_flip_3,
 
-    // VRAM address
+    // Output control for various functional blocks
 
-    output reg [13:0] vram_address_even, output reg [13:0] vram_address_odd
+    output reg load_all_scroll_row_data,
+    output reg vram_written,
+    output reg vram_sprite_read_data_valid,
+
+    output reg [3:0] scroll_char_load,
+    output reg [3:0] scroll_meta_load,
+
+    // VRAM write control
+
+    input [1:0] vram_port_write_en_mask,
+    input [13:0] vram_write_address_16b,
+    input [15:0] vram_write_data_16b,
+
+    // VRAM interface
+
+    input [15:0] vram_read_data_even,  vram_read_data_odd,
+
+    output reg [13:0] vram_address_even,  vram_address_odd,
+    output reg [15:0] vram_write_data_even, vram_write_data_odd,
+    output reg vram_we_even, vram_we_odd
 );
     // --- Layer attribute selection ---
 
@@ -53,11 +83,11 @@ module vdp_vram_bus_arbiter_interleaved(
     reg [13:0] gen_odd_map_base;
     reg gen_odd_use_wide_map;
         
-    wire [3:0] gen_even_palette = vram_read_data_even_r[15:12];
-    wire gen_even_hflip = vram_read_data_even_r[9];
+    wire [3:0] gen_even_palette = vram_read_data_even[15:12];
+    wire gen_even_hflip = vram_read_data_even[9];
 
-    wire [3:0] gen_odd_palette = vram_read_data_odd_r[15:12];
-    wire gen_odd_hflip = vram_read_data_odd_r[9];
+    wire [3:0] gen_odd_palette = vram_read_data_odd[15:12];
+    wire gen_odd_hflip = vram_read_data_odd[9];
 
     wire [13:0] gen_even_next_map_address;
     wire [13:0] gen_odd_next_map_address;
@@ -72,24 +102,24 @@ module vdp_vram_bus_arbiter_interleaved(
     always @* begin
         if (!gen_toggle) begin
             // 0
-            gen_even_hscroll = scroll_x[0];
-            gen_even_scroll_y = scroll_y[0];
+            gen_even_hscroll = scroll_x_0;
+            gen_even_scroll_y = scroll_y_0;
             gen_even_map_base = full_scroll_map_base(0);
             gen_even_use_wide_map = scroll_use_wide_map[0];
             // 1
-            gen_odd_hscroll = scroll_x[1];
-            gen_odd_scroll_y = scroll_y[1];
+            gen_odd_hscroll = scroll_x_1;
+            gen_odd_scroll_y = scroll_y_1;
             gen_odd_map_base = full_scroll_map_base(1);
             gen_odd_use_wide_map = scroll_use_wide_map[1];
         end else begin
             // 2
-            gen_even_hscroll = scroll_x[2];
-            gen_even_scroll_y = scroll_y[2];
+            gen_even_hscroll = scroll_x_2;
+            gen_even_scroll_y = scroll_y_2;
             gen_even_map_base = full_scroll_map_base(2);
             gen_even_use_wide_map = scroll_use_wide_map[2];
             // 3
-            gen_odd_hscroll = scroll_x[3];
-            gen_odd_scroll_y = scroll_y[3];
+            gen_odd_hscroll = scroll_x_3;
+            gen_odd_scroll_y = scroll_y_3;
             gen_odd_map_base = full_scroll_map_base(3);
             gen_odd_use_wide_map = scroll_use_wide_map[3];
         end
@@ -151,14 +181,18 @@ module vdp_vram_bus_arbiter_interleaved(
         // (scroll0 meta doesn't need to be held)
 
         if (scroll_meta_load[`LAYER_SCROLL1])
-            scroll_map_data_h[`LAYER_SCROLL1] <= vram_read_data_odd_r;
+            scroll_map_data_h[`LAYER_SCROLL1] <= vram_read_data_odd;
         if (scroll_meta_load[`LAYER_SCROLL2])
-            scroll_map_data_h[`LAYER_SCROLL2] <= vram_read_data_even_r; 
+            scroll_map_data_h[`LAYER_SCROLL2] <= vram_read_data_even; 
         if (scroll_meta_load[`LAYER_SCROLL3])
-            scroll_map_data_h[`LAYER_SCROLL3] <= vram_read_data_odd_r;
+            scroll_map_data_h[`LAYER_SCROLL3] <= vram_read_data_odd;
     end
 
     // --- VRAM bus control ---
+
+    reg [13:0] vram_address_even_nx, vram_address_odd_nx;
+    reg [1:0] vram_render_write_en_mask_nx;
+    reg [31:0] vram_write_data_nx;
 
     always @* begin
         scroll_meta_load = 0;
@@ -190,7 +224,7 @@ module vdp_vram_bus_arbiter_interleaved(
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s1 prepare tile address gen
-                tile_address_gen_scroll_y_granular = scroll_y[1][2:0];
+                tile_address_gen_scroll_y_granular = scroll_y_1[2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[1];
                 tile_address_gen_base_address = full_scroll_tile_base(1);
             end
@@ -203,7 +237,7 @@ module vdp_vram_bus_arbiter_interleaved(
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s3 tile
-                tile_address_gen_scroll_y_granular = scroll_y[2][2:0];
+                tile_address_gen_scroll_y_granular = scroll_y_2[2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[2];
                 tile_address_gen_base_address = full_scroll_tile_base(2);
             end
@@ -215,7 +249,7 @@ module vdp_vram_bus_arbiter_interleaved(
                 vram_address_odd_nx = tile_address_gen_tile_address_out;
 
                 // next next: s3 tile
-                tile_address_gen_scroll_y_granular = scroll_y[3][2:0];
+                tile_address_gen_scroll_y_granular = scroll_y_3[2:0];
                 tile_address_gen_map_data_in = scroll_map_data_h[3];
                 tile_address_gen_base_address = full_scroll_tile_base(3);
             end
@@ -270,17 +304,14 @@ module vdp_vram_bus_arbiter_interleaved(
                 scroll_meta_load = `LAYER_SCROLL0_OHE | `LAYER_SCROLL1_OHE;
 
                 // s0: prepare tile address gen
-                tile_address_gen_scroll_y_granular = scroll_y[0][2:0];
-                tile_address_gen_map_data_in = vram_read_data_even_r;
+                tile_address_gen_scroll_y_granular = scroll_y_0[2:0];
+                tile_address_gen_map_data_in = vram_read_data_even;
                 tile_address_gen_base_address = full_scroll_tile_base(0);
             end
         endcase
     end
 
     // --- VRAM bus registers ---
-
-    reg [15:0] vram_read_data_even_r;
-    reg [15:0] vram_read_data_odd_r;
 
     wire affine_needs_vram = affine_enabled && !affine_offscreen;
 
@@ -289,25 +320,29 @@ module vdp_vram_bus_arbiter_interleaved(
         vram_write_data_even <= vram_write_data_nx[15:0];
         vram_we_even <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[0];
 
-        vram_read_data_even_r <= vram_read_data_even;
-        vram_read_data_odd_r <= vram_read_data_odd;
-
         vram_address_odd <= affine_needs_vram ? affine_vram_address_odd : vram_address_odd_nx;
         vram_write_data_odd <= vram_write_data_nx[31:16];
         vram_we_odd <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[1];
     end
 
-/*
-reg [13:0] vram_address_even_nx;
-    reg [13:0] vram_address_odd_nx;
-    reg [1:0] vram_render_write_en_mask_nx;
-    reg [31:0] vram_write_data_nx;
+    // --- VRAM base address mapping functions ---
 
-    reg [3:0] scroll_meta_load;
-    reg [3:0] scroll_char_load;
+    function [13:0] full_scroll_tile_base;
+        input [1:0] layer;
 
-    reg load_all_scroll_row_data;
-    reg vram_written;
-    */
+        begin
+            full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 10'b0};
+        end
+
+    endfunction
+        
+    function [13:0] full_scroll_map_base;
+        input [1:0] layer;
+
+        begin
+            full_scroll_map_base = {scroll_map_base >> (layer * 4), 10'b0};
+        end
+
+    endfunction
 
 endmodule
