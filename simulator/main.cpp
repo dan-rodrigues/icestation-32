@@ -194,9 +194,9 @@ int main(int argc, const char * argv[]) {
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-            sim.button_1 = state[SDL_SCANCODE_LEFT];
+            sim.button_1 = state[SDL_SCANCODE_RIGHT];
             sim.button_2 = state[SDL_SCANCODE_RSHIFT];
-            sim.button_3 = state[SDL_SCANCODE_RIGHT];
+            sim.button_3 = state[SDL_SCANCODE_LEFT];
 
             // measure time spent to render frame
             uint64_t current_ticks = SDL_GetTicks();
