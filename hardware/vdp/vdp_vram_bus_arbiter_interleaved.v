@@ -162,7 +162,7 @@ module vdp_vram_bus_arbiter_interleaved(
         .map_base_address(gen_even_map_base),
         .stride(gen_even_use_wide_map ? 128 : 64),
 
-        .map_address(gen_even_next_map_address)
+        .map_address_16b(gen_even_next_map_address)
     );
 
     vdp_map_address_generator odd_generator(
@@ -175,7 +175,7 @@ module vdp_vram_bus_arbiter_interleaved(
         .map_base_address(gen_odd_map_base),
         .stride(gen_odd_use_wide_map ? 128 : 64),
 
-        .map_address(gen_odd_next_map_address)
+        .map_address_16b(gen_odd_next_map_address)
     );
 
     // --- Scroll meta prefetch ---

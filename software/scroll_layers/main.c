@@ -25,11 +25,12 @@ int main() {
 
     const uint16_t tile_vram_base = 0x0000;
 
+    // this being changed to non-interleaved layout
     const uint16_t map_vram_base = 0x1000;
-    const uint16_t map_size = 0x2000; // this size might be confusing due to (0x1000 words * 2) for interleaving
+    const uint16_t map_size = 0x1000;
 
     for (uint8_t i = 0; i < layer_count; i++) {
-        uint16_t layer_map_base = i / 2 * map_size + map_vram_base;
+        uint16_t layer_map_base = i * map_size + map_vram_base;
         vdp_set_layer_map_base(i, layer_map_base);
         vdp_set_layer_tile_base(i, tile_vram_base);
     }
@@ -55,9 +56,9 @@ int main() {
     const uint8_t flip_y = false;
 
     for (uint8_t i = 0; i < layer_count; i++) {
-        uint16_t layer_map_base = (i / 2) * map_size + map_vram_base;
-        vdp_seek_vram(layer_map_base + (i & 1));
-        vdp_set_vram_increment(2);
+        uint16_t layer_map_base = i * map_size + map_vram_base;
+        vdp_seek_vram(layer_map_base);
+        vdp_set_vram_increment(1);
 
         uint8_t palette_id = i;
 

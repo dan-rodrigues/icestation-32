@@ -51,10 +51,16 @@ void vdp_enable_copper(uint8_t enable) {
 }
 
 static void update_layer_address(uint8_t layer, uint16_t address, uint16_t *combined) {
+#ifdef VDP_INTERLEAVED_MAP
+    const uint8_t address_shift = 11;
+#else
+    const uint8_t address_shift = 10;
+#endif
+
     uint8_t shift = layer * 4;
     uint16_t mask = 0xf << shift;
     *combined &= ~mask;
-    *combined |= (address >> 11 &0xf) << shift;
+    *combined |= (address >> address_shift &0xf) << shift;
 }
 
 void vdp_set_layer_map_base(uint8_t layer, uint16_t address) {

@@ -72,56 +72,26 @@ module vdp_vram_bus_arbiter_standard(
 );
     // --- Layer attribute selection ---
 
-    reg [9:0] gen_even_hscroll;
-    reg [9:0] gen_even_scroll_y;
-    reg [13:0] gen_even_map_base;
-    reg gen_even_use_wide_map;
-
-    reg [9:0] gen_odd_hscroll;
-    reg [9:0] gen_odd_scroll_y;
-    reg [13:0] gen_odd_map_base;
-    reg gen_odd_use_wide_map;
-        
-    wire [3:0] gen_even_palette = vram_read_data_even[15:12];
-    wire gen_even_hflip = vram_read_data_even[9];
-
-    wire [3:0] gen_odd_palette = vram_read_data_odd[15:12];
-    wire gen_odd_hflip = vram_read_data_odd[9];
-
-    wire [13:0] gen_even_next_map_address;
-    wire [13:0] gen_odd_next_map_address;
-
-    reg gen_toggle_nx;
-    reg gen_toggle;
-
-    always @(posedge clk) begin
-        gen_toggle <= gen_toggle_nx;
-    end
+    reg [10:0] scroll_x_selected;
+    reg [9:0] scroll_y_selected;
+    reg [13:0] scroll_map_base_selected;
+    reg scroll_use_wide_map_selected;
 
     always @* begin
-        if (!gen_toggle) begin
-            // 0
-            gen_even_hscroll = scroll_x_0;
-            gen_even_scroll_y = scroll_y_0;
-            gen_even_map_base = full_scroll_map_base(0);
-            gen_even_use_wide_map = scroll_use_wide_map[0];
-            // 1
-            gen_odd_hscroll = scroll_x_1;
-            gen_odd_scroll_y = scroll_y_1;
-            gen_odd_map_base = full_scroll_map_base(1);
-            gen_odd_use_wide_map = scroll_use_wide_map[1];
-        end else begin
-            // 2
-            gen_even_hscroll = scroll_x_2;
-            gen_even_scroll_y = scroll_y_2;
-            gen_even_map_base = full_scroll_map_base(2);
-            gen_even_use_wide_map = scroll_use_wide_map[2];
-            // 3
-            gen_odd_hscroll = scroll_x_3;
-            gen_odd_scroll_y = scroll_y_3;
-            gen_odd_map_base = full_scroll_map_base(3);
-            gen_odd_use_wide_map = scroll_use_wide_map[3];
-        end
+        case (map_address_layer_select)
+            `LAYER_SCROLL0: scroll_x_selected = scroll_x_0;
+            `LAYER_SCROLL1: scroll_x_selected = scroll_x_1;
+            default: scroll_x_selected = scroll_x_2;
+        endcase
+
+        case (map_address_layer_select)
+            `LAYER_SCROLL0: scroll_y_selected = scroll_y_0;
+            `LAYER_SCROLL1: scroll_y_selected = scroll_y_1;
+            default: scroll_y_selected = scroll_y_2;
+        endcase
+
+        scroll_map_base_selected = full_scroll_map_base(map_address_layer_select);
+        scroll_use_wide_map_selected = scroll_use_wide_map[map_address_layer_select];
     end
 
     // --- Tile address generator ---
@@ -146,80 +116,99 @@ module vdp_vram_bus_arbiter_standard(
 
     // --- Map address generators ---
 
+    // probably just need one now
+
     wire [10:0] raster_x_next_tile = raster_x_offset[9:3] + 1;
 
-    vdp_map_address_generator even_generator(
+    wire [13:0] gen_odd_next_map_address = gen_odd_next_map_address_full[14:1];
+    wire map_word_select = gen_odd_next_map_address_full[0];
+
+    // just register output of this?
+    // and run it a cycle earlier?
+    // reg [14:0] map_address_next_full;
+
+    // always @(posedge clk) begin
+    //     map_address_next_full <= gen_odd_next_map_address_full;
+    // end
+
+    wire [14:0] gen_odd_next_map_address_full;
+
+    vdp_map_address_generator #(
+        .REGISTERED_INPUTS(1)
+    ) map_address_generator (
+        .clk(clk),
+
         .raster_y(raster_y),
         .raster_x_coarse(raster_x_next_tile),
 
-        .scroll_x_coarse(gen_even_hscroll[9:3]),
-        .scroll_y(gen_even_scroll_y),
+        .scroll_x_coarse(scroll_x_selected[9:3]),
+        .scroll_y(scroll_y_selected),
 
-        .map_base_address(gen_even_map_base),
-        .stride(gen_even_use_wide_map ? 128 : 64),
+        .map_base_address(scroll_map_base_selected),
+        .stride(scroll_use_wide_map_selected ? 128 : 64),
 
-        .map_address(gen_even_next_map_address)
-    );
-
-    vdp_map_address_generator odd_generator(
-        .raster_y(raster_y),
-        .raster_x_coarse(raster_x_next_tile),
-
-        .scroll_x_coarse(gen_odd_hscroll[9:3]),
-        .scroll_y(gen_odd_scroll_y),
-
-        .map_base_address(gen_odd_map_base),
-        .stride(gen_odd_use_wide_map ? 128 : 64),
-
-        .map_address(gen_odd_next_map_address)
+        .map_address_16b(gen_odd_next_map_address_full)
     );
 
     // --- Scroll meta prefetch ---
 
+    // FIXME: select which word to return from map data...
+
     reg [15:0] scroll_map_data_hold [0:3];
 
-    wire [3:0] even_palette = vram_read_data_even[15:12];
-    wire [3:0] odd_palette = vram_read_data_odd[15:12];
+    wire [3:0] palette_selected = map_selected_word[15:12];
+    wire x_flip_selected = map_selected_word[9];
 
-    wire even_x_flip = vram_read_data_even[9];
-    wire odd_x_flip = vram_read_data_odd[9];
-
-    assign scroll_palette_0 = even_palette;
-    assign scroll_palette_1 = odd_palette;
-    assign scroll_palette_2 = even_palette;
-    assign scroll_palette_3 = odd_palette;
-
-    assign scroll_x_flip_0 = even_x_flip;
-    assign scroll_x_flip_1 = odd_x_flip;
-    assign scroll_x_flip_2 = even_x_flip;
-    assign scroll_x_flip_3 = odd_x_flip;
+    // (delay_ff when this is sorted)
+    reg [2:0] map_word_select_delay;
+    wire map_word_select_delayed = map_word_select_delay[2];
 
     always @(posedge clk) begin
-        // (scroll0 meta doesn't need to be held)
+        map_word_select_delay <= {map_word_select_delay, map_word_select};
+    end
 
+    // note delay
+    wire [15:0] map_selected_word = map_word_select_delayed ? vram_read_data_odd : vram_read_data_even;
+
+    // ...
+    assign scroll_palette_0 = palette_selected;
+    assign scroll_palette_1 = palette_selected;
+    assign scroll_palette_2 = palette_selected;
+    assign scroll_palette_3 = palette_selected;
+
+    assign scroll_x_flip_0 = x_flip_selected;
+    assign scroll_x_flip_1 = x_flip_selected;
+    assign scroll_x_flip_2 = x_flip_selected;
+    assign scroll_x_flip_3 = x_flip_selected;
+
+    always @(posedge clk) begin
+        if (scroll_meta_load[`LAYER_SCROLL0])
+            scroll_map_data_hold[`LAYER_SCROLL0] <= map_selected_word;
         if (scroll_meta_load[`LAYER_SCROLL1])
-            scroll_map_data_hold[`LAYER_SCROLL1] <= vram_read_data_odd;
+            scroll_map_data_hold[`LAYER_SCROLL1] <= map_selected_word;
         if (scroll_meta_load[`LAYER_SCROLL2])
-            scroll_map_data_hold[`LAYER_SCROLL2] <= vram_read_data_even; 
+            scroll_map_data_hold[`LAYER_SCROLL2] <= map_selected_word; 
         if (scroll_meta_load[`LAYER_SCROLL3])
-            scroll_map_data_hold[`LAYER_SCROLL3] <= vram_read_data_odd;
+            scroll_map_data_hold[`LAYER_SCROLL3] <= map_selected_word;
     end
 
     // --- VRAM bus control ---
 
-    reg [13:0] vram_address_even_nx, vram_address_odd_nx;
+    reg [13:0] vram_address_nx;
     reg [1:0] vram_render_write_en_mask_nx;
+
+    reg [1:0] map_address_layer_select;
 
     always @* begin
         scroll_meta_load = 0;
         scroll_char_load = 0;
 
+        map_address_layer_select = 0;
+
         load_all_scroll_row_data = 0;
         vram_render_write_en_mask_nx = 0;
 
-        gen_toggle_nx = 0;
-        vram_address_even_nx = 0;
-        vram_address_odd_nx = 0;
+        vram_address_nx = 0;
         vram_written = 0;
 
         tile_address_gen_scroll_y_granular = 0;
@@ -233,96 +222,89 @@ module vdp_vram_bus_arbiter_standard(
         // FIXME: revise for standard layout
         case ((raster_x[2:0] - 1) &3'b111)
             0: begin
-                // now: s2/s3 map data
-                scroll_meta_load = `LAYER_SCROLL2_OHE | `LAYER_SCROLL3_OHE;
+                // now: s1 map
+                scroll_meta_load = `LAYER_SCROLL1_OHE;
 
-                // next: s1 tile
-                vram_address_even_nx = tile_address_gen_tile_address_out;
-                vram_address_odd_nx = tile_address_gen_tile_address_out;
+                // next: sprite access
+                vram_address_nx = vram_sprite_address;
+
+                // next next: s0 prepare tile address gen
+                // (this could be packaged up in a seprate block considering it's the same pattern)
+                tile_address_gen_scroll_y_granular = scroll_y_0[2:0];
+                tile_address_gen_map_data_in = scroll_map_data_hold[0];
+                tile_address_gen_base_address = full_scroll_tile_base(0);
+            end
+            1: begin
+                // now: s2 map
+                scroll_meta_load = `LAYER_SCROLL2_OHE;
+
+                // next: s0 tile
+                vram_address_nx = tile_address_gen_tile_address_out;
 
                 // next next: s1 prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y_1[2:0];
                 tile_address_gen_map_data_in = scroll_map_data_hold[1];
                 tile_address_gen_base_address = full_scroll_tile_base(1);
             end
-            1: begin
-                // now: sprite row data available
-                vram_sprite_read_data_valid = 1;
+            2: begin
+                // next: s1 tile
+                vram_address_nx = tile_address_gen_tile_address_out;
 
-                // next: s2 tile
-                vram_address_even_nx = tile_address_gen_tile_address_out;
-                vram_address_odd_nx = tile_address_gen_tile_address_out;
-
-                // next next: s3 tile
+                // next next: s2 prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y_2[2:0];
                 tile_address_gen_map_data_in = scroll_map_data_hold[2];
                 tile_address_gen_base_address = full_scroll_tile_base(2);
             end
-            2: begin
-                // now: nothing, because this was a CPU write
+            3: begin
+                // now: sprites acccess
+                vram_sprite_read_data_valid = 1;
 
                 // next: s2 tile
-                vram_address_even_nx = tile_address_gen_tile_address_out;
-                vram_address_odd_nx = tile_address_gen_tile_address_out;
+                vram_address_nx = tile_address_gen_tile_address_out;
 
-                // next next: s3 tile
-                tile_address_gen_scroll_y_granular = scroll_y_3[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_hold[3];
-                tile_address_gen_base_address = full_scroll_tile_base(3);
+                // next next: s0 map
+                map_address_layer_select = `LAYER_SCROLL0;
             end
-            3: begin
-                gen_toggle_nx = 0;
-
+            4: begin
                 // now: s0 tile
                 scroll_char_load = `LAYER_SCROLL0_OHE;
 
-                // next: s3 tile
-                vram_address_even_nx = tile_address_gen_tile_address_out;
-                vram_address_odd_nx = tile_address_gen_tile_address_out;
+                // next: s0 map
+                vram_address_nx = gen_odd_next_map_address;
 
-                // next next: none
+                // next next: s1 map
+                map_address_layer_select = `LAYER_SCROLL1;
             end
-            4: begin
-                gen_toggle_nx = 1;
-
+            5: begin
                 // now: s1 tile
                 scroll_char_load = `LAYER_SCROLL1_OHE;
 
-                // next: s0/s1 map address
-                vram_address_even_nx = gen_even_next_map_address;
-                vram_address_odd_nx = gen_odd_next_map_address;
-            end
-            5: begin
-                // now: s2 tile
-                scroll_char_load = `LAYER_SCROLL2_OHE;
+                // next: s1 map
+                vram_address_nx = gen_odd_next_map_address;
 
-                // next: s1/s2 map address
-                vram_address_even_nx = gen_even_next_map_address;
-                vram_address_odd_nx = gen_odd_next_map_address;
+                // next next: s2 map
+                map_address_layer_select = `LAYER_SCROLL2;
             end
             6: begin
-                // next: sprite row fetch (if any, this could be ignored in sprite_core)
-                vram_address_even_nx = vram_sprite_address;
-                vram_address_odd_nx = vram_sprite_address;
+                // now: s1 tile
+                // (this should be implicit according to load_all...)
+                scroll_char_load = `LAYER_SCROLL2_OHE;
+
+                // next: s2 map
+                vram_address_nx = gen_odd_next_map_address;
 
                 // now: s3 tile, which is loaded simultaneously with the previously prefetched layers
                 // the offset added to count[2:0] compensates for this being a cycle earlier
                 load_all_scroll_row_data = 1;
             end
             7: begin
+                // now: s0 map data
+                scroll_meta_load = `LAYER_SCROLL0_OHE;
+
                 // host write - every 8 cycles
-                vram_address_even_nx = vram_write_address_16b;
-                vram_address_odd_nx = vram_write_address_16b;
+                vram_address_nx = vram_write_address_16b;
                 vram_written = 1;
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
-
-                // now: s0/s1 map data
-                scroll_meta_load = `LAYER_SCROLL0_OHE | `LAYER_SCROLL1_OHE;
-
-                // s0: prepare tile address gen
-                tile_address_gen_scroll_y_granular = scroll_y_0[2:0];
-                tile_address_gen_map_data_in = vram_read_data_even;
-                tile_address_gen_base_address = full_scroll_tile_base(0);
             end
         endcase
     end
@@ -339,10 +321,10 @@ module vdp_vram_bus_arbiter_standard(
     wire affine_needs_vram = affine_enabled && !affine_offscreen;
 
     always @(posedge clk) begin
-        vram_address_even <= affine_needs_vram ? affine_vram_address_even : vram_address_even_nx;
+        vram_address_even <= affine_needs_vram ? affine_vram_address_even : vram_address_nx;
         vram_we_even <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[0];
 
-        vram_address_odd <= affine_needs_vram ? affine_vram_address_odd : vram_address_odd_nx;
+        vram_address_odd <= affine_needs_vram ? affine_vram_address_odd : vram_address_nx;
         vram_we_odd <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[1];
     end
 
