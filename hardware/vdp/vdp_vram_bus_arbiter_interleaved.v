@@ -9,12 +9,18 @@
 `include "debug.vh"
 `include "layer_encoding.vh"
 
+// This is the original VRAM bus arbiter that uses interleaved tilemaps
+// It allows for 4 scrolling layers using separate odd / even addresses for the separate RAMs
+// The downside is that the interleaving means VRAM space may be wasted
+
+// This is one of the older parts of the project before and could use some cleanup
+
 module vdp_vram_bus_arbiter_interleaved(
     input clk,
 
     // Reference raster positions
 
-    input [10:0] raster_x_offset, // !
+    input [10:0] raster_x_offset,
     input [10:0] raster_x,
     input [9:0] raster_y,
 
@@ -22,9 +28,6 @@ module vdp_vram_bus_arbiter_interleaved(
 
     input [10:0] scroll_x_0, scroll_x_1, scroll_x_2, scroll_x_3,
     input [9:0] scroll_y_0, scroll_y_1, scroll_y_2, scroll_y_3,
-
-    input [3:0] scroll_map_base_0, scroll_map_base_1, scroll_map_base_2, scroll_map_base_3,
-    input [3:0] scroll_tile_base_0, scroll_tile_base_1, scroll_tile_base_2, scroll_tile_base_3,
 
     // 4 layers combined
     input [15:0] scroll_tile_base,
@@ -147,9 +150,11 @@ module vdp_vram_bus_arbiter_interleaved(
 
     // --- Map address generators ---
 
+    wire [10:0] raster_x_next_tile = raster_x_offset[9:3] + 1;
+
     vdp_map_address_generator even_generator(
         .raster_y(raster_y),
-        .raster_x_coarse(raster_x_offset[9:3] + 1),
+        .raster_x_coarse(raster_x_next_tile),
 
         .scroll_x_coarse(gen_even_hscroll[9:3]),
         .scroll_y(gen_even_scroll_y),
@@ -162,7 +167,7 @@ module vdp_vram_bus_arbiter_interleaved(
 
     vdp_map_address_generator odd_generator(
         .raster_y(raster_y),
-        .raster_x_coarse(raster_x_offset[9:3] + 1),
+        .raster_x_coarse(raster_x_next_tile),
 
         .scroll_x_coarse(gen_odd_hscroll[9:3]),
         .scroll_y(gen_odd_scroll_y),
@@ -175,31 +180,45 @@ module vdp_vram_bus_arbiter_interleaved(
 
     // --- Scroll meta prefetch ---
 
-    reg [15:0] scroll_map_data_h [0:3];
+    reg [15:0] scroll_map_data_hold [0:3];
+
+    wire [3:0] even_palette = vram_read_data_even[15:12];
+    wire [3:0] odd_palette = vram_read_data_odd[15:12];
+
+    wire even_x_flip = vram_read_data_even[9];
+    wire odd_x_flip = vram_read_data_odd[9];
+
+    assign scroll_palette_0 = even_palette;
+    assign scroll_palette_1 = odd_palette;
+    assign scroll_palette_2 = even_palette;
+    assign scroll_palette_3 = odd_palette;
+
+    assign scroll_x_flip_0 = even_x_flip;
+    assign scroll_x_flip_1 = odd_x_flip;
+    assign scroll_x_flip_2 = even_x_flip;
+    assign scroll_x_flip_3 = odd_x_flip;
 
     always @(posedge clk) begin
         // (scroll0 meta doesn't need to be held)
 
         if (scroll_meta_load[`LAYER_SCROLL1])
-            scroll_map_data_h[`LAYER_SCROLL1] <= vram_read_data_odd;
+            scroll_map_data_hold[`LAYER_SCROLL1] <= vram_read_data_odd;
         if (scroll_meta_load[`LAYER_SCROLL2])
-            scroll_map_data_h[`LAYER_SCROLL2] <= vram_read_data_even; 
+            scroll_map_data_hold[`LAYER_SCROLL2] <= vram_read_data_even; 
         if (scroll_meta_load[`LAYER_SCROLL3])
-            scroll_map_data_h[`LAYER_SCROLL3] <= vram_read_data_odd;
+            scroll_map_data_hold[`LAYER_SCROLL3] <= vram_read_data_odd;
     end
 
     // --- VRAM bus control ---
 
     reg [13:0] vram_address_even_nx, vram_address_odd_nx;
     reg [1:0] vram_render_write_en_mask_nx;
-    reg [31:0] vram_write_data_nx;
 
     always @* begin
         scroll_meta_load = 0;
         scroll_char_load = 0;
 
         load_all_scroll_row_data = 0;
-        vram_write_data_nx = 0;
         vram_render_write_en_mask_nx = 0;
 
         gen_toggle_nx = 0;
@@ -225,7 +244,7 @@ module vdp_vram_bus_arbiter_interleaved(
 
                 // next next: s1 prepare tile address gen
                 tile_address_gen_scroll_y_granular = scroll_y_1[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_h[1];
+                tile_address_gen_map_data_in = scroll_map_data_hold[1];
                 tile_address_gen_base_address = full_scroll_tile_base(1);
             end
             1: begin
@@ -238,7 +257,7 @@ module vdp_vram_bus_arbiter_interleaved(
 
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y_2[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_h[2];
+                tile_address_gen_map_data_in = scroll_map_data_hold[2];
                 tile_address_gen_base_address = full_scroll_tile_base(2);
             end
             2: begin
@@ -250,7 +269,7 @@ module vdp_vram_bus_arbiter_interleaved(
 
                 // next next: s3 tile
                 tile_address_gen_scroll_y_granular = scroll_y_3[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_h[3];
+                tile_address_gen_map_data_in = scroll_map_data_hold[3];
                 tile_address_gen_base_address = full_scroll_tile_base(3);
             end
             3: begin
@@ -296,7 +315,6 @@ module vdp_vram_bus_arbiter_interleaved(
                 // host write - every 8 cycles
                 vram_address_even_nx = vram_write_address_16b;
                 vram_address_odd_nx = vram_write_address_16b;
-                vram_write_data_nx = {2{vram_write_data_16b}};
                 vram_written = 1;
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
 
@@ -311,17 +329,22 @@ module vdp_vram_bus_arbiter_interleaved(
         endcase
     end
 
+    // --- VRAM write data passthrough ---
+
+    always @* begin
+        vram_write_data_even = vram_write_data_16b;
+        vram_write_data_odd = vram_write_data_16b;
+    end
+
     // --- VRAM bus registers ---
 
     wire affine_needs_vram = affine_enabled && !affine_offscreen;
 
     always @(posedge clk) begin
         vram_address_even <= affine_needs_vram ? affine_vram_address_even : vram_address_even_nx;
-        vram_write_data_even <= vram_write_data_nx[15:0];
         vram_we_even <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[0];
 
         vram_address_odd <= affine_needs_vram ? affine_vram_address_odd : vram_address_odd_nx;
-        vram_write_data_odd <= vram_write_data_nx[31:16];
         vram_we_odd <= affine_needs_vram ? 0 : vram_render_write_en_mask_nx[1];
     end
 

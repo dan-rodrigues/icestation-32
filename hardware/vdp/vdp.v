@@ -585,7 +585,7 @@ module vdp #(
         .scroll_tile_base(scroll_tile_base),
         .scroll_map_base(scroll_map_base),
         .scroll_use_wide_map(scroll_use_wide_map),
-        
+
         // Affine attributes
 
         .affine_enabled(affine_enabled),
@@ -597,7 +597,7 @@ module vdp #(
 
         .vram_sprite_address(vram_sprite_address),
 
-        // ...
+        // Output control for various functional blocks
 
         .vram_written(vram_written),
         .load_all_scroll_row_data(load_all_scroll_row_data),
