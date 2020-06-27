@@ -20,15 +20,16 @@
 
 _start:
 
-// Enable QE bit:
+// Flash configuration:
 
     la a2, FLASH_CTRL_BASE
 
-    li a0, FLASH_CTRL_CSN | FLASH_CTRL_CLK
+    // begin with deactivated flash
+    li a0, FLASH_CTRL_CSN
     sh a0, (a2)
 
-    // CSN low, clock high
-    li a0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    // activate flash, clock low
+    li a0, FLASH_CTRL_ACTIVE
     sh a0, (a2)
 
     // power up
@@ -96,7 +97,7 @@ _start:
 #endif
 
     // CPU has finished flash config, deassert /CS, hand back flash to flash controller
-    li a1, FLASH_CTRL_CSN | FLASH_CTRL_CLK
+    li a1, FLASH_CTRL_CSN
     sh a1, (a2)
 
 // IPL:
@@ -122,21 +123,15 @@ qpi_transfer:
     li t0, 0
     li t1, 2
     li t2, 0
+
 loop_send_qpi:
-    // negedge..
-
-    // lower clk
+    // lower clk, set output nybble
     li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
-
-    // set output nybble
     andi t3, a0, 0xf0
     slli a0, a0, 4
     srli t3, t3, 4
     or a1, a1, t3
     sh a1, (a2)
-
-    // posedge..
-    // nothing to read as IOs are all output
 
     // raise clk
     ori a1, a1, FLASH_CTRL_CLK
@@ -145,8 +140,8 @@ loop_send_qpi:
     add t0, t0, 1
     bne t0, t1, loop_send_qpi
 
-    // disable outputs
-    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    // disable outputs, lower clk
+    li t0, FLASH_CTRL_ACTIVE
     sh t0, (a2)
 
     ret
@@ -158,20 +153,15 @@ spi_transfer:
     li t0, 0
     li t1, 8
     li t2, 0
+
 loop_send_spi:
-    // negedge..
-
-    // lower clk
+    // lower clk, set output bit
     li a1, FLASH_CTRL_ACTIVE | (1 << FLASH_CTRL_IN_EN_SHIFT)
-
-    // set output bit
     andi t3, a0, 0x80
     add a0, a0, a0
     srli t3, t3, 7
     or a1, a1, t3
     sh a1, (a2)
-
-    // posedge..
 
     // read input bit
     add t2, t2, t2
@@ -187,17 +177,21 @@ loop_send_spi:
     add t0, t0, 1
     bne t0, t1, loop_send_spi
 
+    // disable outputs
+    li t0, FLASH_CTRL_ACTIVE
+    sh t0, (a2)
+
     // a0 = read byte
     mv a0, t2
 
     ret
 
-// deasserts, then reasserts CSN to make the flash ready for another command
+// deasserts, then reasserts CSN to make the flash ready for next command
 
 spi_complete_cmd:
-    li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE
     sh t0, (a2)
-    li t0, FLASH_CTRL_ACTIVE | FLASH_CTRL_CLK
+    li t0, FLASH_CTRL_ACTIVE
     sh t0, (a2)
 
     ret

@@ -20,7 +20,7 @@ HDL_DIR = ../hardware
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
-HDL_SOURCES += $(HDL_TOP).v ice40_spram.v
+HDL_SOURCES += $(HDL_TOP).v ice40_spram.v sb_io.v
 
 CXX_OPT = -O3
 

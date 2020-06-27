@@ -46,9 +46,11 @@ void VerilatorSimulation::step(uint64_t time) {
     uint8_t io = flash.update(flash_bb->csn, flash_bb->clk, flash_bb->in, &out_en);
     flash.check_conflicts(flash_bb->in_en);
 
+    tb->eval();
+
     flash_bb->out = io;
     flash_bb->out_en = out_en;
-    
+
 #if VCD_WRITE
     trace_update(time);
 #endif
