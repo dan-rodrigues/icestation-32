@@ -74,7 +74,7 @@ module vdp_vram_bus_arbiter_standard(
 
     reg [10:0] scroll_x_selected;
     reg [9:0] scroll_y_selected;
-    reg [13:0] scroll_map_base_selected;
+    reg [14:0] scroll_map_base_selected;
     reg scroll_use_wide_map_selected;
 
     always @* begin
@@ -151,8 +151,6 @@ module vdp_vram_bus_arbiter_standard(
     );
 
     // --- Scroll meta prefetch ---
-
-    // FIXME: select which word to return from map data...
 
     reg [15:0] scroll_map_data_hold [0:3];
 
@@ -334,16 +332,16 @@ module vdp_vram_bus_arbiter_standard(
         input [1:0] layer;
 
         begin
-            full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 10'b0};
+            full_scroll_tile_base = {scroll_tile_base >> (layer * 4), 11'b0};
         end
 
     endfunction
         
-    function [13:0] full_scroll_map_base;
+    function [14:0] full_scroll_map_base;
         input [1:0] layer;
 
         begin
-            full_scroll_map_base = {scroll_map_base >> (layer * 4), 10'b0};
+            full_scroll_map_base = {scroll_map_base >> (layer * 4), 12'b0};
         end
 
     endfunction

@@ -101,6 +101,7 @@ int main() {
     // the foregound is a 512x512 map tiled repeatedly
     vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
+
     vdp_set_vram_increment(1);
 
     const int16_t map_y_offset = -48;
@@ -113,7 +114,6 @@ int main() {
 
     vdp_set_layer_tile_base(0, SCROLL_TILE_BASE);
 
-    vdp_set_vram_increment(1);
     // this loads tileset to the 3rd "page" of 128 tiles, where it is expected
     vdp_seek_vram(0 + 0x1800);
     vdp_write_vram_block((uint16_t *)fg_tiles, fg_tiles_length * 2);
@@ -122,10 +122,8 @@ int main() {
 
     vdp_set_layer_map_base(0, SCROLL_MAP_BASE);
 
-    vdp_set_vram_increment(2);
     vdp_seek_vram(SCROLL_MAP_BASE);
     vdp_write_vram_block(fg_map, fg_map_length);
-    vdp_set_vram_increment(1);
 
     // foreground palette
 

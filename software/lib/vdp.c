@@ -54,7 +54,7 @@ static void update_layer_address(uint8_t layer, uint16_t address, uint16_t *comb
 #ifdef VDP_INTERLEAVED_MAP
     const uint8_t address_shift = 11;
 #else
-    const uint8_t address_shift = 10;
+    const uint8_t address_shift = 12;
 #endif
 
     uint8_t shift = layer * 4;

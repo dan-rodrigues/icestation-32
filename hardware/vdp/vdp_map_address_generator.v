@@ -17,15 +17,17 @@ module vdp_map_address_generator #(
     input [9:0] raster_y,
     input [6:0] raster_x_coarse,
 
-    input [13:0] map_base_address,
+    input [14:0] map_base_address,
     input [7:0] stride,
 
-    output reg [14:0] map_address_16b
+    output [14:0] map_address_16b
 );
     reg [9:0] scroll_y_r;
     reg [6:0] scroll_x_coarse_r;
     reg [9:0] raster_y_r;
     reg [6:0] raster_x_coarse_r;
+    reg [14:0] map_base_address_r;
+    reg [7:0] stride_r;
 
     generate
         if (REGISTERED_INPUTS) begin
@@ -34,6 +36,8 @@ module vdp_map_address_generator #(
                 scroll_x_coarse_r <= scroll_x_coarse;
                 raster_y_r <= raster_y;
                 raster_x_coarse_r <= raster_x_coarse;
+                map_base_address_r <= map_base_address;
+                stride_r <= stride;
             end
         end else begin
             always @* begin
@@ -41,6 +45,8 @@ module vdp_map_address_generator #(
                 scroll_x_coarse_r = scroll_x_coarse;
                 raster_y_r = raster_y;
                 raster_x_coarse_r = raster_x_coarse;
+                map_base_address_r = map_base_address;
+                stride_r = stride;
             end
         end
     endgenerate
@@ -49,9 +55,9 @@ module vdp_map_address_generator #(
     wire [5:0] row = (scroll_y_r + raster_y_r) >> 3;
 
     // cheap, only requires +1 LUT
-    wire map_page_select = (stride & 8'h80) && column[6];
+    wire map_page_select = (stride_r & 8'h80) && column[6];
 
-    assign map_address_16b = {map_page_select, row, column[5:0]} + map_base_address;
+    assign map_address_16b = {map_page_select, row, column[5:0]} + map_base_address_r;
 
 endmodule
 
