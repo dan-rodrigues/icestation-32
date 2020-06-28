@@ -10,6 +10,8 @@
 #include "vdp.h"
 #include "font.h"
 
+// This only exists to test refactoring / rewrites of vdp_bus_arbiter_*.v
+
 int main() {
     const uint8_t layer_count = 4;
     const uint16_t x_base = 500;
@@ -25,7 +27,6 @@ int main() {
 
     const uint16_t tile_vram_base = 0x0000;
 
-    // this being changed to non-interleaved layout
     const uint16_t map_vram_base = 0x1000;
     const uint16_t map_size = 0x1000;
 
@@ -43,7 +44,6 @@ int main() {
     const uint16_t bg_color = 0xf033;
     static const uint16_t fg_colors[] = {0xffff, 0xfff0, 0xf0ff, 0xf0f0};
 
-    // workaround interleaving for now, just write same char twice to odd / even words
     vdp_set_single_palette_color(0, bg_color);
 
     for (uint8_t i = 0; i < layer_count; i++) {
