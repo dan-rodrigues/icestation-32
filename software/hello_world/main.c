@@ -15,9 +15,10 @@ int main() {
     vdp_set_wide_map_layers(SCROLL0);
     vdp_set_alpha_over_layers(0);
 
+    vdp_set_vram_increment(1);
+
     vdp_set_layer_scroll(0, 0, 0);
 
-    vdp_set_vram_increment(1);
     vdp_seek_vram(0x0000);
     vdp_fill_vram(0x8000, ' ');
 
@@ -35,7 +36,6 @@ int main() {
 
     vdp_set_layer_map_base(0, map_vram_base);
     vdp_seek_vram(map_vram_base);
-    vdp_set_vram_increment(2);
 
     const char *const hello_string = "Hello world!";
     const uint8_t palette_id = 0x0;

@@ -10,9 +10,8 @@
 `include "layer_encoding.vh"
 
 module vdp #(
-    parameter ENABLE_WIDESCREEN = 0,
-    parameter CHAR_BASE_BITS = 4,
-    parameter MAP_BASE_BITS = 4
+    parameter [0:0] ENABLE_WIDESCREEN = 0,
+    parameter [1:0] LAYERS_TOTAL = 3
 ) (
     input clk,
     input reset,
@@ -488,6 +487,8 @@ module vdp #(
 
     // --- Scroll pixel generators ---
 
+    localparam [1:0] LAYER_LAST = LAYERS_TOTAL - 1;
+
     wire [31:0] scroll_output_pixel;
 
     wire [7:0] scroll0_output_pixel = scroll_output_pixel[7:0];
@@ -497,9 +498,9 @@ module vdp #(
 
     generate
         genvar i;
-        for (i = 0; i < 4; i = i + 1) begin : scroll_pixel_gen
+        for (i = 0; i < LAYERS_TOTAL; i = i + 1) begin : scroll_pixel_gen
             vdp_scroll_pixel_generator #(
-                .STAGE_PIXEL_ROW(i != 3)
+                .STAGE_PIXEL_ROW(i != LAYER_LAST)
             ) scroll_pixel_generator(
                 .clk(clk),
 
@@ -519,6 +520,8 @@ module vdp #(
 
     // --- Priority control --- 
 
+    localparam [4:0] LAYER_ENABLE_MASK = (1 << (LAYERS_TOTAL)) - 1 | `LAYER_SPRITES_OHE;
+
     wire [7:0] prioritized_pixel;
     wire [4:0] prioritized_masked_layer;
     wire [7:0] prioritized_masked_pixel;
@@ -534,15 +537,15 @@ module vdp #(
     vdp_priority_compute priority_compute(
         .clk(clk),
 
-        .scroll1_pixel(selected_layer_pixel),
-        .scroll2_pixel(scroll1_output_pixel),
-        .scroll3_pixel(scroll2_output_pixel),
-        .scroll4_pixel(scroll3_output_pixel),
+        .scroll0_pixel(selected_layer_pixel),
+        .scroll1_pixel(scroll1_output_pixel),
+        .scroll2_pixel(scroll2_output_pixel),
+        .scroll3_pixel(scroll3_output_pixel),
 
         .sprite_pixel(sprite_pixel),
         .sprite_priority(sprite_pixel_priority),
 
-        .layer_enable(layer_enable[4:0] & (affine_enabled ? 5'b10001 : 5'b11111)),
+        .layer_enable(layer_enable[4:0] & (affine_enabled ? 5'b10001 : LAYER_ENABLE_MASK)),
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),
@@ -570,7 +573,7 @@ module vdp #(
     wire [15:0] scroll_gen_palette;
     wire [3:0] scroll_gen_hflip;
 
-    vdp_vram_bus_arbiter_interleaved bus_arbiter(
+    vdp_vram_bus_arbiter_standard bus_arbiter(
         .clk(clk),
 
         .raster_x_offset(raster_x_offset),

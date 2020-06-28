@@ -10,9 +10,9 @@
 #include "vdp.h"
 #include "font.h"
 
+// This only exists to test refactoring / rewrites of vdp_bus_arbiter_*.v
+
 int main() {
-    // this needs to be adjusted based on how many available layers there are
-    // INTERLEAVED_LAYER_COUNT = 4 etc.
     const uint8_t layer_count = 4;
     const uint16_t x_base = 500;
     const uint16_t y_base = 240;
@@ -20,21 +20,22 @@ int main() {
     uint8_t enabled_layers = SCROLL0 | SCROLL1 | SCROLL2 | (layer_count == 4 ? SCROLL3 : 0);
 
     vdp_enable_layers(enabled_layers);
-    vdp_set_wide_map_layers(0); // !
+    vdp_set_wide_map_layers(0);
     vdp_set_alpha_over_layers(0);
+
+    vdp_set_vram_increment(1);
 
     const uint16_t tile_vram_base = 0x0000;
 
     const uint16_t map_vram_base = 0x1000;
-    const uint16_t map_size = 0x2000; // this size might be confusing due to (0x1000 words * 2) for interleaving
+    const uint16_t map_size = 0x1000;
 
     for (uint8_t i = 0; i < layer_count; i++) {
-        uint16_t layer_map_base = i / 2 * map_size + map_vram_base;
+        uint16_t layer_map_base = i * map_size + map_vram_base;
         vdp_set_layer_map_base(i, layer_map_base);
         vdp_set_layer_tile_base(i, tile_vram_base);
     }
 
-    vdp_set_vram_increment(1);
     vdp_seek_vram(0x0000);
     vdp_fill_vram(0x8000, ' ');
 
@@ -43,7 +44,6 @@ int main() {
     const uint16_t bg_color = 0xf033;
     static const uint16_t fg_colors[] = {0xffff, 0xfff0, 0xf0ff, 0xf0f0};
 
-    // workaround interleaving for now, just write same char twice to odd / even words
     vdp_set_single_palette_color(0, bg_color);
 
     for (uint8_t i = 0; i < layer_count; i++) {
@@ -55,9 +55,8 @@ int main() {
     const uint8_t flip_y = false;
 
     for (uint8_t i = 0; i < layer_count; i++) {
-        uint16_t layer_map_base = (i / 2) * map_size + map_vram_base;
-        vdp_seek_vram(layer_map_base + (i & 1));
-        vdp_set_vram_increment(2);
+        uint16_t layer_map_base = i * map_size + map_vram_base;
+        vdp_seek_vram(layer_map_base);
 
         uint8_t palette_id = i;
 

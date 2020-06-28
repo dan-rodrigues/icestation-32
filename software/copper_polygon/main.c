@@ -37,7 +37,8 @@ static VDPLayer POLYGON_VISIBLE_LAYERS = SCROLL0 | SCROLL1;
 static VDPLayer POLYGON_HIDDEN_LAYERS = SCROLL1;
 
 static const uint16_t TILE_BASE = 0x0000;
-static const uint16_t MAP_BASE = 0x1000;
+static const uint16_t MAP_BASE_BG = 0x1000;
+static const uint16_t MAP_BASE_FG = 0x2000;
 
 // current state context
 
@@ -55,6 +56,8 @@ int main() {
     vdp_enable_copper(false);
     vdp_enable_layers(POLYGON_HIDDEN_LAYERS);
 
+    vdp_set_vram_increment(1);
+
     vp_print_init();
 
     // tiles (8x8 font, common to both layers)
@@ -71,9 +74,8 @@ int main() {
     vdp_set_alpha_over_layers(SCROLL0);
 
     // checkerboard background (512x512, tiled repeatedly)
-    vdp_set_layer_map_base(1, MAP_BASE);
-    vdp_seek_vram(MAP_BASE + 1);
-    vdp_set_vram_increment(2);
+    vdp_set_layer_map_base(1, MAP_BASE_BG);
+    vdp_seek_vram(MAP_BASE_BG);
 
     const uint8_t checkerboard_dimension = 4;
     const uint16_t opaque_tile = ' ';
@@ -96,9 +98,8 @@ int main() {
 
     // initialize all map tiles to the empty opaque tile (space character)
 
-    vdp_set_layer_map_base(0, MAP_BASE);
-    vdp_set_vram_increment(2);
-    vdp_seek_vram(MAP_BASE + 0);
+    vdp_set_layer_map_base(0, MAP_BASE_FG);
+    vdp_seek_vram(MAP_BASE_FG);
     vdp_fill_vram(0x2000, opaque_tile);
 
     // print info
@@ -112,12 +113,12 @@ int main() {
     const char *const context_2 = "The copper coprocessor shows / hides this layer with raster effects.";
     const char *const context_3 = "The copper program does raster-synced writes with sequences of WAIT and WRITE instructions.";
 
-    vp_printf(vp_center_string_x(title), context_y, 0, SCROLL0, MAP_BASE, title);
-    vp_printf(vp_center_string_x(subtitle), context_y + 1, 0, SCROLL0, MAP_BASE, subtitle);
+    vp_printf(vp_center_string_x(title), context_y, 0, SCROLL0, MAP_BASE_FG, title);
+    vp_printf(vp_center_string_x(subtitle), context_y + 1, 0, SCROLL0, MAP_BASE_FG, subtitle);
 
-    vp_printf(vp_center_string_x(context_1), context_y + 4, 3, SCROLL0, MAP_BASE, context_1);
-    vp_printf(vp_center_string_x(context_2), context_y + 6, 0, SCROLL0, MAP_BASE, context_2);
-    vp_printf(vp_center_string_x(context_3), context_y + 8, 0, SCROLL0, MAP_BASE, context_3);
+    vp_printf(vp_center_string_x(context_1), context_y + 4, 3, SCROLL0, MAP_BASE_FG, context_1);
+    vp_printf(vp_center_string_x(context_2), context_y + 6, 0, SCROLL0, MAP_BASE_FG, context_2);
+    vp_printf(vp_center_string_x(context_3), context_y + 8, 0, SCROLL0, MAP_BASE_FG, context_3);
 
     // checkerboard scrolling background palette
 
@@ -154,7 +155,7 @@ int main() {
         const uint8_t metrics_y = 39;
 
         uint16_t bytes_used = cop_ram_get_write_index() * 2;
-        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE, "Copper RAM usage: %d bytes", bytes_used);
+        vp_printf(metrics_x, metrics_y, 0, SCROLL0, MAP_BASE_FG, "Copper RAM usage: %d bytes", bytes_used);
 
         // polygon/text color updates
 

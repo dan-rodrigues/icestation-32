@@ -27,22 +27,23 @@ int main() {
     vdp_set_alpha_over_layers(SCROLL0);
     vdp_set_wide_map_layers(0);
 
+    vdp_set_vram_increment(1);
+
     // one opaque tile to use for all graphics in demo
 
     const uint16_t opaque_tile = 0;
 
     vdp_set_layer_tile_base(0, TILE_BASE);
     vdp_set_layer_tile_base(1, TILE_BASE);
-
     vdp_seek_vram(TILE_BASE);
-    vdp_set_vram_increment(1);
     vdp_fill_vram(0x10, 0x1111);
 
     // checkerboard background (512x512, tiled repeatedly)
 
-    vdp_set_layer_map_base(1, MAP_BASE);
-    vdp_seek_vram(MAP_BASE + 1);
-    vdp_set_vram_increment(2);
+    const uint16_t map_size = 0x1000;
+
+    vdp_set_layer_map_base(1, MAP_BASE + map_size);
+    vdp_seek_vram(MAP_BASE + map_size);
 
     const uint8_t checkerboard_dimension = 4;
 
@@ -67,9 +68,8 @@ int main() {
     // initialize all map tiles to the empty opaque tile (space character)
 
     vdp_set_layer_map_base(0, MAP_BASE);
-    vdp_set_vram_increment(2);
-    vdp_seek_vram(MAP_BASE + 0);
-    vdp_fill_vram(0x2000, opaque_tile | BAR_PALETTE_ID << SCROLL_MAP_PAL_SHIFT);
+    vdp_seek_vram(MAP_BASE);
+    vdp_fill_vram(0x1000, opaque_tile | BAR_PALETTE_ID << SCROLL_MAP_PAL_SHIFT);
 
     // checkerboard background palette
 

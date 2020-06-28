@@ -18,9 +18,7 @@ static void seek_update() {
 
     uint16_t address = current_y * 64 + current_x;
     address += (second_page ? 0x1000 : 0);
-    address *= 2;
 
-    address += (vdp_layer_is_odd(current_layer) ? 1 : 0);
     vdp_seek_vram(current_vram_base + address);
 }
 
@@ -41,7 +39,7 @@ void vp_print_init() {
 }
 
 void vp_printf(uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t vram_base, const char *fmt, ...) {
-    vdp_set_vram_increment(2);
+    vdp_set_vram_increment(1);
 
     current_palette_mask = palette << SCROLL_MAP_PAL_SHIFT;
     current_x = x;
@@ -55,8 +53,6 @@ void vp_printf(uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t v
     va_start(args, fmt);
     tfp_format(NULL, vdp_putc, fmt, args);
     va_end(args);
-
-    vdp_set_vram_increment(1);
 }
 
 uint8_t vp_center_string_x(const char *string) {

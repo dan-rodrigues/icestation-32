@@ -29,6 +29,7 @@ VDP_SOURCES := vdp/vdp.v \
 	 	blender.v \
 	 	copper.v \
 		vram_bus_arbiter_interleaved.v \
+		vram_bus_arbiter_standard.v \
 	)
 
 SOURCES := $(SOURCES) $(VDP_SOURCES)
