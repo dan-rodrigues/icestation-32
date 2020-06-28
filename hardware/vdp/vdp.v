@@ -545,7 +545,7 @@ module vdp #(
         .sprite_pixel(sprite_pixel),
         .sprite_priority(sprite_pixel_priority),
 
-        .layer_enable(layer_enable[4:0] & (affine_enabled ? 5'b10001 : LAYER_ENABLE_MASK)),
+        .layer_enable(layer_enable[4:0] & (affine_enabled ? `LAYER_SPRITES_OHE | `LAYER_SCROLL0 : LAYER_ENABLE_MASK)),
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),

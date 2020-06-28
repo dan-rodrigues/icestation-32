@@ -17,7 +17,6 @@ module vdp_priority_compute(
     input [7:0] sprite_pixel,
     input [1:0] sprite_priority,
 
-    // one hot
     input [4:0] layer_enable,
     input [4:0] layer_mask,
 
