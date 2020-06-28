@@ -94,7 +94,7 @@ module vdp_blender(
     delay_ff #(
         .DELAY(1),
         .WIDTH(1)
-    ) source_visible_dm(
+    ) source_visible_dm (
         .clk(clk),
         .in(source_visible),
         .out(source_visible_d)
@@ -116,7 +116,7 @@ module vdp_blender(
     delay_ff #(
         .DELAY(2),
         .WIDTH(12)
-    ) output_dest_color_dm(
+    ) output_dest_color_dm (
         .clk(clk),
         .in(dest_color[11:0]),
         .out(output_dest_color_d)

@@ -9,7 +9,9 @@
 `include "debug.vh"
 `include "layer_encoding.vh"
 
-// (context here...)
+// 3 layer, non-interleaved bus arbiter
+// Unlike vdp_vram_bus_arbiter_interleaved, tilemaps are stored in VRAM contiguously
+// This sacrifices 1 layer in exchange for more flexible, less wasteful VRAM management
 
 module vdp_vram_bus_arbiter_standard(
     input clk,
@@ -96,42 +98,43 @@ module vdp_vram_bus_arbiter_standard(
 
     // --- Tile address generator ---
 
-    reg [2:0] tile_address_gen_scroll_y_granular;
-    wire [2:0] tile_address_gen_raster_y_granular = raster_y[2:0];
-    reg [15:0] tile_address_gen_map_data_in;
-    reg [13:0] tile_address_gen_base_address;
-
-    wire [13:0] tile_address_gen_tile_address_out;
+    wire [2:0] tile_raster_y_granular = raster_y[2:0];
+    wire [13:0] tile_address;
 
     vdp_tile_address_generator tile_address_generator(
         .clk(clk),
 
-        .scroll_y_granular(tile_address_gen_scroll_y_granular),
-        .raster_y_granular(tile_address_gen_raster_y_granular),
-        .vram_data(tile_address_gen_map_data_in),
-        .tile_base_address(tile_address_gen_base_address),
+        .scroll_y_granular(tile_scroll_y_granular_selected),
+        .raster_y_granular(tile_raster_y_granular),
+        .vram_data(tile_map_data_selected),
+        .tile_base_address(tile_base_selected),
 
-        .tile_address(tile_address_gen_tile_address_out)
+        .tile_address(tile_address)
     );
+
+    reg [2:0] tile_scroll_y_granular_selected;
+    reg [15:0] tile_map_data_selected;
+    reg [13:0] tile_base_selected;
+
+    always @* begin
+        case (tile_address_layer_select)
+            `LAYER_SCROLL0: tile_scroll_y_granular_selected = scroll_y_0[2:0];
+            `LAYER_SCROLL1: tile_scroll_y_granular_selected = scroll_y_1[2:0];
+            default: tile_scroll_y_granular_selected = scroll_y_2[2:0];
+        endcase
+
+        tile_map_data_selected = scroll_map_data_hold[tile_address_layer_select];
+        tile_base_selected = full_scroll_tile_base(tile_address_layer_select);
+    end
 
     // --- Map address generators ---
 
-    // probably just need one now
-
     wire [10:0] raster_x_next_tile = raster_x_offset[9:3] + 1;
 
-    wire [13:0] gen_odd_next_map_address = gen_odd_next_map_address_full[14:1];
-    wire map_word_select = gen_odd_next_map_address_full[0];
+    wire [13:0] map_address = map_address_16b[14:1];
+    wire map_word_select = map_address_16b[0];
 
-    // just register output of this?
-    // and run it a cycle earlier?
-    // reg [14:0] map_address_next_full;
-
-    // always @(posedge clk) begin
-    //     map_address_next_full <= gen_odd_next_map_address_full;
-    // end
-
-    wire [14:0] gen_odd_next_map_address_full;
+    wire [14:0] map_address_16b;
 
     vdp_map_address_generator #(
         .REGISTERED_INPUTS(1)
@@ -147,7 +150,7 @@ module vdp_vram_bus_arbiter_standard(
         .map_base_address(scroll_map_base_selected),
         .stride(scroll_use_wide_map_selected ? 128 : 64),
 
-        .map_address_16b(gen_odd_next_map_address_full)
+        .map_address_16b(map_address_16b)
     );
 
     // --- Scroll meta prefetch ---
@@ -157,18 +160,20 @@ module vdp_vram_bus_arbiter_standard(
     wire [3:0] palette_selected = map_selected_word[15:12];
     wire x_flip_selected = map_selected_word[9];
 
-    // (delay_ff when this is sorted)
-    reg [2:0] map_word_select_delay;
-    wire map_word_select_delayed = map_word_select_delay[2];
+    // A delay is needed on the VRAM word select since the fetches are pipelined
 
-    always @(posedge clk) begin
-        map_word_select_delay <= {map_word_select_delay, map_word_select};
-    end
+    wire map_word_select_d;
 
-    // note delay
-    wire [15:0] map_selected_word = map_word_select_delayed ? vram_read_data_odd : vram_read_data_even;
+    delay_ff #(
+        .DELAY(3)
+    ) map_word_select_dm (
+        .clk(clk),
+        .in(map_word_select),
+        .out(map_word_select_d)
+    );
 
-    // ...
+    wire [15:0] map_selected_word = map_word_select_d ? vram_read_data_odd : vram_read_data_even;
+
     assign scroll_palette_0 = palette_selected;
     assign scroll_palette_1 = palette_selected;
     assign scroll_palette_2 = palette_selected;
@@ -196,12 +201,14 @@ module vdp_vram_bus_arbiter_standard(
     reg [1:0] vram_render_write_en_mask_nx;
 
     reg [1:0] map_address_layer_select;
+    reg [1:0] tile_address_layer_select;
 
     always @* begin
         scroll_meta_load = 0;
         scroll_char_load = 0;
 
         map_address_layer_select = 0;
+        tile_address_layer_select = 0;
 
         load_all_scroll_row_data = 0;
         vram_render_write_en_mask_nx = 0;
@@ -209,93 +216,10 @@ module vdp_vram_bus_arbiter_standard(
         vram_address_nx = 0;
         vram_written = 0;
 
-        tile_address_gen_scroll_y_granular = 0;
-        tile_address_gen_map_data_in = 0;
-        tile_address_gen_base_address = 0;
-
         vram_sprite_read_data_valid = 0;
 
-        // TODO: define and document the -1 offset in one place
-
-        // FIXME: revise for standard layout
-        case ((raster_x[2:0] - 1) &3'b111)
+        case (raster_x[2:0])
             0: begin
-                // now: s1 map
-                scroll_meta_load = `LAYER_SCROLL1_OHE;
-
-                // next: sprite access
-                vram_address_nx = vram_sprite_address;
-
-                // next next: s0 prepare tile address gen
-                // (this could be packaged up in a seprate block considering it's the same pattern)
-                tile_address_gen_scroll_y_granular = scroll_y_0[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_hold[0];
-                tile_address_gen_base_address = full_scroll_tile_base(0);
-            end
-            1: begin
-                // now: s2 map
-                scroll_meta_load = `LAYER_SCROLL2_OHE;
-
-                // next: s0 tile
-                vram_address_nx = tile_address_gen_tile_address_out;
-
-                // next next: s1 prepare tile address gen
-                tile_address_gen_scroll_y_granular = scroll_y_1[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_hold[1];
-                tile_address_gen_base_address = full_scroll_tile_base(1);
-            end
-            2: begin
-                // next: s1 tile
-                vram_address_nx = tile_address_gen_tile_address_out;
-
-                // next next: s2 prepare tile address gen
-                tile_address_gen_scroll_y_granular = scroll_y_2[2:0];
-                tile_address_gen_map_data_in = scroll_map_data_hold[2];
-                tile_address_gen_base_address = full_scroll_tile_base(2);
-            end
-            3: begin
-                // now: sprites acccess
-                vram_sprite_read_data_valid = 1;
-
-                // next: s2 tile
-                vram_address_nx = tile_address_gen_tile_address_out;
-
-                // next next: s0 map
-                map_address_layer_select = `LAYER_SCROLL0;
-            end
-            4: begin
-                // now: s0 tile
-                scroll_char_load = `LAYER_SCROLL0_OHE;
-
-                // next: s0 map
-                vram_address_nx = gen_odd_next_map_address;
-
-                // next next: s1 map
-                map_address_layer_select = `LAYER_SCROLL1;
-            end
-            5: begin
-                // now: s1 tile
-                scroll_char_load = `LAYER_SCROLL1_OHE;
-
-                // next: s1 map
-                vram_address_nx = gen_odd_next_map_address;
-
-                // next next: s2 map
-                map_address_layer_select = `LAYER_SCROLL2;
-            end
-            6: begin
-                // now: s1 tile
-                // (this should be implicit according to load_all...)
-                scroll_char_load = `LAYER_SCROLL2_OHE;
-
-                // next: s2 map
-                vram_address_nx = gen_odd_next_map_address;
-
-                // now: s3 tile, which is loaded simultaneously with the previously prefetched layers
-                // the offset added to count[2:0] compensates for this being a cycle earlier
-                load_all_scroll_row_data = 1;
-            end
-            7: begin
                 // now: s0 map data
                 scroll_meta_load = `LAYER_SCROLL0_OHE;
 
@@ -303,6 +227,75 @@ module vdp_vram_bus_arbiter_standard(
                 vram_address_nx = vram_write_address_16b;
                 vram_written = 1;
                 vram_render_write_en_mask_nx = vram_port_write_en_mask;
+            end
+            1: begin
+                // now: s1 map
+                scroll_meta_load = `LAYER_SCROLL1_OHE;
+
+                // next: sprite access
+                vram_address_nx = vram_sprite_address;
+
+                // next next: s0 tile address
+                // (this could be packaged up in a seprate block considering it's the same pattern)
+                tile_address_layer_select = `LAYER_SCROLL0;
+            end
+            2: begin
+                // now: s2 map
+                scroll_meta_load = `LAYER_SCROLL2_OHE;
+
+                // next: s0 tile
+                vram_address_nx = tile_address;
+
+                // next next: s1 tile address
+                tile_address_layer_select = `LAYER_SCROLL1;
+            end
+            3: begin
+                // next: s1 tile
+                vram_address_nx = tile_address;
+
+                // next next: s2 tile address
+                tile_address_layer_select = `LAYER_SCROLL2;
+            end
+            4: begin
+                // now: sprites acccess
+                vram_sprite_read_data_valid = 1;
+
+                // next: s2 tile
+                vram_address_nx = tile_address;
+
+                // next next: s0 map
+                map_address_layer_select = `LAYER_SCROLL0;
+            end
+            5: begin
+                // now: s0 tile
+                scroll_char_load = `LAYER_SCROLL0_OHE;
+
+                // next: s0 map
+                vram_address_nx = map_address;
+
+                // next next: s1 map
+                map_address_layer_select = `LAYER_SCROLL1;
+            end
+            6: begin
+                // now: s1 tile
+                scroll_char_load = `LAYER_SCROLL1_OHE;
+
+                // next: s1 map
+                vram_address_nx = map_address;
+
+                // next next: s2 map
+                map_address_layer_select = `LAYER_SCROLL2;
+            end
+            7: begin
+                // now: s1 tile
+                // (this should be implicit according to load_all...)
+                scroll_char_load = `LAYER_SCROLL2_OHE;
+
+                // next: s2 map
+                vram_address_nx = map_address;
+
+                // now: s3 tile, which is loaded simultaneously with the previously prefetched layers
+                load_all_scroll_row_data = 1;
             end
         endcase
     end
