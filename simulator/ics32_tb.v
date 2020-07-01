@@ -7,12 +7,8 @@
 `default_nettype none
 
 module ics32_tb(
-`ifndef EXTERNAL_CLOCKS
-    input clk_12m,
-`else
     input clk_1x,
     input clk_2x,
-`endif
 
     output [3:0] vga_r,
     output [3:0] vga_g,
@@ -41,12 +37,9 @@ module ics32_tb(
         // Enabling this just delays the program start
         .ENABLE_BOOTLOADER(0)
     ) ics32 (
-`ifndef EXTERNAL_CLOCKS
-        .clk_12m(clk_12m),
-`else
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
-`endif
+        .pll_locked(1),
 
         .vga_r(vga_r),
         .vga_g(vga_g),
@@ -65,30 +58,67 @@ module ics32_tb(
         .led_r(led_r),
         .led_b(led_b),
 
-        .flash_clk(flash_clk),
+        .flash_clk_ddr(flash_clk_ddr),
         .flash_csn(flash_csn),
-        .flash_in_en_bb(flash_in_en),
-        .flash_in_bb(flash_in),
-        .flash_out_bb(flash_out)
+        .flash_in_en(flash_in_en),
+        .flash_in(flash_in),
+        .flash_out(flash_out)
     );
 
     // --- Flash sim blackbox ---
 
-    // Parameters could be forwarded to the sim factory functions
-    // This could later be used to assume a certain power-up state (depending on icepack "-s" switch)
-
-    wire flash_clk;
+    wire [1:0] flash_clk_ddr;
     wire flash_csn;
     wire [3:0] flash_in_en;
     wire [3:0] flash_in;
     wire [3:0] flash_out;
 
+    reg [3:0] flash_in_r;
+    reg [3:0] flash_out_r;
+    reg flash_csn_r;
+
+    assign flash_csn_bb = flash_csn_r;
+    assign flash_in_bb = flash_in_r;
+    assign flash_in_en_bb = flash_in_en;
+    wire [3:0] flash_out = flash_out_r;
+    
+    always @(posedge clk_2x) begin
+        flash_in_r <= flash_in;
+        flash_csn_r <= flash_csn;
+
+        flash_out_r <= flash_out_bb;
+    end
+
+    // This isn't quite what SB_IO does in DDR mode
+    // Since we're not actually pushing out DDR data streams, this could be replaced with a reimplementation of flash_clk_out
+    // There might be also a simpler way to do this in a way that works in both sims
+
+    reg flash_clk_l, flash_clk_h;
+    assign flash_clk_bb = clk_2x ? flash_clk_h : flash_clk_l;
+
+    always @(posedge clk_2x) begin
+        flash_clk_h <= flash_clk_ddr[0];
+    end
+
+    always @(negedge clk_2x) begin
+        flash_clk_l <= flash_clk_ddr[1];
+    end
+
+    // Parameters could be forwarded to the sim factory functions
+    // This could later be used to assume a certain power-up state (depending on icepack "-s" switch)
+
+    wire flash_clk_bb;
+    wire flash_csn_bb;
+    wire [3:0] flash_in_bb;
+    wire [3:0] flash_in_en_bb;
+    wire [3:0] flash_out_bb;
+
     flash_bb flash(
-        .clk(flash_clk),
-        .csn(flash_csn),
-        .in_en(flash_in_en),
-        .in(flash_in),
-        .out(flash_out)
+        .clk(flash_clk_bb),
+        .csn(flash_csn_bb),
+        .in_en(flash_in_en_bb),
+        .in(flash_in_bb),
+        .out(flash_out_bb)
     );
 
 endmodule

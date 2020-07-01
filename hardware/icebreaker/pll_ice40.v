@@ -1,4 +1,4 @@
-// pll.v
+// pll_ice40.v
 //
 // Copyright (C) 2020 Dan Rodrigues <danrr.gh.oss@gmail.com>
 //
@@ -6,7 +6,7 @@
 
 `default_nettype none
 
-module pll #(
+module pll_ice40 #(
     parameter ENABLE_FAST_CLK = 1
 ) (
     // verilator lint_off UNUSED
