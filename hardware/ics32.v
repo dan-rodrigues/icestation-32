@@ -9,22 +9,19 @@
 `include "bus_arbiter.vh"
 
 module ics32 #(
-    parameter ENABLE_WIDESCREEN = 1,
-    parameter FORCE_FAST_CPU = 0,
-    parameter integer RESET_DURATION = 1 << 24,
-    parameter ENABLE_BOOTLOADER = 1,
+    parameter [0:0] ENABLE_WIDESCREEN = 1,
+    parameter [0:0] FORCE_FAST_CPU = 0,
+    parameter integer RESET_DURATION = 4,
+    parameter [0:0] ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
 `else
     parameter BOOTLOADER_PATH = "boot.hex"
 `endif
 ) (
-`ifndef EXTERNAL_CLOCKS
-    input clk_12m,
-`else
     input clk_1x,
     input clk_2x,
-`endif
+    input pll_locked,
 
     output [3:0] vga_r,
     output [3:0] vga_g,
@@ -43,15 +40,11 @@ module ics32 #(
     input btn_2,
     input btn_3,
 
-    output flash_clk,
+    output [1:0] flash_clk_ddr,
     output flash_csn,
-`ifdef SIMULATOR
-    output [3:0] flash_in_bb,
-    output [3:0] flash_in_en_bb,
-    input [3:0] flash_out_bb
-`else
-    inout [3:0] flash_io
-`endif
+    output [3:0] flash_in,
+    output [3:0] flash_in_en,
+    input [3:0] flash_out
 );
     localparam ENABLE_FAST_CPU = !ENABLE_WIDESCREEN || FORCE_FAST_CPU;
 
@@ -111,54 +104,31 @@ module ics32 #(
     reset_generator #(
         .DURATION(RESET_DURATION)
     ) reset_generator (
-        .clk_1x(pll_clk_1x),
-        .clk_2x(pll_clk_2x),
+        .clk_1x(clk_1x),
+        .clk_2x(clk_2x),
         .pll_locked(pll_locked),
 
         .reset_1x(reset_1x),
         .reset_2x(reset_2x)
     );
 
-    // --- PLL (640x480 or 848x480 clock selection) ---
+    // --- Clock Assignment ---
 
-    wire pll_clk_1x, pll_clk_2x;
-    wire pll_locked;
-
-`ifndef EXTERNAL_CLOCKS
-
-    pll #(
-        .ENABLE_FAST_CLK(ENABLE_WIDESCREEN)
-    ) pll (
-        .clk_12m(clk_12m),
-
-        .locked(pll_locked),
-        .clk_1x(pll_clk_1x),
-        .clk_2x(pll_clk_2x)
-    );
-
-`else
-
-    assign pll_clk_1x = clk_1x;
-    assign pll_clk_2x = clk_2x;
-    assign pll_locked = 1;
-
-`endif
-
-    assign vga_clk = pll_clk_2x;
+    assign vga_clk = clk_2x;
 
     wire cpu_clk, vdp_clk;
     wire cpu_reset, vdp_reset;
 
     generate
         if (!ENABLE_FAST_CPU) begin
-            assign cpu_clk = pll_clk_1x;
-            assign vdp_clk = pll_clk_2x;
+            assign cpu_clk = clk_1x;
+            assign vdp_clk = clk_2x;
 
             assign cpu_reset = reset_1x;
             assign vdp_reset = reset_2x;
         end else begin
-            assign cpu_clk = pll_clk_2x;
-            assign vdp_clk = pll_clk_2x;
+            assign cpu_clk = clk_2x;
+            assign vdp_clk = clk_2x;
 
             assign cpu_reset = reset_2x;
             assign vdp_reset = reset_2x;
@@ -306,8 +276,8 @@ module ics32 #(
     generate
         if (!ENABLE_FAST_CPU) begin
             cpu_peripheral_sync cpu_peripheral_sync(
-                .clk_1x(pll_clk_1x),
-                .clk_2x(pll_clk_2x),
+                .clk_1x(clk_1x),
+                .clk_2x(clk_2x),
 
                 // 1x inputs
                 .cpu_address(cpu_address_1x),
@@ -570,101 +540,15 @@ module ics32 #(
     
     // verilator lint_restore
 
-    // --- Flash IO control ---
+    // --- Flash IO ---
 
-`ifndef SIMULATOR
-
-    wire [3:0] flash_out;
-    wire [3:0] flash_in_en;
-    wire [3:0] flash_in;
-
-    // IO
-
-    SB_IO #(
-        .PIN_TYPE(6'b110100),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) flash_inout [3:0] (
-        .PACKAGE_PIN(flash_io),
-        .OUTPUT_ENABLE(flash_in_en_selected),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(vdp_clk),
-        .D_OUT_0(flash_in_selected),
-        .INPUT_CLK(vdp_clk),
-        .D_IN_0(flash_out)
-    );
-
-    // CSN
-
-    SB_IO #(
-        .PIN_TYPE(6'b010100),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) flash_csn_io (
-        .PACKAGE_PIN(flash_csn),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(vdp_clk),
-        .D_OUT_0(flash_csn_selected)
-    );
-
-    // CLK
-
-    SB_IO #(
-        .PIN_TYPE(6'b010000),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) flash_clk_io (
-        .PACKAGE_PIN(flash_clk),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(vdp_clk),
-        .D_OUT_0(flash_clk_out[0]),
-        .D_OUT_1(flash_clk_out[1])
-    );
-
-`else
-
-    reg [3:0] flash_in_r;
-    reg [3:0] flash_out_r;
-    reg flash_csn_r;
-
-    assign flash_csn = flash_csn_r;
-    assign flash_in_bb = flash_in_r;
-    assign flash_in_en_bb = flash_in_en_selected;
-    wire [3:0] flash_out = flash_out_r;
-    
-    always @(posedge vdp_clk) begin
-        flash_in_r <= flash_in_selected;
-        flash_out_r <= flash_out_bb;
-        flash_csn_r <= flash_csn_selected;
-    end
-
-    // This isn't quite what SB_IO does in DDR mode
-    // Since we're not actually pushing out DDR data streams, this could be replaced with a reimplementation of flash_clk_out
-    // There might be also a simpler way to do this in a way that works in both sims
-
-    reg flash_clk_l, flash_clk_h;
-    assign flash_clk = vdp_clk ? flash_clk_h : flash_clk_l;
-
-    always @(posedge vdp_clk) begin
-        flash_clk_h <= flash_clk_out[0];
-    end
-
-    always @(negedge vdp_clk) begin
-        flash_clk_l <= flash_clk_out[1];
-    end
-
-`endif
-
-    wire [1:0] flash_clk_out = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b0, flash_dma_clk_en};
+    assign flash_clk_ddr = flash_ctrl_active ? {2{flash_ctrl_clk}} : {1'b0, flash_dma_clk_en};
     wire flash_dma_clk_en;
 
-    wire [3:0] flash_in_selected = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
-    wire [3:0] flash_in_en_selected = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
+    assign flash_in = flash_ctrl_active ? flash_ctrl_in : flash_dma_in;
+    assign flash_in_en = flash_ctrl_active ? flash_ctrl_in_en : flash_dma_in_en;
 
-    wire flash_csn_selected = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
+    assign flash_csn = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
 
     // --- Flash interface ---
 

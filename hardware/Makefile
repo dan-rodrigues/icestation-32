@@ -7,10 +7,16 @@ PACKAGE = sg48
 BOOT_DIR = ../firmware/
 BOOT_HEX = $(BOOT_DIR)boot.hex
 
-YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top ics32
+TOP = ics32_top_icebreaker
+
+YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top $(TOP)
 YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
 
 include sources.mk
+
+# iCEBreaker specific for now
+SOURCES += icebreaker/$(TOP).v
+SOURCES += $(ICEBREAKER_SRCS)
 
 main-build: pre-build
 	@$(MAKE) --no-print-directory $(PROJ).bit

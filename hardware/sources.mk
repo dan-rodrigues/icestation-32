@@ -6,7 +6,6 @@
  	address_decoder.v \
  	delay_ff.v \
  	flash_dma.v \
- 	pll.v \
  	bus_arbiter.v \
  	reset_generator.v \
  	cpu_peripheral_sync.v \
@@ -32,4 +31,10 @@ VDP_SOURCES := vdp/vdp.v \
 		vram_bus_arbiter_standard.v \
 	)
 
-SOURCES := $(SOURCES) $(VDP_SOURCES)
+ICEBREAKER_SRCS := \
+	$(addprefix icebreaker/, \
+		pll_ice40.v \
+	)
+	
+SOURCES +=  $(VDP_SOURCES)
+
