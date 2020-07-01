@@ -5,6 +5,8 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <getopt.h>
+#include <limits>
 
 #include "QSPIFlashSim.hpp"
 
@@ -26,15 +28,32 @@ const std::string title = "cxxrtl";
 
 #endif
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char **argv) {
     if (argc < 2) {
         std::cout << "Usage: <sim> <test-program>" << std::endl;
         return EXIT_SUCCESS;
     }
 
+    int64_t sim_cycles = std::numeric_limits<int64_t>::max();
+    int opt = 0;
+
+    while ((opt = getopt_long(argc, (char **)argv, "t:n", NULL, NULL)) != -1) {
+        switch (opt) {
+            case 't':
+                sim_cycles = strtol(optarg, NULL, 10);
+                if (sim_cycles <= 0) {
+                    std::cerr << "-t argument must be a non-zero positive integer" << std::endl;
+                    return EXIT_FAILURE;
+                }
+                break;
+            case '?':
+                return EXIT_FAILURE;
+        }
+    }
+
     // 1. load test program...
 
-    auto cpu_program_path = argv[1];
+    auto cpu_program_path = argv[optind];
 
     std::ifstream cpu_program_stream(cpu_program_path, std::ios::binary);
     if (cpu_program_stream.fail()) {
@@ -134,7 +153,7 @@ int main(int argc, const char * argv[]) {
     const auto sdl_poll_interval = 10000;
     auto sdl_poll_counter = sdl_poll_interval;
 
-    while (!sim.finished()) {
+    while (!sim.finished() && (time / 2) < sim_cycles) {
         // clock negedge
         sim.clk_2x = 0;
         sim.step(time);
