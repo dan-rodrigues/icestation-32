@@ -550,7 +550,7 @@ module ics32 #(
 
     assign flash_csn = flash_ctrl_active ? flash_ctrl_csn : flash_dma_csn;
 
-    // --- Flash interface ---
+    // --- Flash arbiter ---
 
     wire flash_read_ready;
     wire [31:0] flash_read_data;
@@ -559,14 +559,24 @@ module ics32 #(
     wire [3:0] flash_dma_in_en;
     wire [3:0] flash_dma_in;
 
-    flash_dma flash_dma(
+    flash_arbiter flash_arbiter(
         .clk(vdp_clk),
         .reset(vdp_reset),
 
-        .read_address(cpu_address[19:0]),
+        // Reader A: CPU
+
+        .read_address_a({4'b0, cpu_address[18:0]}),
+        .read_en_a(flash_read_en),
+        .ready_a(flash_read_ready),
+
+        // Reader B: ADPCM DSP
+        // (WIP)
+
+        // Flash read data
+
         .read_data(flash_read_data),
-        .read_en(flash_read_en),
-        .read_ready(flash_read_ready),
+
+        // Flash interface
 
         .flash_clk_en(flash_dma_clk_en),
         .flash_csn(flash_dma_csn),

@@ -5,7 +5,7 @@
  	vram.v \
  	address_decoder.v \
  	delay_ff.v \
- 	flash_dma.v \
+ 	flash_arbiter.v \
  	bus_arbiter.v \
  	reset_generator.v \
  	cpu_peripheral_sync.v \
