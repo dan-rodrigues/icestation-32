@@ -1,6 +1,6 @@
-CROSS = riscv-none-embed-
-
 COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
+include $(COMMON_DIR)/cross.mk
+
 SIM_DIR = $(COMMON_DIR)../../simulator/
 
 ifeq ($(OPT_LEVEL),)

@@ -29,7 +29,7 @@ void CXXRTLSimulation::preload_cpu_program(const std::vector<uint8_t> &program) 
     auto & cpu_ram_0 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__0_2e_mem;
     auto & cpu_ram_1 = top.memory_p_ics32_2e_cpu__ram_2e_cpu__ram__1_2e_mem;
 
-    size_t ipl_load_length = std::min((size_t)0x20000, program.size());
+    size_t ipl_load_length = std::min((size_t)0x10000, program.size());
 
     for (size_t i = 0; i < ipl_load_length / 4; i++) {
         uint16_t low_word = program[i * 4] | program[i * 4 + 1] << 8;
