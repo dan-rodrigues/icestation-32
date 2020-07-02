@@ -22,7 +22,7 @@ void VerilatorSimulation::preload_cpu_program(const std::vector<uint8_t> &progra
     auto ram_0 = tb->ics32_tb->ics32->cpu_ram->cpu_ram_0->mem;
     auto ram_1 = tb->ics32_tb->ics32->cpu_ram->cpu_ram_1->mem;
 
-    size_t ipl_load_length = std::min((size_t)0x20000, program.size());
+    size_t ipl_load_length = std::min((size_t)0x10000, program.size());
     for (size_t i = 0; i < ipl_load_length / 4; i++) {
         ram_0[i] = program[i * 4] | program[i * 4 + 1] << 8;
         ram_1[i] = program[i * 4 + 2] | program[i * 4 + 3] << 8;

@@ -203,7 +203,7 @@ void QSPIFlashSim::handle_new_cmd() {
             transition_io_state(IOState::IDLE);
             break;
         case CMD::EXIT_QPI:
-            if (cmd_mode != CMDMode::QPI) {
+            if (cmd_mode != CMDMode::SPI) {
                 log_info("Transitioning to SPI mode");
             } else {
                 log_info("Attempted to re-enter SPI mode");

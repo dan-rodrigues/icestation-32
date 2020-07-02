@@ -53,6 +53,11 @@ int main(int argc, const char **argv) {
 
     // 1. load test program...
 
+    if (optind >= argc) {
+        std::cerr << "Expected test program path after any options" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     auto cpu_program_path = argv[optind];
 
     std::ifstream cpu_program_stream(cpu_program_path, std::ios::binary);

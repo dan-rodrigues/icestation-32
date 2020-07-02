@@ -1,8 +1,8 @@
-CROSS = riscv-none-embed-
+COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
+
+include $(COMMON_DIR)/../software/common/cross.mk
 
 SOURCES = boot.S
-
-COMMON_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 
 CFLAGS = -Wall -flto -march=rv32i -mabi=ilp32 -ffreestanding -nostdlib
 DFLAGS = --line-numbers
