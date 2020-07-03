@@ -121,7 +121,7 @@ int main(int argc, char **argv)  {
     auto output_tiles_path = output_directory;
     output_tiles_path.append(tiles_name + ".h");
     std::ofstream output_tiles_stream(output_tiles_path, std::ios::out);
-    DataHeader::generate_header(image.tiles.ics_tiles(), "uint32_t", tiles_name, output_tiles_stream);
+    DataHeader::write_combined_h(image.tiles.ics_tiles(), "uint32_t", tiles_name, output_tiles_stream);
     output_tiles_stream.close();
 
     // palette header creation
@@ -130,7 +130,7 @@ int main(int argc, char **argv)  {
     auto palette_name = output_prefix + "palette";
     output_palette_path.append(palette_name + ".h");
     std::ofstream output_palette_stream(output_palette_path, std::ios::out);
-    DataHeader::generate_header(image.palette.ics_palette(), "uint16_t", palette_name, output_palette_stream);
+    DataHeader::write_combined_h(image.palette.ics_palette(), "uint16_t", palette_name, output_palette_stream);
     output_palette_stream.close();
 
     // output test PNG to quickly verify results
