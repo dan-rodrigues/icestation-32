@@ -4,7 +4,7 @@
 
 * GNU RISC-V toolchain
 
-The `CROSS` variable in `common/common.mk` must be set according to the name of your RISC-V installation.
+The `CROSS` variable in `common/cross.mk` must be set according to the name of your RISC-V installation.
 
 ## Simulation
 

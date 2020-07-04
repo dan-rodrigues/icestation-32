@@ -1,0 +1,2 @@
+CROSS = riscv-none-embed-
+
