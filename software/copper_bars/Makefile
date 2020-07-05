@@ -15,6 +15,6 @@ HEADERS = \
 	../lib/assert.h \
 	../lib/copper.h
 
-# OPT_LEVEL := -O3
+OPT_LEVEL := -O3
 
 include ../common/common.mk

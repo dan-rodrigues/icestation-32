@@ -1,6 +1,7 @@
  SOURCES := \
  	ics32.v \
  	picorv32.v \
+	vexriscv/vexriscv_shared_bus.v \
  	cpu_ram.v \
  	vram.v \
  	address_decoder.v \
@@ -31,10 +32,22 @@ VDP_SOURCES := vdp/vdp.v \
 		vram_bus_arbiter_standard.v \
 	)
 
+VEX_USE_BOOTLOADER ?= 1
+
+VEX_RESET_BOOT = vexriscv/vexriscv_reset_60000.v
+VEX_RESET_RAM = vexriscv/vexriscv_reset_00000.v
+
+ifeq ($(VEX_USE_BOOTLOADER), 1)
+	VEX = $(VEX_RESET_BOOT)
+else
+	VEX = $(VEX_RESET_RAM)
+endif
+
 ICEBREAKER_SRCS := \
 	$(addprefix icebreaker/, \
 		pll_ice40.v \
 	)
 	
 SOURCES +=  $(VDP_SOURCES)
+SOURCES += $(VEX)
 

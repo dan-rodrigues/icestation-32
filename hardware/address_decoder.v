@@ -17,6 +17,7 @@ module address_decoder #(
     input [19:0] cpu_address,
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
+    output reg [3:0] cpu_wstrb_decoder,
 
     output reg bootloader_en,
 
@@ -42,29 +43,22 @@ module address_decoder #(
     output reg flash_ctrl_en,
     output reg flash_ctrl_write_en
 );
-    wire [19:0] cpu_address_s;
-    wire cpu_mem_valid_s;
-    wire [3:0] cpu_wstrb_s;
+    reg [19:0] cpu_address_r;
+    reg cpu_mem_valid_r;
 
     generate
         if (REGISTERED_INPUTS) begin
-            reg [19:0] cpu_address_r;
-            reg cpu_mem_valid_r;
-            reg [3:0] cpu_wstrb_r;
-
             always @(posedge clk) begin
                 cpu_address_r <= cpu_address;
                 cpu_mem_valid_r <= cpu_mem_valid;
-                cpu_wstrb_r <= cpu_wstrb;
+                cpu_wstrb_decoder <= cpu_wstrb;
             end
-
-            assign cpu_address_s = cpu_address_r;
-            assign cpu_mem_valid_s = cpu_mem_valid_r;
-            assign cpu_wstrb_s = cpu_wstrb_r;
         end else begin
-            assign cpu_address_s = cpu_address;
-            assign cpu_mem_valid_s = cpu_mem_valid;
-            assign cpu_wstrb_s = cpu_wstrb;
+            always @* begin
+                cpu_address_r = cpu_address;
+                cpu_mem_valid_r = cpu_mem_valid;
+                cpu_wstrb_decoder = cpu_wstrb;
+            end
         end
     endgenerate
 
@@ -89,11 +83,11 @@ module address_decoder #(
         flash_ctrl_en = 0;
         flash_ctrl_write_en = 0;
 
-        if (cpu_mem_valid_s && !reset) begin
-            if (cpu_address_s[19]) begin
+        if (cpu_mem_valid_r && !reset) begin
+            if (cpu_address_r[19]) begin
                 flash_read_en = 1;
             end else begin
-                case (cpu_address_s[18:16])
+                case (cpu_address_r[18:16])
                     0: cpu_ram_en = 1;
                     1: vdp_en = 1;
                     2: status_en = 1;
@@ -105,13 +99,13 @@ module address_decoder #(
                 endcase    
             end
 
-            cpu_ram_write_en = cpu_ram_en && cpu_wstrb_s;
-            vdp_write_en = vdp_en && cpu_wstrb_s;
-            status_write_en = status_en && cpu_wstrb_s;
-            dsp_write_en = dsp_en && cpu_wstrb_s;
-            pad_write_en = pad_en && cpu_wstrb_s;
-            cop_ram_write_en = cop_ram_en && cpu_wstrb_s;
-            flash_ctrl_write_en = flash_ctrl_en && cpu_wstrb_s;
+            cpu_ram_write_en = cpu_ram_en && cpu_wstrb_decoder;
+            vdp_write_en = vdp_en && cpu_wstrb_decoder;
+            status_write_en = status_en && cpu_wstrb_decoder;
+            dsp_write_en = dsp_en && cpu_wstrb_decoder;
+            pad_write_en = pad_en && cpu_wstrb_decoder;
+            cop_ram_write_en = cop_ram_en && cpu_wstrb_decoder;
+            flash_ctrl_write_en = flash_ctrl_en && cpu_wstrb_decoder;
         end
     end
  
