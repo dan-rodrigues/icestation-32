@@ -17,7 +17,7 @@ module vdp_host_interface #(
     input [5:0] host_address,
     output reg [4:0] register_write_address,
 
-    // writes
+    // Writes..
 
     output reg register_write_en,
     output reg [15:0] register_write_data,
@@ -34,13 +34,13 @@ module vdp_host_interface #(
     input [4:0] cop_write_address,
     input [15:0] cop_write_data,
 
-    // CPU reads
+    // Reads (only from CPU)
 
     input host_read_en,
     output reg [4:0] read_address
 );
-    reg host_write_en_r, host_write_en_d;
-    reg host_read_en_r, host_read_en_d;
+    reg host_write_en_r;
+    reg host_read_en_r;
 
     // only used in 8bit mode
     reg [7:0] host_write_data_r;
@@ -51,40 +51,12 @@ module vdp_host_interface #(
         host_write_data_r <= host_write_data;
 
         host_write_en_r <= host_write_en;
-        host_write_en_d <= host_write_en_r;
-
         host_read_en_r <= host_read_en;
-        host_read_en_d <= host_read_en_r;
     end
 
-    // this is intended to stall by some variable number of cycles, when that's inevitably needed
-    
-    reg [1:0] busy_counter;
-    reg busy;
-
-    // cpu read / write control
-
     always @(posedge clk) begin
-        if (reset) begin
-            busy_counter <= 0;
-            busy <= 0;
-            ready <= 0;
-        end else begin
-            ready <= 0;
-
-            // probably have to register this one anyway
-            // can expose it as an output of delay_ff
-            if (busy_counter > 0) begin
-                busy_counter <= busy_counter - 1;
-            end else if (busy) begin
-                ready <= 1;
-                busy <= 0;
-            end else if (host_read_en_r && !host_read_en_d || host_write_en_r && !host_write_en_d) begin
-                ready <= 1;
-                busy_counter <= 0;
-                busy <= 0;
-            end
-        end
+        // There are no additional wait cycles
+        ready <= (host_write_en || host_read_en);
     end
 
     reg [7:0] data_t;

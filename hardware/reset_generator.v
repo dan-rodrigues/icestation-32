@@ -7,7 +7,7 @@
 `default_nettype none
 
 module reset_generator #(
-    parameter integer DURATION = 64
+    parameter integer DURATION_EXPONENT = 8
 ) (
     input clk_1x,
     input clk_2x,
@@ -18,15 +18,13 @@ module reset_generator #(
     output reg reset_1x = 1,
     output reg reset_2x = 1
 );
-    localparam LOG2_DURATION = $clog2(DURATION);
-
     reg pll_locked_r;
 
     always @(negedge clk_2x) begin
         pll_locked_r <= pll_locked;
     end
 
-    reg [LOG2_DURATION:0] counter = 0;
+    reg [DURATION_EXPONENT:0] counter = 0;
     
     reg reset = 1;
 
@@ -35,7 +33,7 @@ module reset_generator #(
             counter <= 0;
             reset <= 1;
         end else begin
-            if (counter != DURATION) begin
+            if (!counter[DURATION_EXPONENT]) begin
                 counter <= counter + 1;
             end else if (!clk_1x) begin
                 // ensure that both reset_1x and reset_2x occur on the same rising edge

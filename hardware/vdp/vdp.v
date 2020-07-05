@@ -325,9 +325,9 @@ module vdp #(
     // --- Register reads ---
 
     always @(posedge clk) begin
-        case (register_read_address[1:0])
+        case (register_read_address[1])
             0: host_read_data <= raster_x;
-            2: host_read_data <= raster_y;
+            1: host_read_data <= raster_y;
         endcase
     end
 

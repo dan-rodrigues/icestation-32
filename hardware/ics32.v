@@ -11,7 +11,7 @@
 module ics32 #(
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] FORCE_FAST_CPU = 0,
-    parameter integer RESET_DURATION = 4,
+    parameter integer RESET_DURATION_EXPONENT = 2,
     parameter [0:0] ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
@@ -102,7 +102,7 @@ module ics32 #(
     wire reset_1x, reset_2x;
 
     reset_generator #(
-        .DURATION(RESET_DURATION)
+        .DURATION_EXPONENT(RESET_DURATION_EXPONENT)
     ) reset_generator (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

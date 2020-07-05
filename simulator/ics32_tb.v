@@ -30,7 +30,7 @@ module ics32_tb(
     ics32 #(
         .ENABLE_WIDESCREEN(1),
         .FORCE_FAST_CPU(0),
-        .RESET_DURATION(4),
+        .RESET_DURATION_EXPONENT(2),
 
         // For simulator use, there's no point enabling this unless the bootloader itself is being tested
         // The sim performs the bootloaders job of copying the program from flash to CPU RAM
