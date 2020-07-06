@@ -9,6 +9,7 @@
 `include "bus_arbiter.vh"
 
 module ics32 #(
+    parameter [0:0] USE_VEXRISCV = 1,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] FORCE_FAST_CPU = 0,
     parameter integer RESET_DURATION_EXPONENT = 2,
@@ -145,6 +146,8 @@ module ics32 #(
     wire cop_ram_write_en;
     wire flash_ctrl_en, flash_ctrl_write_en;
 
+    wire [3:0] cpu_wstrb_decoder;
+
     address_decoder #(
         .REGISTERED_INPUTS(!ENABLE_FAST_CPU)
     ) decoder (
@@ -154,6 +157,8 @@ module ics32 #(
         .cpu_address(cpu_address),
         .cpu_mem_valid(cpu_mem_valid),
         .cpu_wstrb(cpu_wstrb),
+
+        .cpu_wstrb_decoder(cpu_wstrb_decoder),
 
         .vdp_en(vdp_en),
         .vdp_write_en(vdp_write_en),
@@ -180,7 +185,7 @@ module ics32 #(
 
     // --- Copper RAM ---
 
-    wire [10:0] cop_ram_write_address = {cpu_address[11:2], cpu_wstrb[2]};
+    wire [10:0] cop_ram_write_address = {cpu_address[11:2], cpu_wstrb_decoder[2]};
     wire [15:0] cop_ram_read_data;
 
     wire [10:0] cop_ram_read_address;
@@ -314,7 +319,7 @@ module ics32 #(
 
     wire vdp_active_frame_ended;
 
-    wire [6:0] vdp_write_address = {cpu_address[15:2], cpu_wstrb[2]};
+    wire [6:0] vdp_write_address = {cpu_address[15:2], cpu_wstrb_decoder[2]};
 
     wire vdp_read_en = vdp_en && !vdp_write_en;
 
@@ -491,52 +496,68 @@ module ics32 #(
 
     localparam CPU_RESET_PC = ENABLE_BOOTLOADER ? 32'h60000 : 32'h00000;
 
-    picorv32 #(
-        .ENABLE_TRACE(0),
-        // register file gets inferred as BRAMs so using rv32e has little practical gain
-        .ENABLE_REGS_16_31(1),
+    generate
+        if (USE_VEXRISCV) begin
+            vexriscv_shared_bus vex_shared_bus(
+                .clk(cpu_clk),
+                .reset(cpu_reset),
 
-        // MMIO DSP is used instead of the included PCPI implementation
-        .ENABLE_FAST_MUL(0),
+                .mem_ready(cpu_mem_ready_1x),
+                .mem_valid(cpu_mem_valid_1x),
+                .mem_addr(cpu_address_1x),
+                .mem_rdata(cpu_read_data_1x),
+                .mem_wdata(cpu_write_data_1x),
+                .mem_wstrb(cpu_wstrb_1x)
+            );
+        end else begin
+            picorv32 #(
+                .ENABLE_TRACE(0),
+                // register file gets inferred as BRAMs so using rv32e has little practical gain
+                .ENABLE_REGS_16_31(1),
 
-        .PROGADDR_RESET(CPU_RESET_PC),
-        // SP defined by software
-        // .STACKADDR(32'h0001_0000),
-        
-        // this greatly helps shfit speed but is still an optional extra that could be removed
-        .TWO_STAGE_SHIFT(1),
+                // MMIO DSP is used instead of the included PCPI implementation
+                .ENABLE_FAST_MUL(0),
 
-        // huge cell savings with this enabled
-        .TWO_CYCLE_ALU(1),
+                .PROGADDR_RESET(CPU_RESET_PC),
+                // SP defined by software
+                // .STACKADDR(32'h0001_0000),
+                
+                // this greatly helps shfit speed but is still an optional extra that could be removed
+                .TWO_STAGE_SHIFT(0),
 
-        // moderate savings on these and not really expecting trouble with aligned C-generated code
-        .CATCH_MISALIGN(0),
-        .CATCH_ILLINSN(0),
+                // huge cell savings with this enabled
+                .TWO_CYCLE_ALU(1),
 
-        // this seems neutral at best even with retiming?
-        .TWO_CYCLE_COMPARE(0),
+                // moderate savings on these and not really expecting trouble with aligned C-generated code
+                .CATCH_MISALIGN(0),
+                .CATCH_ILLINSN(0),
 
-        // rdcycle(h) instructions are not needed
-        .ENABLE_COUNTERS(0),
-        .ENABLE_COUNTERS64(0),
+                // this seems neutral at best even with retiming?
+                .TWO_CYCLE_COMPARE(0),
 
-        // IRQ now disabled (vdp_copper to be used instead)
-        .ENABLE_IRQ(0),
-        .ENABLE_IRQ_QREGS(0),
-        .ENABLE_IRQ_TIMER(0)
-    ) pico (
-        .clk(cpu_clk),
-        .resetn(!cpu_reset),
+                // rdcycle(h) instructions are not needed
+                .ENABLE_COUNTERS(0),
+                .ENABLE_COUNTERS64(0),
 
-        .mem_ready(cpu_mem_ready_1x),
-        .mem_valid(cpu_mem_valid_1x),
-        .mem_addr(cpu_address_1x),
-        .mem_rdata(cpu_read_data_1x),
-        .mem_wdata(cpu_write_data_1x),
-        .mem_wstrb(cpu_wstrb_1x),
+                // IRQ now disabled (vdp_copper to be used instead)
+                .ENABLE_IRQ(0),
+                .ENABLE_IRQ_QREGS(0),
+                .ENABLE_IRQ_TIMER(0)
+            ) pico (
+                .clk(cpu_clk),
+                .resetn(!cpu_reset),
 
-        .irq(0)
-    );
+                .mem_ready(cpu_mem_ready_1x),
+                .mem_valid(cpu_mem_valid_1x),
+                .mem_addr(cpu_address_1x),
+                .mem_rdata(cpu_read_data_1x),
+                .mem_wdata(cpu_write_data_1x),
+                .mem_wstrb(cpu_wstrb_1x),
+
+                .irq(0)
+            );            
+        end
+    endgenerate
     
     // verilator lint_restore
 

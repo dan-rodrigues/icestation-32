@@ -19,7 +19,9 @@ static const uint16_t MAP_BASE = 0x1000;
 static const uint8_t BAR_PALETTE_ID = 0;
 static const uint8_t BAR_COLOR_ID = 1;
 
-static void draw_raster_bars(uint16_t line_offset, uint16_t angle);
+static void draw_raster_bars(uint32_t line_offset, uint32_t angle);
+
+static uint16_t preshifted_argb[32];
 
 int main() {
     vdp_enable_copper(false);
@@ -86,6 +88,14 @@ int main() {
 
     vdp_wait_frame_ended();
 
+    for (uint8_t i = 0; i < 32; i++) {
+        if (i < 16) {
+            preshifted_argb[i] = i << 12 | i << 8 | i << 4 | i;
+        } else {
+            preshifted_argb[i] = preshifted_argb[~i & 0xf];
+        }
+    }
+
     while (true) {
         draw_raster_bars(line_offset, angle);
 
@@ -99,12 +109,12 @@ int main() {
     return 0;
 }
 
-static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
+static void draw_raster_bars(uint32_t line_offset, uint32_t angle) {
     static const uint16_t color_masks[] = {
         0xff00, 0xf0f0, 0xf00f, 0xffff, 0xfff0, 0xf0ff, 0xff0f, 0xffff
     };
     const size_t color_mask_count = sizeof(color_masks) / sizeof(uint16_t);
-    const uint8_t bar_height = 32;
+    const uint32_t bar_height = 32;
 
     COPBatchWriteConfig config = {
         .mode = CWM_DOUBLE,
@@ -120,37 +130,29 @@ static void draw_raster_bars(uint16_t line_offset, uint16_t angle) {
 
     vdp_enable_copper(true);
 
-    uint16_t line = 0;
+    uint32_t line = 0;
 
     while (line < SCREEN_ACTIVE_HEIGHT) {
-        const uint16_t angle_delta = 6;
+        const uint32_t angle_delta = 6;
         const int16_t offset_scale = 0x18;
 
         int16_t sint = sin(angle);
         angle += angle_delta;
-        int16_t offset = sys_multiply(sint, offset_scale) / SIN_MAX;
+        int32_t offset = sys_multiply(sint, offset_scale) / SIN_MAX;
 
-        uint16_t selected_line = line + line_offset + offset;
-        uint16_t bar_offset = selected_line % bar_height;
+        uint32_t selected_line = line + line_offset + offset;
+        uint32_t bar_offset = selected_line % bar_height;
 
         config.batch_count = 1;
         cop_start_batch_write(&config);
 
-        uint8_t mask_selected = (selected_line / bar_height) % color_mask_count;
-        uint16_t color_mask = color_masks[mask_selected];
+        uint32_t mask_selected = (selected_line / bar_height) % color_mask_count;
+        uint32_t color_mask = color_masks[mask_selected];
 
-        uint16_t color = 0;
-        uint8_t y = bar_offset % (bar_height / 2);
-
-        if (bar_offset < (bar_height / 2)) {
-            uint8_t alpha = y;
-            color = alpha << 12 | y << 8 | y << 4 | y;
-            color &= color_mask;
-        } else {
-            uint8_t alpha = ~y & 0xf;
-            color = (0x0fff | alpha << 12) - (y << 8) - (y << 4) - y;
-            color &= color_mask;
-        }
+        uint32_t color = 0;
+        uint32_t y = bar_offset % bar_height;
+        color = preshifted_argb[y];
+        color &= color_mask;
 
         cop_add_batch_double(&config, BAR_COLOR_ID, color);
 

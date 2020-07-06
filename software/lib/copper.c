@@ -15,7 +15,7 @@
 static volatile uint16_t * const COP_RAM = (uint16_t *)0x50000;
 static const size_t COP_RAM_SIZE = 0x1000 / sizeof(uint16_t);
 
-static uint16_t cop_pc = 0;
+static uint32_t cop_pc = 0;
 
 static const uint8_t OP_SHIFT = 14;
 
