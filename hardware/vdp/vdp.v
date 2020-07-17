@@ -438,7 +438,7 @@ module vdp #(
 
     // --- Raster offset for sprites ---
 
-    localparam SPRITE_X_INITIAL = -1;
+    localparam SPRITE_X_INITIAL = -2;
     localparam SPRITE_START_LEAD_TIME = 10;
     localparam SPRITE_HOLD_TIME = HEIGHT_TOTAL - 512;
 
@@ -647,8 +647,8 @@ module vdp #(
         .clk(clk),
         .start_new_line(sprite_core_reset),
 
-        .x(sprites_x),
-        .y(sprites_y),
+        .render_x(sprites_x),
+        .render_y(sprites_y),
 
         .meta_address(sprite_metadata_address),
         .meta_write_data(sprite_metadata_write_data),

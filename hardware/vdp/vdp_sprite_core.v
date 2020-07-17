@@ -6,12 +6,14 @@
 
 `default_nettype none
 
-module vdp_sprite_core(
+module vdp_sprite_core #(
+    parameter [0:0] REGSTER_RENDER_X = 0
+) (
     input clk,
     input start_new_line,
 
-    input [9:0] x,
-    input [8:0] y,
+    input [9:0] render_x,
+    input [8:0] render_y,
 
     input [7:0] meta_address,
     input [15:0] meta_write_data,
@@ -27,12 +29,31 @@ module vdp_sprite_core(
     output [1:0] pixel_priority
 );
     reg start_new_line_r;
-    reg [9:0] x_r;
 
     always @(posedge clk) begin
         start_new_line_r <= start_new_line;
-        x_r <= x;
     end
+
+    // yosys hangs on the "make count" target with x_r removed:
+    // > 28.39. Executing DFF2DFFE pass (transform $dff to $dffe where applicable).
+    // ...
+    // need to investigate this, leaving this commented out until then
+    // It would save on LCs though
+    // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
+
+    reg [9:0] render_x_r;
+
+    generate
+        if (REGSTER_RENDER_X) begin
+            always @(posedge clk) begin
+                render_x_r <= render_x;
+            end
+        end else begin
+            always @* begin
+                render_x_r = render_x;
+            end
+        end
+    endgenerate
 
     // --- Metadata block writing ---
 
@@ -124,7 +145,7 @@ module vdp_sprite_core(
     // w: width select (8 or 16)
     // T: terminator bit
 
-    wire hit_list_select = y[0];
+    wire hit_list_select = render_y[0];
 
     wire hit_list_ended = hit_list_render_read_data[15];
 
@@ -164,7 +185,7 @@ module vdp_sprite_core(
     // --- Line buffers ---
 
     // selected buffer toggles every line
-    wire line_buffer_select = !y[0];
+    wire line_buffer_select = !render_y[0];
 
     // there is an offscreen and onscreen buffer at any given time
     // on: onscreen - being read
@@ -227,15 +248,7 @@ module vdp_sprite_core(
     assign line_buffer_display_data = line_buffer_select ?
         line_buffer_data_out_1 : line_buffer_data_out_0;
 
-     // yosys hangs on the "make count" target with x_r removed:
-     // > 28.39. Executing DFF2DFFE pass (transform $dff to $dffe where applicable).
-     // ...
-     // need to investigate this, leaving this commented out until then
-     // It would save on LCs though
-     // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
-
-    assign line_buffer_display_read_address = x_r;
-    // assign line_buffer_display_read_address = x;
+    assign line_buffer_display_read_address = render_x_r;
 
     // These are registered in the sprite_line_buffer module
 
@@ -262,7 +275,7 @@ module vdp_sprite_core(
         .clk(clk),
         .restart(start_new_line_r),
 
-        .raster_y(y),
+        .render_y(render_y),
 
         // reading
         .sprite_y(sprite_y_read),

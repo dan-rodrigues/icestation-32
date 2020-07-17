@@ -18,7 +18,7 @@ module vdp_sprite_raster_collision #(
     input clk,
     input restart,
 
-    input [8:0] raster_y,
+    input [8:0] render_y,
 
     // sprite attribute data
     input [8:0] sprite_y,
@@ -42,7 +42,7 @@ module vdp_sprite_raster_collision #(
     localparam READ_LATENCY = 3;
 
     // changes per line
-    reg [8:0] raster_y_r;
+    reg [8:0] render_y_r;
 
     // changes per sprite
     reg [8:0] sprite_y_r;
@@ -89,7 +89,7 @@ module vdp_sprite_raster_collision #(
     reg [8:0] sprite_y_intersect_t;
     reg has_collision, has_collision_t;
 
-    wire [8:0] sprite_y_intersect_nx = raster_y_r - sprite_y_r;
+    wire [8:0] sprite_y_intersect_nx = render_y_r - sprite_y_r;
     wire has_collision_nx = sprite_y_intersect_nx < sprite_height_r;
     wire hit_list_needs_increment = ready && (has_collision_t || will_finish);
 
@@ -111,7 +111,7 @@ module vdp_sprite_raster_collision #(
 
             // probably not needed, account for any latency and remove
             // this is already registered in parent vdp module
-            raster_y_r <= raster_y;
+            render_y_r <= render_y;
             
             // -1 for preincrement index
             hit_list_index <= -1;
@@ -249,14 +249,14 @@ module vdp_sprite_raster_collision #(
     // the pipeline adds latency of PIPE_DELAY cycles so these are added for convenience
 
     reg [8:0] input_sprite_y;
-    reg [8:0] input_raster_y;
+    reg [8:0] input_render_y;
     reg [7:0] input_sprite_height;
     reg input_flip_y;
     reg input_width_select_in;
 
     always @(posedge clk) begin
         input_sprite_y = $past(sprite_y, PIPE_DELAY - 1);
-        input_raster_y = $past(raster_y, PIPE_DELAY - 1);
+        input_render_y = $past(render_y, PIPE_DELAY - 1);
         input_sprite_height = $past(sprite_height, PIPE_DELAY - 1);
         input_flip_y = $past(flip_y, PIPE_DELAY - 1);
         input_width_select_in = $past(width_select_in, PIPE_DELAY - 1);
@@ -266,7 +266,7 @@ module vdp_sprite_raster_collision #(
         if (valid_count > (PIPE_DELAY + 1)) begin
             sprite_top = input_sprite_y;
             sprite_pos = input_sprite_y + input_sprite_height;
-            raster_pos = input_raster_y;
+            raster_pos = input_render_y;
             flipped_y_intersect = (sprite_y_intersect ^ {4{input_flip_y}}) % input_sprite_height;
 
             // a) cases where there IS collision
@@ -275,7 +275,7 @@ module vdp_sprite_raster_collision #(
                 assert(flipped_y_intersect < input_sprite_height);
 
                 // raster >= sprite.top
-                // assert($past(raster_y, PIPE_DELAY) >= $past(sprite_y, PIPE_DELAY));
+                // assert($past(render_y, PIPE_DELAY) >= $past(sprite_y, PIPE_DELAY));
 
                 // sprite.bottom > raster
                 assert(sprite_pos > raster_pos);
@@ -294,9 +294,9 @@ module vdp_sprite_raster_collision #(
             end
         end
 
-        // raster_y is not supposed to change in the middle of a sprite list evaluation
+        // render_y is not supposed to change in the middle of a sprite list evaluation
         if (!restart) begin
-            assume($stable(raster_y));
+            assume($stable(render_y));
         end
     end
 
