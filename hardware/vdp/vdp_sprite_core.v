@@ -10,8 +10,8 @@ module vdp_sprite_core(
     input clk,
     input start_new_line,
 
-    input [9:0] x,
-    input [8:0] y,
+    input [9:0] render_x,
+    input [8:0] render_y,
 
     input [7:0] meta_address,
     input [15:0] meta_write_data,
@@ -27,11 +27,11 @@ module vdp_sprite_core(
     output [1:0] pixel_priority
 );
     reg start_new_line_r;
-    reg [9:0] x_r;
+    // reg [9:0] x_r;
 
     always @(posedge clk) begin
         start_new_line_r <= start_new_line;
-        x_r <= x;
+        // x_r <= render_x;
     end
 
     // --- Metadata block writing ---
@@ -124,7 +124,7 @@ module vdp_sprite_core(
     // w: width select (8 or 16)
     // T: terminator bit
 
-    wire hit_list_select = y[0];
+    wire hit_list_select = render_y[0];
 
     wire hit_list_ended = hit_list_render_read_data[15];
 
@@ -164,7 +164,7 @@ module vdp_sprite_core(
     // --- Line buffers ---
 
     // selected buffer toggles every line
-    wire line_buffer_select = !y[0];
+    wire line_buffer_select = !render_y[0];
 
     // there is an offscreen and onscreen buffer at any given time
     // on: onscreen - being read
@@ -234,7 +234,7 @@ module vdp_sprite_core(
      // It would save on LCs though
      // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
 
-    assign line_buffer_display_read_address = x_r;
+    assign line_buffer_display_read_address = render_x;
     // assign line_buffer_display_read_address = x;
 
     // These are registered in the sprite_line_buffer module
@@ -262,7 +262,7 @@ module vdp_sprite_core(
         .clk(clk),
         .restart(start_new_line_r),
 
-        .raster_y(y),
+        .render_y(render_y),
 
         // reading
         .sprite_y(sprite_y_read),
