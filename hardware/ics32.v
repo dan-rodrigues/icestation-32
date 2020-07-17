@@ -622,11 +622,8 @@ module ics32 #(
     wire flash_ctrl_clk_data = cpu_write_data[8];
     wire flash_ctrl_csn_data = cpu_write_data[9];
 
-    reg [3:0] flash_ctrl_read_data;
-
-    always @(posedge vdp_clk) begin
-        flash_ctrl_read_data <= flash_out;
-    end
+    // It's expected that flash_out is registered in the parent module (SB_IO reg for iCE40)
+    wire [3:0] flash_ctrl_read_data = flash_out;
 
     always @(posedge vdp_clk) begin
         if (vdp_reset) begin
