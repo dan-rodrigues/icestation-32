@@ -6,7 +6,9 @@
 
 `default_nettype none
 
-module vdp_sprite_core(
+module vdp_sprite_core #(
+    parameter [0:0] REGSTER_RENDER_X = 0
+) (
     input clk,
     input start_new_line,
 
@@ -27,12 +29,31 @@ module vdp_sprite_core(
     output [1:0] pixel_priority
 );
     reg start_new_line_r;
-    // reg [9:0] x_r;
 
     always @(posedge clk) begin
         start_new_line_r <= start_new_line;
-        // x_r <= render_x;
     end
+
+    // yosys hangs on the "make count" target with x_r removed:
+    // > 28.39. Executing DFF2DFFE pass (transform $dff to $dffe where applicable).
+    // ...
+    // need to investigate this, leaving this commented out until then
+    // It would save on LCs though
+    // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
+
+    reg [9:0] render_x_r;
+
+    generate
+        if (REGSTER_RENDER_X) begin
+            always @(posedge clk) begin
+                render_x_r <= render_x;
+            end
+        end else begin
+            always @* begin
+                render_x_r = render_x;
+            end
+        end
+    endgenerate
 
     // --- Metadata block writing ---
 
@@ -227,15 +248,7 @@ module vdp_sprite_core(
     assign line_buffer_display_data = line_buffer_select ?
         line_buffer_data_out_1 : line_buffer_data_out_0;
 
-     // yosys hangs on the "make count" target with x_r removed:
-     // > 28.39. Executing DFF2DFFE pass (transform $dff to $dffe where applicable).
-     // ...
-     // need to investigate this, leaving this commented out until then
-     // It would save on LCs though
-     // SPRITE_X_INITIAL needs to have an additional -1 if this change is made
-
-    assign line_buffer_display_read_address = render_x;
-    // assign line_buffer_display_read_address = x;
+    assign line_buffer_display_read_address = render_x_r;
 
     // These are registered in the sprite_line_buffer module
 
