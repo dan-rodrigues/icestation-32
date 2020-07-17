@@ -241,7 +241,6 @@ module vdp #(
         end
 
         sprite_metadata_write_en <= 0;
-
         sprite_metadata_block_select <= sprite_metadata_block_select_nx;
 
         if (sprite_metadata_write_en && sprite_meta_address_needs_increment) begin
@@ -339,17 +338,13 @@ module vdp #(
     reg sprite_metadata_write_en;
 
     reg [2:0] sprite_metadata_block_select_nx;
-    wire sprite_meta_address_needs_increment = sprite_metadata_block_select == 3'b100;
+    wire sprite_meta_address_needs_increment = sprite_metadata_block_select[2];
 
     always @* begin
         sprite_metadata_block_select_nx = sprite_metadata_block_select;
 
         if (sprite_metadata_write_en) begin
-            sprite_metadata_block_select_nx = sprite_metadata_block_select << 1;
-
-            if (sprite_meta_address_needs_increment) begin
-                sprite_metadata_block_select_nx = 3'b001;
-            end
+            sprite_metadata_block_select_nx = {sprite_metadata_block_select[1:0], sprite_metadata_block_select[2]};
         end
     end
 
