@@ -14,7 +14,6 @@ module vdp_scroll_pixel_generator #(
     input [2:0] raster_x_granular,
     input [31:0] pixel_row,
     input [3:0] palette_number,
-    input hflip,
 
     input tile_row_load_enable,
     input meta_load_enable,
@@ -31,11 +30,7 @@ module vdp_scroll_pixel_generator #(
     reg [3:0] palette_number_preloaded;
     reg [3:0] output_palette_number_t;
 
-    reg hflip_preloaded;
-    reg output_hflip;
-    reg output_hflip_t;
-
-    wire [7:0] pixel_nx = {output_palette_number, output_hflip ? output_pixel_row[3:0] : output_pixel_row[31:28]};
+    wire [7:0] pixel_nx = {output_palette_number, output_pixel_row[31:28]};
 
     always @(posedge clk) begin
         pixel <= pixel_nx;
@@ -48,7 +43,6 @@ module vdp_scroll_pixel_generator #(
 
         if (meta_load_enable) begin
             palette_number_preloaded <= palette_number;
-            hflip_preloaded <= hflip;
         end
     end
 
@@ -56,7 +50,6 @@ module vdp_scroll_pixel_generator #(
         if (shifter_preload_load_enable) begin
             output_pixel_row_t <= STAGE_PIXEL_ROW ? pixel_row_preloaded : pixel_row;
             output_palette_number_t <= palette_number_preloaded;
-            output_hflip_t <= hflip_preloaded;
         end
     end
 
@@ -64,13 +57,8 @@ module vdp_scroll_pixel_generator #(
         if (~(scroll_x_granular) == raster_x_granular) begin
             output_pixel_row <= output_pixel_row_t;
             output_palette_number <= output_palette_number_t;
-            output_hflip <= output_hflip_t;
         end else begin
-            if (!output_hflip) begin
-                output_pixel_row <= {output_pixel_row[27:0], 4'b0000};
-            end else begin
-                output_pixel_row <= {4'b0000, output_pixel_row[31:4]};
-            end
+            output_pixel_row <= {output_pixel_row[27:0], 4'b0000};
         end
     end
 

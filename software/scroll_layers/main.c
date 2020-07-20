@@ -12,6 +12,8 @@
 
 // This only exists to test refactoring / rewrites of vdp_bus_arbiter_*.v
 
+static void print_greeting(uint8_t palette_id, bool flip_x, bool flip_y);
+
 int main() {
     const uint8_t layer_count = 4;
     const uint16_t x_base = 500;
@@ -50,28 +52,19 @@ int main() {
         vdp_set_single_palette_color(i * 0x10 + 1, fg_colors[i]);
     }
 
-    const char *const hello_string = "Hello world!";
-    const uint8_t flip_x = false;
-    const uint8_t flip_y = false;
-
     for (uint8_t i = 0; i < layer_count; i++) {
         uint16_t layer_map_base = i * map_size + map_vram_base;
         vdp_seek_vram(layer_map_base);
 
         uint8_t palette_id = i;
 
-        const char *string = hello_string;
+        // Regular, unflipped text
+        print_greeting(palette_id, false, false);
 
-        while (*string) {
-            uint16_t map = *string & 0xff;
-            map |= palette_id << SCROLL_MAP_PAL_SHIFT;
-            map |= flip_x << SCROLL_MAP_X_FLIP_SHIFT;
-            map |= flip_y << SCROLL_MAP_Y_FLIP_SHIFT;
+        vdp_write_vram(' ');
 
-            vdp_write_vram(map);
-
-            string++;
-        }
+        // Flipped text
+        print_greeting(palette_id, true, false);
     }
 
     uint32_t frame_counter = 0;
@@ -86,5 +79,20 @@ int main() {
         vdp_wait_frame_ended();
 
         frame_counter++;
+    }
+}
+
+static void print_greeting(uint8_t palette_id, bool flip_x, bool flip_y) {
+    const char *string = "Hello world!";
+
+    while (*string) {
+        uint16_t map = *string & 0xff;
+        map |= palette_id << SCROLL_MAP_PAL_SHIFT;
+        map |= flip_x << SCROLL_MAP_X_FLIP_SHIFT;
+        map |= flip_y << SCROLL_MAP_Y_FLIP_SHIFT;
+
+        vdp_write_vram(map);
+
+        string++;
     }
 }

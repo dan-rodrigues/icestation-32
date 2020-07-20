@@ -177,12 +177,12 @@ module vdp_vram_bus_arbiter_standard(
     assign scroll_palette_0 = palette_selected;
     assign scroll_palette_1 = palette_selected;
     assign scroll_palette_2 = palette_selected;
-    assign scroll_palette_3 = palette_selected;
+    assign scroll_palette_3 = 0;
 
-    assign scroll_x_flip_0 = x_flip_selected;
-    assign scroll_x_flip_1 = x_flip_selected;
-    assign scroll_x_flip_2 = x_flip_selected;
-    assign scroll_x_flip_3 = x_flip_selected;
+    assign scroll_x_flip_0 = scroll_map_data_hold[`LAYER_SCROLL0][9];
+    assign scroll_x_flip_1 = scroll_map_data_hold[`LAYER_SCROLL1][9];
+    assign scroll_x_flip_2 = scroll_map_data_hold[`LAYER_SCROLL2][9];
+    assign scroll_x_flip_3 = 0;
 
     always @(posedge clk) begin
         if (scroll_meta_load[`LAYER_SCROLL0])

@@ -21,6 +21,7 @@ module vdp_sprite_core #(
     input meta_we,
 
     input [13:0] vram_base_address,
+    output vram_read_data_needs_x_flip,
     output [13:0] vram_read_address,
     input [31:0] vram_read_data,
     input vram_data_valid,
@@ -308,6 +309,7 @@ module vdp_sprite_core #(
 
         .vram_base_address(vram_base_address),
         .vram_read_address(vram_read_address),
+        .vram_read_data_needs_x_flip(vram_read_data_needs_x_flip),
         .vram_read_data(vram_read_data),
         .vram_data_valid(vram_data_valid),
 
