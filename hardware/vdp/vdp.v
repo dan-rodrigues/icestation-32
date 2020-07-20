@@ -480,6 +480,33 @@ module vdp #(
         end
     end
 
+    // --- Shared pixel row reverser ---
+
+    // Sprites and scroll layers can optionally have their graphics data flipped horizontally.
+    // Since only 1 of these can be read at a time, this reversing logic can be shared between all.
+
+    wire map_pixel_row_needs_x_flip = |(scroll_gen_hflip & scroll_char_load);
+    wire sprite_pixel_row_needs_x_flip = vram_sprite_read_data_needs_x_flip && vram_sprite_read_data_valid;
+    wire should_reverse_pixel_row = map_pixel_row_needs_x_flip || sprite_pixel_row_needs_x_flip;
+
+    reg [31:0] pixel_row_ordered;
+
+    always @* begin
+        if (should_reverse_pixel_row) begin
+            pixel_row_ordered[31:28] = vram_read_data_r[3:0];
+            pixel_row_ordered[27:24] = vram_read_data_r[7:4];
+            pixel_row_ordered[23:20] = vram_read_data_r[11:8];
+            pixel_row_ordered[19:16] = vram_read_data_r[15:12];
+
+            pixel_row_ordered[15:12] = vram_read_data_r[19:16];
+            pixel_row_ordered[11:8] = vram_read_data_r[23:20];
+            pixel_row_ordered[7:4] = vram_read_data_r[27:24];
+            pixel_row_ordered[3:0] = vram_read_data_r[31:28];
+        end else begin
+            pixel_row_ordered = vram_read_data_r;
+        end
+    end
+
     // --- Scroll pixel generators ---
 
     localparam [1:0] LAYER_LAST = LAYERS_TOTAL - 1;
@@ -501,9 +528,8 @@ module vdp #(
 
                 .scroll_x_granular(scroll_x[i][2:0]),
                 .raster_x_granular(raster_x_offset[2:0]),
-                .pixel_row(vram_read_data_r),
+                .pixel_row(pixel_row_ordered),
                 .palette_number(scroll_gen_palette[i * 4 + 3: i * 4]),
-                .hflip(scroll_gen_hflip[i]),
                 .meta_load_enable(scroll_meta_load[i]),
                 .tile_row_load_enable(scroll_char_load[i]),
                 .shifter_preload_load_enable(load_all_scroll_row_data),
@@ -634,6 +660,7 @@ module vdp #(
     wire [1:0] sprite_pixel_priority;
 
     wire [13:0] vram_sprite_address;
+    wire vram_sprite_read_data_needs_x_flip;
     reg vram_sprite_read_data_valid;
 
     wire sprite_core_reset = line_ended;
@@ -652,7 +679,8 @@ module vdp #(
 
         .vram_base_address(full_sprite_tile_base),
         .vram_read_address(vram_sprite_address),
-        .vram_read_data(vram_read_data_r),
+        .vram_read_data(pixel_row_ordered),
+        .vram_read_data_needs_x_flip(vram_sprite_read_data_needs_x_flip),
         .vram_data_valid(vram_sprite_read_data_valid),
 
         .pixel(sprite_pixel),

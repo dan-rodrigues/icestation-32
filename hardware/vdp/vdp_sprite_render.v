@@ -19,6 +19,7 @@ module vdp_sprite_render(
 
     // prefetch reading
     input [13:0] vram_base_address,
+    output vram_read_data_needs_x_flip,
     output reg [13:0] vram_read_address,
     input [31:0] vram_read_data,
     input vram_data_valid,
@@ -130,6 +131,8 @@ module vdp_sprite_render(
     // x_block
     reg [9:0] target_x_r;
     reg flip_x_r;
+
+    assign vram_read_data_needs_x_flip = flip_x_r;
 
     // g_block
     reg [9:0] character_r;
@@ -266,9 +269,9 @@ module vdp_sprite_render(
 
                     vf_palette <= palette_r;
                     vf_priority <= priority_r;
+                    vf_flip <= flip_x_r;
 
                     vf_target_x <= target_x_r;
-                    vf_flip <= flip_x_r;
 
                     sprite_row_is_valid <= 1;
 
@@ -334,11 +337,11 @@ module vdp_sprite_render(
 
     reg [2:0] blitter_pixel_counter;
 
-    wire [3:0] blitter_output_pixel = (vf_flip ? blitter_output_source[3:0] : blitter_output_source[31:28]);
+    wire [3:0] blitter_output_pixel = blitter_output_source[31:28];
     wire [1:0] blitter_output_priority = (blitter_drawing_first_pixel ? vf_priority : blitter_priority);
     wire [3:0] blitter_output_palette = (blitter_drawing_first_pixel ? vf_palette : blitter_palette);
     
-    wire [31:0] blitter_next_shift = (vf_flip ? {4'b0000, blitter_output_source[31:4]} : {blitter_output_source[27:0], 4'b0000});
+    wire [31:0] blitter_next_shift = {blitter_output_source[27:0], 4'b0000};
 
     wire blitter_drawing = blitter_input_valid || blitter_pixel_counter > 0;
     wire line_buffer_write_en_nx =  pixel_is_opaque && blitter_drawing;
