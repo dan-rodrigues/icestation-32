@@ -57,7 +57,7 @@ module vdp_sprite_render(
         end
     end
 
-    // --- hit list reading ---
+    // --- Hit list reading ---
 
     reg [7:0] sprite_id_r;
     reg [3:0] line_offset_r;
@@ -120,8 +120,6 @@ module vdp_sprite_render(
 
     // --- Sprite x_block / g_block reading ---
 
-    localparam META_READ_LATENCY = 1;
-
     // pipelines from hit_list
     reg [3:0] xb_line_offset;
     reg xb_width_select_r;
@@ -139,7 +137,7 @@ module vdp_sprite_render(
     reg [3:0] palette_r;
     reg [1:0] priority_r;
 
-    reg [1:0] x_block_load_counter;
+    reg [1:0] x_block_loaded;
     reg x_block_data_valid;
 
     reg x_block_ready;
@@ -150,7 +148,7 @@ module vdp_sprite_render(
     always @(posedge clk) begin
         if (restart) begin
             x_block_ready <= 1;
-            x_block_load_counter <= 0;
+            x_block_loaded <= 0;
             x_block_data_valid <= 0;
             x_block_finished <= 0;
         end else if (hit_list_data_valid && hit_list_ended_r) begin
@@ -160,24 +158,20 @@ module vdp_sprite_render(
 
             x_block_finished <= 1;
         end else if (!x_block_finished && !x_block_ready) begin
-            // not ready means we're loading
-            if (x_block_load_counter > 0) begin
-                x_block_load_counter <= x_block_load_counter - 1;
-            end else begin
-                // load is done, see if consumer is ready
-                if (x_block_dependency_ready) begin
-                    // x_block
-                    target_x_r <= target_x;
-                    flip_x_r <= flip_x;
-                    // g_block
-                    character_r <= character;
-                    palette_r <= palette;
-                    priority_r <= pixel_priority;
+            if (x_block_loaded && x_block_dependency_ready) begin
+                // x_block
+                target_x_r <= target_x;
+                flip_x_r <= flip_x;
+                // g_block
+                character_r <= character;
+                palette_r <= palette;
+                priority_r <= pixel_priority;
 
-                    x_block_data_valid <= 1;
-                    x_block_ready <= 1;
-                end
+                x_block_data_valid <= 1;
+                x_block_ready <= 1;
             end
+
+            x_block_loaded <= 1;
         end else if (!x_block_finished && x_block_ready && hit_list_data_valid) begin
             sprite_meta_address <= sprite_id_r;
 
@@ -185,8 +179,7 @@ module vdp_sprite_render(
             xb_line_offset <= line_offset_r;
             xb_width_select_r <= width_select_r;
 
-            x_block_load_counter <= META_READ_LATENCY;
-
+            x_block_loaded <= 0;
             x_block_ready <= 0;
             x_block_data_valid <= 0;
         end
@@ -208,18 +201,14 @@ module vdp_sprite_render(
 
     // --- VRAM sprite row fetching ---
 
-    // 8 since that's the spacing between rows
-    // (can fine tune later)
-    // this shouldn't need to be high
-    localparam VRAM_READ_LATENCY = 3; // should be 3 but faster blitter wrecks it
+    localparam VRAM_READ_LATENCY = 3;
     localparam ROW_OFFSET = 128;
 
     reg fetching_second_row;
     reg sprite_row_is_valid;
     reg char_x;
 
-    // FIXME: can use input instead of deriving here
-    reg [3:0] vram_load_counter;
+    reg [1:0] vram_load_counter;
     reg vram_loading;
 
     // line needs to be offset *to the next row*
@@ -257,11 +246,8 @@ module vdp_sprite_render(
             sprite_row_is_valid <= 0;
 
             if (vram_loading) begin
-                // FIXME: use actual signal from vram sequencer outside
-                // this would save the logic cost from repeating it here
-                // - this would also allow setting the vram advance *in advance* earlier if
-                if (vram_load_counter > 0) begin
-                    vram_load_counter <= vram_load_counter - 1;
+                if (vram_load_counter != VRAM_READ_LATENCY) begin
+                    vram_load_counter <= vram_load_counter + 1;
                 end else if (vram_data_valid)  begin
                     // this can be set before the ready signal since blitter makes its own copy
                     // on the very first step
@@ -280,7 +266,7 @@ module vdp_sprite_render(
                     if (xb_width_select_r && !fetching_second_row) begin
                         // setup to read next 8px row...
                         vram_read_address <= vram_read_address + 8;
-                        vram_load_counter <= VRAM_READ_LATENCY;
+                        vram_load_counter <= 0;
 
                         // ...and render first 8px in mean time
                         char_x <= 0;
@@ -298,7 +284,7 @@ module vdp_sprite_render(
             end else if (x_block_data_valid) begin
                 vram_read_address <= sprite_row_vram_address;
 
-                vram_load_counter <= VRAM_READ_LATENCY;
+                vram_load_counter <= 0;
                 fetching_second_row <= 0;
                 vram_loading <= 1;
                 vram_fetcher_ready <= 0;
@@ -335,7 +321,8 @@ module vdp_sprite_render(
     wire blitter_drawing_first_pixel = blitter_input_valid;
     wire [31:0] blitter_output_source = blitter_drawing_first_pixel ? vf_row_prefetched : blitter_row_shifter;
 
-    reg [2:0] blitter_pixel_counter;
+    reg [3:0] blitter_pixel_counter;
+    wire blitter_all_pixels_counted = blitter_pixel_counter[3];
 
     wire [3:0] blitter_output_pixel = blitter_output_source[31:28];
     wire [1:0] blitter_output_priority = (blitter_drawing_first_pixel ? vf_priority : blitter_priority);
@@ -343,19 +330,19 @@ module vdp_sprite_render(
     
     wire [31:0] blitter_next_shift = {blitter_output_source[27:0], 4'b0000};
 
-    wire blitter_drawing = blitter_input_valid || blitter_pixel_counter > 0;
+    wire blitter_drawing = blitter_input_valid || !blitter_all_pixels_counted;
     wire line_buffer_write_en_nx =  pixel_is_opaque && blitter_drawing;
     wire [9:0] line_buffer_write_address_nx = blitter_input_valid ? blitter_x_start : line_buffer_write_address + 1;
 
     reg [2:0] blitter_pixel_counter_nx;
 
     always @* begin
-        blitter_pixel_counter_nx = 0;
+        blitter_pixel_counter_nx = blitter_pixel_counter;
 
         if (blitter_input_valid) begin
-            blitter_pixel_counter_nx = 7;
-        end else if (blitter_pixel_counter > 0) begin
-            blitter_pixel_counter_nx = blitter_pixel_counter - 1;
+            blitter_pixel_counter_nx = 0;
+        end else if (!blitter_all_pixels_counted) begin
+            blitter_pixel_counter_nx = blitter_pixel_counter + 1;
         end
     end
 
