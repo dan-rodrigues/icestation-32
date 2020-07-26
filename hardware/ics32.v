@@ -215,7 +215,7 @@ module ics32 #(
 
     address_decoder decoder_1x(
         .clk(cpu_clk),
-        .reset(reset_1x),
+        .reset(cpu_reset),
 
         .cpu_address(cpu_address_1x),
         .cpu_mem_valid(cpu_mem_valid_1x),
@@ -271,15 +271,21 @@ module ics32 #(
 
     // --- 1x <-> 2x clock sync (if required) ---
 
+    wire [31:0] cpu_read_data_2x_source;
+    wire cpu_mem_ready_2x_source;
     wire cpu_access_1x = bootloader_en || cpu_ram_en;
-    assign cpu_read_data_1x = cpu_access_1x ? cpu_read_data_1x_arbiter : cpu_read_data_2x_sync;
-    assign cpu_mem_ready_1x = cpu_access_1x ? cpu_mem_ready_1x_arbiter : cpu_mem_ready_2x_sync;
 
-    wire [31:0] cpu_read_data_2x_sync;
-    wire cpu_mem_ready_2x_sync;
+    assign cpu_read_data_1x = cpu_access_1x ? cpu_read_data_1x_arbiter : cpu_read_data_2x_source;
+    assign cpu_mem_ready_1x = cpu_access_1x ? cpu_mem_ready_1x_arbiter : cpu_mem_ready_2x_source;
 
     generate
         if (!ENABLE_FAST_CPU) begin
+            wire [31:0] cpu_read_data_2x_sync;
+            wire cpu_mem_ready_2x_sync;
+
+            assign cpu_read_data_2x_source = cpu_read_data_2x_sync;
+            assign cpu_mem_ready_2x_source = cpu_mem_ready_2x_sync;
+
             cpu_peripheral_sync cpu_peripheral_sync(
                 .clk_1x(clk_1x),
                 .clk_2x(clk_2x),
@@ -310,8 +316,8 @@ module ics32 #(
             assign cpu_write_data = cpu_write_data_1x;
             assign cpu_mem_valid = cpu_mem_valid_1x;
 
-            assign cpu_read_data_1x = cpu_read_data;
-            assign cpu_mem_ready_1x = cpu_mem_ready;
+            assign cpu_read_data_2x_source = cpu_read_data;
+            assign cpu_mem_ready_2x_source = cpu_mem_ready;
         end
     endgenerate
 
