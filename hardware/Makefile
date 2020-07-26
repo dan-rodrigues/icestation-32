@@ -32,6 +32,12 @@ SOURCES += $(ICEBREAKER_SRCS)
 # Timing constraints vary according to video mode
 TIMING_PY := constraints/$(VIDEO_MODE).py 
 
+ifeq ($(VIDEO_MODE), VM_848x480)
+	ENABLE_WIDESCREEN = 1
+else
+	ENABLE_WIDESCREEN = 0
+endif
+
 main-build: pre-build
 	@$(MAKE) --no-print-directory $(PROJ).bit
 
@@ -41,10 +47,10 @@ pre-build:
 ###
 
 $(PROJ).json: $(SOURCES) $(BOOT_HEX)
-	yosys $(YOSYS_DEFINE_ARGS) -p 'chparam -set ENABLE_WIDESCREEN 0 ics32_top_icebreaker; synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
+	yosys $(YOSYS_DEFINE_ARGS) -p 'chparam -set ENABLE_WIDESCREEN $(ENABLE_WIDESCREEN) $(TOP); synth_ice40 $(YOSYS_SYNTH_FLAGS) -json $@' $(SOURCES)
 
 count: $(SOURCES) $(BOOT_HEX)
-	yosys $(YOSYS_DEFINE_ARGS) -p 'synth_ice40 $(YOSYS_SYNTH_FLAGS) -noflatten' $(SOURCES)
+	yosys $(YOSYS_DEFINE_ARGS) -p 'chparam -set ENABLE_WIDESCREEN $(ENABLE_WIDESCREEN) $(TOP); synth_ice40 $(YOSYS_SYNTH_FLAGS) -noflatten' $(SOURCES)
 
 %.asc: $(PIN_DEF) %.json
 	nextpnr-ice40 --$(DEVICE) $(if $(PACKAGE),--package $(PACKAGE)) $(if $(FREQ),--freq $(FREQ)) --json $(filter-out $<,$^) --placer heap --pcf $< --asc $@ --pre-pack $(TIMING_PY) --seed 0
