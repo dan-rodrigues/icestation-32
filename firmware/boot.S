@@ -19,6 +19,8 @@
 .equ PAD_DATA, 0x40000
 .equ PAD_USER_BUTTON, (1 << 1)
 
+.equ LED_DATA, 0x20000
+
 #define QPI_MODE 0
 
 _start:
@@ -32,15 +34,22 @@ _start:
     jal bp_print_init
 
     li a0, 0x2041   
-    la a1, LoadString   
+    la a1, prompt_string
     jal bp_print
 
+    sw a0, (a1)
     la a0, PAD_DATA
+    la a2, LED_DATA
 loop_wait_button:
+    // LED counter on upper bits
+    addi t0, t0, 1
+    srli t1, t0, 16
+    sw t1, (a2)
+    
+    // Did user press button yet?
     lw a1, (a0)
     andi a1, a1, PAD_USER_BUTTON
-    bnez a1, loop_wait_button
-
+    beqz a1, loop_wait_button
 #endif
 
 // Flash configuration:
@@ -128,7 +137,6 @@ loop_wait_button:
     la a0, IPL_START
     la a1, IPL_END
     la a2, CPU_RAM_BASE
-    bge a0, a1, trap
 loop_ipl:
     lw a3, (a0)
     sw a3, (a2)
@@ -137,6 +145,9 @@ loop_ipl:
     blt a0, a1, loop_ipl
 
     j CPU_RAM_BASE
+
+prompt_string:
+    .string "PRESS BUTTON   "
 
 // a0: byte to send
 // returns: (nothing)
@@ -217,11 +228,4 @@ spi_complete_cmd:
     sh t0, (a2)
 
     ret
-
-trap:
-    ebreak
-
-LoadString:
-.string "PRESS BUTTON"
-.align 4
 

@@ -20,8 +20,7 @@ module ics32_tb(
     output vga_clk,
     output vga_de,
 
-    output led_r,
-    output led_b,
+    output [7:0] led,
 
     input btn_u,
     input btn_1,
@@ -30,7 +29,7 @@ module ics32_tb(
 );
     ics32 #(
         .ENABLE_WIDESCREEN(1),
-        .FORCE_FAST_CPU(0),
+        .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(2),
 
         // For simulator use, there's no point enabling this unless the bootloader itself is being tested
@@ -52,13 +51,12 @@ module ics32_tb(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
-        .btn_u(btn_u),
+        .btn_u(~btn_u),
         .btn_1(btn_1),
         .btn_2(btn_2),
         .btn_3(btn_3),
 
-        .led_r(led_r),
-        .led_b(led_b),
+        .led(led),
 
         .flash_clk_ddr(flash_clk_ddr),
         .flash_csn(flash_csn),

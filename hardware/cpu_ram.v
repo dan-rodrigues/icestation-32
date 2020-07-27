@@ -24,30 +24,24 @@ module cpu_ram(
         wstrb[0], wstrb[0]
     };
 
-    SB_SPRAM256KA cpu_ram_0(
-        .ADDRESS(address),
-        .DATAIN(write_data[15:0]),
-        .MASKWREN(mask_write_en[3:0]),
-        .WREN(write_en),
-        .CHIPSELECT(cs),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(1'b0),
-        .POWEROFF(1'b1),
-        .DATAOUT(read_data[15:0])
+    spram_256k cpu_ram_0(
+        .clk(clk),
+        .address(address),
+        .write_data(write_data[15:0]),
+        .mask(mask_write_en[3:0]),
+        .write_en(write_en),
+        .cs(cs),
+        .read_data(read_data[15:0])
     );
 
-    SB_SPRAM256KA cpu_ram_1(
-        .ADDRESS(address),
-        .DATAIN(write_data[31:16]),
-        .MASKWREN(mask_write_en[7:4]),
-        .WREN(write_en),
-        .CHIPSELECT(cs),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(1'b0),
-        .POWEROFF(1'b1),
-        .DATAOUT(read_data[31:16])
+    spram_256k cpu_ram_1(
+        .clk(clk),
+        .address(address),
+        .write_data(write_data[31:16]),
+        .mask(mask_write_en[7:4]),
+        .write_en(write_en),
+        .cs(cs),
+        .read_data(read_data[31:16])
     );
 
 endmodule

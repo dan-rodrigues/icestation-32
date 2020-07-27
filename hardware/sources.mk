@@ -46,6 +46,15 @@ endif
 ICEBREAKER_SRCS := \
 	$(addprefix icebreaker/, \
 		pll_ice40.v \
+		spram_256k.v \
+	)
+
+ULX3S_SRCS := \
+	$(addprefix ulx3s/, \
+		pll_ecp5.v \
+		generated_pll.v \
+		hdmi_encoder.v \
+		../common/spram_256k.v \
 	)
 	
 SOURCES +=  $(VDP_SOURCES)

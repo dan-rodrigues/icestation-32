@@ -35,7 +35,7 @@ module flash_reader #(
     localparam CRM_BYTE = 8'h20;
 
     reg [4:0] state;
-
+    
     wire [3:0] byte_state = state[4:1];
     wire nybble_state = state[0];
 
@@ -74,8 +74,10 @@ module flash_reader #(
         end
     end
 
+    wire halted = (reset || !valid || ready);
+
     always @* begin
-        if (reset || !valid || ready) begin
+        if (halted) begin
             flash_in_en = 0;
             flash_csn = 1;
         end else begin
@@ -89,7 +91,7 @@ module flash_reader #(
     end
 
     always @(posedge clk) begin
-        if (reset || !valid || ready) begin
+        if (halted) begin
             flash_clk_en <= 0;
             state <= 0;
             ready <= 0;
@@ -100,7 +102,6 @@ module flash_reader #(
 
             flash_clk_en <= 1;
 
-            // (review the necessary number of cycles)
             if (state == (5'h0f + DUMMY_CYCLES)) begin
                 ready <= 1;
             end

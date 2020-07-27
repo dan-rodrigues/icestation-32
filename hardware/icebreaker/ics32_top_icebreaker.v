@@ -107,7 +107,7 @@ module ics32_top_icebreaker #(
 
     ics32 #(
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
-        .FORCE_FAST_CPU(0),
+        .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(24),
         .ENABLE_BOOTLOADER(1)
     ) ics32 (
@@ -125,13 +125,12 @@ module ics32_top_icebreaker #(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
-        .btn_u(btn_u),
+        .btn_u(~btn_u),
         .btn_1(btn_1),
         .btn_2(btn_2),
         .btn_3(btn_3),
 
-        .led_r(led_r),
-        .led_b(led_b),
+        .led({led_r, led_b}),
 
         .flash_clk_ddr(flash_clk_ddr),
         .flash_csn(flash_csn_io),

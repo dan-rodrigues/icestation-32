@@ -50,3 +50,9 @@ fg_tiles.h fg_palette.h: $(FG_GFX) $(FG_PAL) $(PNG_CONVERTER)
 
 sprite_tiles.h sprite_palette.h: $(SPRITE_PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f png $(SPRITE_PNG) -o sprite_
+
+### Prog
+
+fujprog:
+	fujprog -j FLASH -f 0x100000 prog.img
+
