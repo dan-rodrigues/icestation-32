@@ -11,7 +11,7 @@ VIDEO_MODE = VM_848x480
 
 PROJ = system
 
-PIN_DEF = icebreaker.pcf
+PIN_DEF = icebreaker/icebreaker.pcf
 DEVICE = up5k
 PACKAGE = sg48
 

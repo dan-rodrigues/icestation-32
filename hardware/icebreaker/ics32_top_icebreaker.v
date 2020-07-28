@@ -24,6 +24,7 @@ module ics32_top_icebreaker #(
     output led_r,
     output led_b,
 
+    input btn_u,
     input btn_1,
     input btn_2,
     input btn_3,
@@ -124,6 +125,7 @@ module ics32_top_icebreaker #(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
+        .btn_u(btn_u),
         .btn_1(btn_1),
         .btn_2(btn_2),
         .btn_3(btn_3),
