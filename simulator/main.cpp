@@ -218,6 +218,7 @@ int main(int argc, const char **argv) {
             SDL_PumpEvents();
             const Uint8 *state = SDL_GetKeyboardState(NULL);
 
+            sim.button_user = state[SDL_SCANCODE_LSHIFT];
             sim.button_1 = state[SDL_SCANCODE_RIGHT];
             sim.button_2 = state[SDL_SCANCODE_RSHIFT];
             sim.button_3 = state[SDL_SCANCODE_LEFT];

@@ -17,6 +17,7 @@ public:
     void operator = (Simulation const &s) = delete;
 
     bool clk_1x = false, clk_2x = false;
+    bool button_user = false;
     bool button_1 = false, button_2 = false, button_3 = false;
 
     virtual void forward_cmd_args(int argc, const char * argv[]) = 0;

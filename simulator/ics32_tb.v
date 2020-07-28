@@ -23,6 +23,7 @@ module ics32_tb(
     output led_r,
     output led_b,
 
+    input btn_u,
     input btn_1,
     input btn_2,
     input btn_3
@@ -35,7 +36,7 @@ module ics32_tb(
         // For simulator use, there's no point enabling this unless the bootloader itself is being tested
         // The sim performs the bootloaders job of copying the program from flash to CPU RAM
         // Enabling this just delays the program start
-        .ENABLE_BOOTLOADER(0)
+        .ENABLE_BOOTLOADER(1)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
@@ -51,6 +52,7 @@ module ics32_tb(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
+        .btn_u(btn_u),
         .btn_1(btn_1),
         .btn_2(btn_2),
         .btn_3(btn_3),

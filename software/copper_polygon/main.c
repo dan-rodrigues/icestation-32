@@ -66,7 +66,10 @@ int main() {
 
     const uint8_t background_index = 1;
     const uint8_t foreground_index = 2;
-    upload_font_remapped(TILE_BASE, background_index, foreground_index);
+    upload_font_remapped(
+        TILE_BASE,
+        background_index,
+        foreground_index);
 
     // the polygon layer (also showing the text) is a full wdith 1024x512 layer
     vdp_set_wide_map_layers(SCROLL0);

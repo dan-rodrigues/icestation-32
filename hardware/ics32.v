@@ -37,6 +37,7 @@ module ics32 #(
     output led_r,
     output led_b,
 
+    input btn_u,
     input btn_1,
     input btn_2,
     input btn_3,
@@ -428,7 +429,8 @@ module ics32 #(
 
     reg [15:0] pad_mock_state;
     assign pad_read_data[0] = pad_mock_state[0];
-    assign pad_read_data[1] = 0;
+    // Instead of P2 data, return the user button state
+    assign pad_read_data[1] = user_button_r;
 
     always @(posedge vdp_clk) begin
         if (pad_latch) begin
@@ -441,6 +443,16 @@ module ics32 #(
         end
 
         pad_clk_r <= pad_clk;
+    end
+
+    // --- User button ---
+
+    reg user_button_r;
+
+    // Not bothering to debounce this since its uses don't rely on it
+
+    always @(posedge vdp_clk) begin
+        user_button_r <= btn_u;
     end
 
     // --- Bus arbiter ---

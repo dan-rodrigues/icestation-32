@@ -16,9 +16,32 @@
 
 .equ FLASH_SR2_QE, (1 << 1)
 
+.equ PAD_DATA, 0x40000
+.equ PAD_USER_BUTTON, (1 << 1)
+
 #define QPI_MODE 0
 
 _start:
+
+#if BOOT_PROMPT
+
+    // C code shouldn't be complex enough to use the stack
+    // It's initialized here anyway just to be safe
+    la sp, CPU_RAM_BASE + 0x10000
+
+    jal bp_print_init
+
+    li a0, 0x2041   
+    la a1, LoadString   
+    jal bp_print
+
+    la a0, PAD_DATA
+loop_wait_button:
+    lw a1, (a0)
+    andi a1, a1, PAD_USER_BUTTON
+    bnez a1, loop_wait_button
+
+#endif
 
 // Flash configuration:
 
@@ -113,7 +136,6 @@ loop_ipl:
     addi a2, a2, 4
     blt a0, a1, loop_ipl
 
-loop:
     j CPU_RAM_BASE
 
 // a0: byte to send
@@ -198,3 +220,8 @@ spi_complete_cmd:
 
 trap:
     ebreak
+
+LoadString:
+.string "PRESS BUTTON"
+.align 4
+
