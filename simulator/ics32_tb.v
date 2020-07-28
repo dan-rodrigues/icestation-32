@@ -36,7 +36,7 @@ module ics32_tb(
         // For simulator use, there's no point enabling this unless the bootloader itself is being tested
         // The sim performs the bootloaders job of copying the program from flash to CPU RAM
         // Enabling this just delays the program start
-        .ENABLE_BOOTLOADER(1)
+        .ENABLE_BOOTLOADER(0)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
