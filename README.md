@@ -8,33 +8,39 @@ This repo is still in its early stages and its and contents (including this READ
 
 ## Features
 
-* PicoRV32 main CPU (compact implementation of RISC-V)
+* RISC-V CPU (configurable with VexRiscV or PicoRV32)
 * 64kbyte of CPU RAM (2x SPRAM)
-* Custom VDP for scrolling layers and sprites
 * 64kbyte VDP RAM (2x SPRAM)
+* Custom VDP for smooth-scrolling layers and sprites
+* Custom "copper" coprocessor integrated into VDP to perform raster effects
 * Configurable video modes of 640x480@60hz or 848x480@60hz
 * 4bpp graphics assembled from 8x8 tiles
 * ARGB16 colors arranged into 16 palettes of 16 colors each
 * Optional alpha blending using 4bit alpha intensity**
-* 4x scrolling layers up to 1024x512 pixels each*
+* 3x or 4x scrolling layers up to 1024x512 pixels each*
 * 1x 1024x1024 pixel affine-transformable layer*
 * 256x sprites of up to 16x16 pixels each
 * 1060+ sprite pixels per line depending on clock and video mode
+* (S)NES-compatible pad interface***
 
-*Only one of these layer types can be enabled at any given time but they can be toggled multiple times in a frame using raster-timed updates.
+*: Only one of these layer types can be enabled at any given time but they can be toggled multiple times in a frame using raster-timed updates. The 4x layer implementation is still included in this repo but was disabled due to VRAM usage constraints.
 
-**Visual artefacts can been seen if more than one alpha-enabled layer intersects with another i.e. using overlapping sprites.
+**: Visual artefacts can been seen if more than one alpha-enabled layer intersects with another i.e. using overlapping sprites.
+
+***: While the system does have the pad interface implemented, it is only connected to a mock interface on the iCEBreaker board to use the 3 available buttons. Atleast one SNES PMOD is in development. When the ULX3S target is ready, more options for input will be available (i.e. more buttons, USB, Bluetooth...)
 
 ## Usage
 
 ### Prerequisites
 
-* yosys
-* nextpnr-ice40
-* icetools
-* GNU RISC-V toolchain (newlib)
+* [yosys](https://github.com/YosysHQ/yosys)
+* [nextpnr-ice40](https://github.com/YosysHQ/nextpnr)
+* [icetools](https://github.com/YosysHQ/icestorm)
+* [GNU RISC-V toolchain](https://github.com/riscv/riscv-gnu-toolchain) (newlib)
 
 While the RISC-V toolchain can be built from source, the PicoRV32 repo [includes a Makefile](https://github.com/cliffordwolf/picorv32#building-a-pure-rv32i-toolchain) with convenient build-and-install targets. This project only uses the `RV32I` ISA. Those with case-insensitive file systems will likely have issues building the toolchain from source. If so, binaries of the toolchain for various platforms are available [here](https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/tag/v8.3.0-1.1).
+
+The open-tool-forge [fpga-toolchain](https://github.com/open-tool-forge/fpga-toolchain) project also provides nightly builds of most of these tools.
 
 ### Programming bitstream on iCEBreaker
 
@@ -59,13 +65,32 @@ A simulator using SDL2 and its documentation is included in the [/simulator](sim
 
 Demo software and simulator screenshots are included in the [/software](software/) directory.
 
+## Configuration
+
+### CPU
+
+One of two RISC-V implementations can be selected. The implementation is chosen using the boolean `USE_VEXRISCV` parameter in the `ics32` module.
+
+* PicoRV32: Enabled when `USE_VEXRISCV=0`. This was the original choice and the rest of the system was designed around its shared bus interface. While it is not as compact as the Vex, it is much faster to run in simulators as it is fully synchronous.
+* VexRiscV (default): Enabled when `USE_VEXRISCV=1`. This was a later addition. A wrapper module is used to bridge between the Vex split IBus/DBus and the Pico-compatible shared bus. It is the more compact CPU which is especially important considering the size of the up5k target.
+
+### Video modes
+
+One of two video modes can be selected and only when the project is built. The video modes can't be toggled in software. The `VIDEO_MODE` variable in [/hardware/Makefile]([/hardware/Makefile) selects which video mode to use. This Makefile variable in turn determines the value of the `ENABLE_WIDESCREEN` parameter in the `ics32` module.
+
+Currently only an iCEBreaker target is provided with these configurations:
+
+* 640x480@60hz: 25.175MHz VDP/CPU clock
+* 848x480@60hz: 33.75MHz VDP clock, 16.88MHz CPU clock
+
+Note the 848x480 video has two clock domains because the up5k cannot run the CPU at 33.75MHz and meet timing. The dual clock domain setup is automatically enabled when `ENABLE_WIDESCREEN` is set. The `FORCE_FAST_CPU` parameter is also available to force the single clock domain setup which fails timing in the 848x480 case, although the author hasn't seen it break even with substantial overclock.
+
 ## TODO
 
 * A better README file!
-* Explanation of 1x and 2x clock modes and their necessity
+* ULX3S target
 * More demo software for sprites / scrolling layers / raster effects etc.
-* Re-adding the 3x layer, non-interleaved scrolling layers for more efficient VRAM usage and to reduce LC usage
 * Many bits of cleanup and optimization
 * Gamepad support, when the PMODs become available
-* Audio
+* Integrating the [ADPCM sound module](https://github.com/dan-rodrigues/ics-adpcm)
 
