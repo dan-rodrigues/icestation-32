@@ -1,8 +1,10 @@
 # icestation-32
 
-This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and run on the iCEBreaker FPGA board. It requires the 12bpp HDMI PMOD for video output.
+This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker) and [ULX3S](https://github.com/emard/ulx3s)* boards. It requires the 12bpp HDMI PMOD for video output.
 
 This repo is still in its early stages and its and contents (including this README) are changing rapidly.
+
+*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required
 
 ![Demo photo](photos/main.jpg)
 
@@ -34,29 +36,48 @@ This repo is still in its early stages and its and contents (including this READ
 ### Prerequisites
 
 * [yosys](https://github.com/YosysHQ/yosys)
-* [nextpnr-ice40](https://github.com/YosysHQ/nextpnr)
-* [icetools](https://github.com/YosysHQ/icestorm)
+* [nextpnr](https://github.com/YosysHQ/nextpnr) (-ice40 for iCEBreaker, -ecp5 for ULX3S)
+* [icetools](https://github.com/YosysHQ/icestorm) (if building for iCEBreaker)
 * [GNU RISC-V toolchain](https://github.com/riscv/riscv-gnu-toolchain) (newlib)
 
 While the RISC-V toolchain can be built from source, the PicoRV32 repo [includes a Makefile](https://github.com/cliffordwolf/picorv32#building-a-pure-rv32i-toolchain) with convenient build-and-install targets. This project only uses the `RV32I` ISA. Those with case-insensitive file systems will likely have issues building the toolchain from source. If so, binaries of the toolchain for various platforms are available [here](https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/tag/v8.3.0-1.1).
 
 The open-tool-forge [fpga-toolchain](https://github.com/open-tool-forge/fpga-toolchain) project also provides nightly builds of most of these tools.
 
-### Programming bitstream on iCEBreaker
+### Build and program bitstream
+
+#### iCEBreaker
 
 ```
 cd hardware
-make prog
+make icebreaker_prog
 ```
 
-### Programming software on iCEBreaker
+#### ULX3S
+
+```
+cd hardware
+make ulx3s_prog
+```
+
+### Programming software
 
 Demo software is included under `/software` and can be programmed separately. For example, to build and program the `sprites` demo:
+
+### iCEBreaker
 
 ```
 cd software/sprites/
 make
 iceprog -o 1M prog.bin
+```
+
+### ULX3S
+
+```
+cd software/sprites/
+make
+fujprog -j flash -f 0x100000 prog.bin
 ```
 
 ### Running simulator (Verilator or CXXRTL, plus SDL2)
@@ -88,7 +109,6 @@ Note the 848x480 video has two clock domains because the up5k cannot run the CPU
 ## TODO
 
 * A better README file!
-* ULX3S target
 * More demo software for sprites / scrolling layers / raster effects etc.
 * Many bits of cleanup and optimization
 * Gamepad support, when the PMODs become available

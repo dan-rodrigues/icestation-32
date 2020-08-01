@@ -17,7 +17,7 @@ SIM_HEADERS =  Simulation.hpp
 HDL_TOP = ics32_tb
 HDL_DIR = ../hardware
 
-VEX_USE_BOOTLOADER = 1
+VEX_USE_BOOTLOADER = 0
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
