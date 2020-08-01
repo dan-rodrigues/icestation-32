@@ -60,24 +60,3 @@ void bp_print(uint16_t vram_start, const char *string) {
         string++;
     }
 }
-
-// TODO: stuff for board greetings
-
-void bp_print_greetings(void) {
-    // other palettes...
-    vdp_set_single_palette_color(0x11, 0xfff0);
-    vdp_set_single_palette_color(0x21, 0xf0ff);
-    vdp_set_single_palette_color(0x31, 0xff0f);
-
-    const char *greeting = "ULX3S SAYS HELLO";
-
-    for (uint8_t y = 0; y < 64; y++) {
-        uint16_t vram_start = 0x2000 + y * 0x40 + y;
-
-        // repetitions?
-        for (uint8_t x = 0; x < 10; x++) {
-            bp_print(vram_start, greeting);
-            vram_start += 20;
-        }
-    }
-}

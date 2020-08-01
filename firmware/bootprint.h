@@ -12,6 +12,4 @@
 void bp_print_init(void);
 void bp_print(uint16_t vram_start, const char *string);
 
-void bp_print_greetings(void);
-
 #endif /* bootprint_h */
