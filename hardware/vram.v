@@ -13,30 +13,24 @@ module vram(
 
     output [31:0] read_data
 );
-    SB_SPRAM256KA ram0 (
-        .ADDRESS(even_address),
-        .DATAIN(write_data[15:0]),
-        .MASKWREN(4'b1111),
-        .WREN(even_write_en),
-        .CHIPSELECT(1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(1'b0),
-        .POWEROFF(1'b1),
-        .DATAOUT(read_data[15:0])
+    spram_256k vram_0 (
+        .clk(clk),
+        .address(even_address),
+        .write_data(write_data[15:0]),
+        .mask(4'b1111),
+        .write_en(even_write_en),
+        .cs(1),
+        .read_data(read_data[15:0])
     );
 
-    SB_SPRAM256KA ram1 (
-        .ADDRESS(odd_address),
-        .DATAIN(write_data[31:16]),
-        .MASKWREN(4'b1111),
-        .WREN(odd_write_en),
-        .CHIPSELECT(1),
-        .CLOCK(clk),
-        .STANDBY(1'b0),
-        .SLEEP(1'b0),
-        .POWEROFF(1'b1),
-        .DATAOUT(read_data[31:16])
+    spram_256k vram_1 (
+        .clk(clk),
+        .address(odd_address),
+        .write_data(write_data[31:16]),
+        .mask(4'b1111),
+        .write_en(odd_write_en),
+        .cs(1),
+        .read_data(read_data[31:16])
     );
 
 endmodule

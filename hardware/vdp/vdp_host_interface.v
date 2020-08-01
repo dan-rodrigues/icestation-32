@@ -55,8 +55,8 @@ module vdp_host_interface #(
     end
 
     always @(posedge clk) begin
-        // There are no additional wait cycles
-        ready <= (host_write_en || host_read_en);
+        // There are no additional wait cycles, except the one added by using the registered inputs
+        ready <= (host_write_en_r || host_read_en_r);
     end
 
     reg [7:0] data_t;

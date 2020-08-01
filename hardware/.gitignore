@@ -4,6 +4,9 @@
 /*.bit
 /*.json
 
+/*.svf
+/*.config
+
 # verilator
 
 /obj_dir/

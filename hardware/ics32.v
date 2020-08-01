@@ -11,7 +11,7 @@
 module ics32 #(
     parameter [0:0] USE_VEXRISCV = 1,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
-    parameter [0:0] FORCE_FAST_CPU = 0,
+    parameter [0:0] ENABLE_FAST_CPU = 0,
     parameter integer RESET_DURATION_EXPONENT = 2,
     parameter [0:0] ENABLE_BOOTLOADER = 1,
 `ifdef BOOTLOADER
@@ -34,8 +34,7 @@ module ics32 #(
     output vga_clk,
     output vga_de,
 
-    output led_r,
-    output led_b,
+    output [7:0] led,
 
     input btn_u,
     input btn_1,
@@ -48,8 +47,6 @@ module ics32 #(
     output [3:0] flash_in_en,
     input [3:0] flash_out
 );
-    localparam ENABLE_FAST_CPU = !ENABLE_WIDESCREEN || FORCE_FAST_CPU;
-
     // --- Bootloader ---
 
     reg [31:0] bootloader [0:255];
@@ -66,15 +63,15 @@ module ics32 #(
 
     // --- LEDs ---
 
-    reg [1:0] status;
-    assign led_r = status[0];
-    assign led_b = status[1];
+    reg [7:0] status;
+
+    assign led = status;
 
     always @(posedge vdp_clk) begin
         if (vdp_reset) begin
-            status <= 2'b01;
+            status <= 8'h00;
         end else if (status_write_en) begin
-            status <= cpu_write_data[1:0];
+            status <= cpu_write_data[7:0];
         end
     end
 
