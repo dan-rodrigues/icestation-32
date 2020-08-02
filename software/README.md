@@ -14,6 +14,17 @@ The `CROSS` variable in `common/cross.mk` must be set according to the name of y
 2. Build the simulator
 3. Launch the demo in the simulator
 
+## `affine_platformer/`
+
+Demo with various system features combined into a single scene including:
+
+* Affine layer, which renders the rotating and scaling 8 ball.
+* Copper coprocessor, used to do a raster-timed toggle between the affine 8 ball background and the horizontally scrolling ground.
+* Sprites, displaying the hero character and the horizontally scrolling clouds.
+* Gamepad input, used to make the hero jump and to manually zoom the affine layer that displays the 8 ball.
+
+![Affine platformer demo](screenshots/affine_platformer.png)
+
 ## `copper_polygon/`
 
 Copper coprocessor demo using horizontal raster effects to draw a rotated, scaled polygon. The copper has a simple instruction set dedicated to performing raster-synced writes to the VDP. The CPU transforms a polygon each frame, traces its edges, then emits copper machine code used to toggle the display of a static opaque layer. The effective result is a layer mask in the shape of the transformed polygon.

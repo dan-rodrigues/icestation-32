@@ -566,7 +566,7 @@ module vdp #(
         .sprite_pixel(sprite_pixel),
         .sprite_priority(sprite_pixel_priority),
 
-        .layer_enable(layer_enable[4:0] & (affine_enabled ? `LAYER_SPRITES_OHE | `LAYER_SCROLL0 : LAYER_ENABLE_MASK)),
+        .layer_enable(layer_enable[4:0] & (affine_enabled ? `LAYER_SPRITES_OHE | `LAYER_SCROLL0_OHE : LAYER_ENABLE_MASK)),
         .layer_mask(layer_mask),
 
         .prioritized_pixel(prioritized_pixel),
@@ -696,22 +696,16 @@ module vdp #(
     reg [9:0] affine_x;
     wire [8:0] affine_y = raster_y;
 
-    wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 7);
-
-    // NOTE: this may effect sprite fillrate so this should probably be wound back a bit with pipeline delay etc.
-
-    // wire affine_x_end = raster_x == H_ACTIVE_WIDTH + OFFSCREEN_X_TOTAL - 1;
+    wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 16);
     wire affine_x_end = line_ended;
 
     reg affine_offscreen;
-
-    localparam AFFINE_X_INITIAL = -2;
 
     always @(posedge clk) begin
         affine_x <= affine_x + 1;
 
         if (affine_x_start) begin
-            affine_x <= AFFINE_X_INITIAL;
+            affine_x <= 0;
             affine_offscreen <= 0;
         end else if (affine_x_end) begin
             affine_offscreen <= 1;
