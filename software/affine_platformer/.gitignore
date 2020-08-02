@@ -13,8 +13,13 @@
 /sin_table.h
 /fg_palette.h
 /fg_tiles.h
+/ball_palette.h
+/ball_tiles.h
 /sprite_palette.h
 /sprite_tiles.h
+/cloud_small_palette.h
+/cloud_small_tiles.h
+test.png
 
 # Optional disassembly
 

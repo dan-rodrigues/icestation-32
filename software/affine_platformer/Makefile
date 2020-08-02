@@ -3,12 +3,14 @@ SOURCES = \
 	../common/vectors.S \
 	../common/start.S \
 	../lib/vdp.c \
+	../lib/copper.c \
 	../lib/math_util.c \
 	../lib/assert.c \
 	../lib/gamepad.c
 
 HEADERS = \
 	../lib/vdp.h \
+	../lib/copper.h \
 	../lib/math_util.h \
 	../lib/assert.h \
 	../lib/gamepad.h \
@@ -18,7 +20,9 @@ HEADERS = \
 	sprite_tiles.h \
 	sprite_palette.h \
 	ball_tiles.h \
-	ball_palette.h
+	ball_palette.h \
+	cloud_small_tiles.h \
+	cloud_small_palette.h
 
 include ../common/common.mk
 
@@ -42,6 +46,7 @@ FG_PAL = fg_palette.pal
 SPRITE_PNG = miyamoto.png
 
 BALL_PNG = ball.png
+CLOUD_PNG = cloud_small.png
 
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
 PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
@@ -58,3 +63,5 @@ sprite_tiles.h sprite_palette.h: $(SPRITE_PNG) $(PNG_CONVERTER)
 ball_tiles.h ball_palette.h: $(BALL_PNG) $(PNG_CONVERTER)
 	$(PNG_CONVERTER) -f png $(BALL_PNG) -o ball_
 
+cloud_small_tiles.h cloud_small_palette.h: $(CLOUD_PNG) $(PNG_CONVERTER)
+	$(PNG_CONVERTER) -f png $(CLOUD_PNG) -o cloud_small_
