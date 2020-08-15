@@ -33,12 +33,13 @@ module vdp_copper(
 );
     localparam PC_RESET = 10'h000;
 
-    reg [10:0] pc;
+    wire operating = !reset && enable;
 
+    reg [10:0] pc;
     assign ram_read_address = pc;
 
-    wire operating = !reset && enable;
-    assign ram_read_en = operating;
+    reg ram_read_deferring;
+    assign ram_read_en = operating && !ram_read_deferring;
 
     // --- Raster tracking ---
 
@@ -164,6 +165,8 @@ module vdp_copper(
             target_x <= 0;
             target_y <= 0;
             state <= STATE_OP_PREFETCH;
+
+            ram_read_deferring <= 0;
         end else begin
             reg_write_en <= 0;
 
@@ -176,12 +179,13 @@ module vdp_copper(
                             target_x <= op_target_value;
                         end
 
+                        state <= (op_target_wait ? STATE_RASTER_WAITING : STATE_OP_DECODE);
+
                         if (op_target_wait) begin
-                            state <= STATE_RASTER_WAITING;
-                        end else begin
-                            state <= STATE_OP_DECODE;
-                            pc <= pc + 1;
+                            ram_read_deferring <= 1;
                         end
+
+                        pc <= pc + 1;
                     end
                     OP_WRITE_REG: begin
                         op_write_target_reg_r <= op_write_target_reg;
@@ -222,20 +226,18 @@ module vdp_copper(
                 if (op_write_batch_complete) begin
                     if (op_write_batch_count_r == 0) begin
                         state <= STATE_OP_DECODE;
-                        pc <= pc + 1;
                     end else begin
                         op_write_batch_count_r <= op_write_batch_count_r - 1;
 
                         if (op_write_auto_wait_r) begin
                             target_y <= raster_y + 1;
+                            ram_read_deferring <= 1;
                             state <= STATE_RASTER_WAITING;
-                        end else begin
-                            pc <= pc + 1;
                         end
                     end
-                end else begin
-                    pc <= pc + 1;
                 end
+
+                pc <= pc + 1;
             end else if (state == STATE_RASTER_WAITING) begin
                 if (target_hit) begin
                     if (op_current == OP_WRITE_REG && op_write_auto_wait_r) begin
@@ -244,7 +246,7 @@ module vdp_copper(
                         state <= STATE_OP_DECODE;
                     end
 
-                    pc <= pc + 1;
+                    ram_read_deferring <= 0;
                 end
             end else if (state == STATE_OP_PREFETCH) begin
                 state <= STATE_OP_DECODE;
@@ -253,5 +255,3 @@ module vdp_copper(
     end
 
 endmodule
-
-// TODO: some formal verification here
