@@ -25,19 +25,28 @@ Demo with various system features combined into a single scene including:
 
 ![Affine platformer demo](screenshots/affine_platformer.png)
 
+## `audio_drumkit/`
+
+Interactive audio demo with 3 preloaded samples triggered by 3 buttons.
+
+* Audio can be dumped to WAV by passing the `-w` switch to the sim (i.e. `-w sim.wav`).
+* Audio can also be played back in realtime by passing the `-a` switch but it will sound choppy at less than 60FPS.
+
+![Audio drumkit demo](screenshots/audio_drumkit.png)
+
 ## `copper_polygon/`
 
 Copper coprocessor demo using horizontal raster effects to draw a rotated, scaled polygon. The copper has a simple instruction set dedicated to performing raster-synced writes to the VDP. The CPU transforms a polygon each frame, traces its edges, then emits copper machine code used to toggle the display of a static opaque layer. The effective result is a layer mask in the shape of the transformed polygon.
 
 The copper is implemented in vdp_copper.v and has 4kbyte of instruction memory.
 
-![Platformer demo](screenshots/copper-polygon.png)
+![Platformer demo](screenshots/copper_polygon.png)
 
 ## `copper_bars/`
 
 Copper coprocessor demo using vertical raster effects only. This is a simpler demo than the above polygon demo and displays squished and strecthed "raster bars" by altering a single color each line. The bar layer itself is as a single-colored opaque layer. The apparent movement and alpha blending is done with raster effects.
 
-![Platformer demo](screenshots/copper-bars-squish.png)
+![Platformer demo](screenshots/copper_bars_squish.png)
 
 ## `platformer/`
 

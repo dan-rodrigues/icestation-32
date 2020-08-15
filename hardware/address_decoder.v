@@ -14,7 +14,7 @@ module address_decoder #(
     input clk,
     input reset,
 
-    input [19:0] cpu_address,
+    input [20:0] cpu_address,
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
     output reg [3:0] cpu_wstrb_decoder,
@@ -23,6 +23,9 @@ module address_decoder #(
 
     output reg vdp_en,
     output reg vdp_write_en,
+
+    output reg audio_ctrl_en,
+    output reg audio_ctrl_write_en,
 
     output reg cpu_ram_en,
     output reg cpu_ram_write_en,
@@ -43,7 +46,7 @@ module address_decoder #(
     output reg flash_ctrl_en,
     output reg flash_ctrl_write_en
 );
-    reg [19:0] cpu_address_r;
+    reg [20:0] cpu_address_r;
     reg cpu_mem_valid_r;
 
     generate
@@ -67,27 +70,21 @@ module address_decoder #(
 
     always @* begin
         bootloader_en = 0;
-        cpu_ram_en = 0;
-        cpu_ram_write_en = 0;
         flash_read_en = 0;
-        status_en = 0;
-        status_write_en = 0;
-        vdp_en = 0;
-        vdp_write_en = 0;
-        dsp_en = 0;
-        dsp_write_en = 0;
-        pad_en = 0;
-        pad_write_en = 0;
-        cop_ram_en = 0;
-        cop_ram_write_en = 0;
-        flash_ctrl_en = 0;
-        flash_ctrl_write_en = 0;
+        audio_ctrl_en = 0; audio_ctrl_write_en = 0;
+        cpu_ram_en = 0; cpu_ram_write_en = 0;
+        status_en = 0; status_write_en = 0;
+        vdp_en = 0; vdp_write_en = 0;
+        dsp_en = 0; dsp_write_en = 0;
+        pad_en = 0; pad_write_en = 0;
+        cop_ram_en = 0; cop_ram_write_en = 0;
+        flash_ctrl_en = 0; flash_ctrl_write_en = 0;
 
         if (cpu_mem_valid_r && !reset) begin
-            if (cpu_address_r[19]) begin
+            if (cpu_address_r[20]) begin
                 flash_read_en = 1;
             end else begin
-                case (cpu_address_r[18:16])
+                case (cpu_address_r[19:16])
                     0: cpu_ram_en = 1;
                     1: vdp_en = 1;
                     2: status_en = 1;
@@ -96,6 +93,7 @@ module address_decoder #(
                     5: cop_ram_en = 1;
                     6: bootloader_en = 1;
                     7: flash_ctrl_en = 1;
+                    8: audio_ctrl_en = 1;
                 endcase    
             end
 
@@ -106,6 +104,7 @@ module address_decoder #(
             pad_write_en = pad_en && cpu_wstrb_decoder;
             cop_ram_write_en = cop_ram_en && cpu_wstrb_decoder;
             flash_ctrl_write_en = flash_ctrl_en && cpu_wstrb_decoder;
+            audio_ctrl_write_en = audio_ctrl_en && cpu_wstrb_decoder;
         end
     end
  

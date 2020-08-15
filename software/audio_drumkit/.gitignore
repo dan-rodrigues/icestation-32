@@ -1,0 +1,21 @@
+# GCC
+
+/prog.elf
+/prog.bin
+/prog.hex
+
+/sections_p.lds
+
+# Flash resources
+
+/rc_*.o
+
+# Audio build artefacts
+
+/snare.h
+/snare.c
+/cymbal.h
+/cymbal.c
+/kick.h
+/kick.c
+ 

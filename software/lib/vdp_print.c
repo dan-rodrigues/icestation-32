@@ -55,6 +55,22 @@ void vp_printf(uint8_t x, uint8_t y, uint8_t palette, VDPLayer layer, uint16_t v
     va_end(args);
 }
 
+void vp_clear_row(uint8_t y, VDPLayer layer, uint16_t vram_base) {
+    vdp_set_vram_increment(1);
+
+    current_x = 0;
+    current_y = y;
+    current_palette_mask = 0;
+    current_layer = layer;
+    current_vram_base = vram_base;
+
+    seek_update();
+
+    for (uint32_t i = 0; i < SCREEN_ACTIVE_WIDTH / 8; i++) {
+        vdp_putc(NULL, ' ');
+    }
+}
+
 uint8_t vp_center_string_x(const char *string) {
     uint8_t length = 0;
     while (*string++) {

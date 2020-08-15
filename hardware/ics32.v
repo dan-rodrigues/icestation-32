@@ -14,6 +14,7 @@ module ics32 #(
     parameter [0:0] ENABLE_FAST_CPU = 0,
     parameter integer RESET_DURATION_EXPONENT = 2,
     parameter [0:0] ENABLE_BOOTLOADER = 1,
+    parameter ADPCM_STEP_LUT_PATH = "adpcm_step_lut.hex",
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
 `else
@@ -45,7 +46,11 @@ module ics32 #(
     output flash_csn,
     output [3:0] flash_in,
     output [3:0] flash_in_en,
-    input [3:0] flash_out
+    input [3:0] flash_out,
+
+    output [15:0] audio_output_l,
+    output [15:0] audio_output_r,
+    output audio_output_valid
 );
     // --- Bootloader ---
 
@@ -137,6 +142,7 @@ module ics32 #(
     // --- Address deccoder ---
 
     wire vdp_en, vdp_write_en;
+    wire audio_ctrl_en, audio_ctrl_write_en;
     wire status_en, status_write_en;
     wire flash_read_en;
     wire dsp_en, dsp_write_en;
@@ -155,8 +161,10 @@ module ics32 #(
         .cpu_address(cpu_address),
         .cpu_mem_valid(cpu_mem_valid),
         .cpu_wstrb(cpu_wstrb),
-
         .cpu_wstrb_decoder(cpu_wstrb_decoder),
+
+        .audio_ctrl_en(audio_ctrl_en),
+        .audio_ctrl_write_en(audio_ctrl_write_en),
 
         .vdp_en(vdp_en),
         .vdp_write_en(vdp_write_en),
@@ -252,6 +260,7 @@ module ics32 #(
 
         .flash_read_ready(0),
         .vdp_ready(0),
+        .audio_ready(0),
 
         .bootloader_read_data(bootloader_read_data),
         .cpu_ram_read_data(cpu_ram_read_data),
@@ -390,6 +399,61 @@ module ics32 #(
         .read_data({vram_read_data_odd, vram_read_data_even})
     );
 
+    // --- ADPCM Audio ---
+
+    wire audio_ctrl_ch_write_ready, audio_gb_write_ready;
+    wire audio_ctrl_ready = audio_ctrl_ch_write_ready || audio_gb_write_ready || audio_ctrl_read_ready;
+
+    wire audio_ctrl_read_request = audio_ctrl_en && !audio_ctrl_write_en;
+    wire audio_ctrl_read_ready;
+
+    wire audio_ctrl_ch_write_en = audio_ctrl_write_en && !cpu_address[9];
+    wire audio_ctrl_gb_write_en = audio_ctrl_write_en && cpu_address[9];
+
+    wire [7:0] audio_ctrl_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
+    wire [1:0] audio_ctrl_write_byte_mask = cpu_wstrb_decoder[1:0] | cpu_wstrb_decoder[3:2];
+    wire [7:0] audio_ctrl_cpu_read_data;
+
+    wire [22:0] pcm_read_address;
+    wire pcm_read_en;
+    wire pcm_data_ready;
+
+    ics_adpcm #(
+        .OUTPUT_INTERVAL(33750000 / 44100),
+        .CHANNELS(8),
+        .ADPCM_STEP_LUT_PATH(ADPCM_STEP_LUT_PATH)
+    ) ics_adpcm (
+        .clk(vdp_clk),
+        .reset(vdp_reset),
+
+        .ch_write_address(audio_ctrl_address),
+        .ch_write_data(cpu_write_data[15:0]),
+        .ch_write_byte_mask(audio_ctrl_write_byte_mask),
+        .ch_write_en(audio_ctrl_ch_write_en),
+        .ch_write_ready(audio_ctrl_ch_write_ready),
+
+        .gb_write_address(audio_ctrl_address[0]),
+        .gb_write_data(cpu_write_data[15:0]),
+        .gb_write_en(audio_ctrl_gb_write_en),
+        .gb_write_ready(audio_gb_write_ready),
+
+        .status_read_address(audio_ctrl_address[1:0]),
+        .status_read_request(audio_ctrl_read_request),
+        .status_read_ready(audio_ctrl_read_ready),
+        .status_read_data(audio_ctrl_cpu_read_data),
+
+        .pcm_address_valid(pcm_read_en),
+        .pcm_read_address(pcm_read_address),
+        .pcm_data_ready(pcm_data_ready),
+        .pcm_read_data(flash_read_data[15:0]),
+
+        .output_l(audio_output_l),
+        .output_r(audio_output_r),
+        .output_valid(audio_output_valid)
+    );
+
+    /* verilator public_module */
+
     // --- CPU RAM ---
 
     wire [31:0] cpu_ram_read_data;
@@ -459,7 +523,7 @@ module ics32 #(
 
     bus_arbiter #(
         .SUPPORT_2X_CLK(!ENABLE_FAST_CPU),
-        .READ_SOURCES(`BA_VDP | `BA_FLASH | `BA_DSP | `BA_PAD | `BA_FLASH_CTRL)
+        .READ_SOURCES(`BA_VDP | `BA_FLASH | `BA_DSP | `BA_PAD | `BA_FLASH_CTRL | `BA_AUDIO)
     ) bus_arbiter (
         .clk(vdp_clk),
 
@@ -478,9 +542,11 @@ module ics32 #(
         .pad_en(pad_en),
         .cop_en(cop_ram_write_en),
         .flash_ctrl_en(flash_ctrl_en),
+        .audio_ctrl_en(audio_ctrl_en),
 
         .flash_read_ready(flash_read_ready),
         .vdp_ready(vdp_ready),
+        .audio_ready(audio_ctrl_ready),
 
         .bootloader_read_data(0),
         .cpu_ram_read_data(0),
@@ -489,6 +555,7 @@ module ics32 #(
         .vdp_read_data(vdp_read_data),
         .pad_read_data(pad_read_data),
         .flash_ctrl_read_data(flash_ctrl_read_data),
+        .audio_cpu_read_data(audio_ctrl_cpu_read_data),
 
         // outputs
 
@@ -601,12 +668,15 @@ module ics32 #(
 
         // Reader A: CPU
 
-        .read_address_a({4'b0, cpu_address[18:0]}),
+        .read_address_a({5'b0, cpu_address[18:0]}),
         .read_en_a(flash_read_en),
         .ready_a(flash_read_ready),
 
         // Reader B: ADPCM DSP
-        // (WIP)
+
+        .read_address_b({pcm_read_address, 1'b0}),
+        .read_en_b(pcm_read_en),
+        .ready_b(pcm_data_ready),
 
         // Flash read data
 

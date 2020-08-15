@@ -36,3 +36,6 @@ set_io -nowarn btn_1 20
 set_io -nowarn btn_2 19
 set_io -nowarn btn_3 18
 
+set_io uart_rx 6
+set_io uart_tx 9
+

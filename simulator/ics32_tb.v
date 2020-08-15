@@ -31,11 +31,11 @@ module ics32_tb(
         .ENABLE_WIDESCREEN(1),
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(2),
+        .ADPCM_STEP_LUT_PATH("../hardware/adpcm_step_lut.hex"),
 
-        // For simulator use, there's no point enabling this unless the bootloader itself is being tested
-        // The sim performs the bootloaders job of copying the program from flash to CPU RAM
-        // Enabling this just delays the program start
-        .ENABLE_BOOTLOADER(0)
+        // The boot code configures the QSPI flash which is needed to access any flash resources such as audio
+        // If this isn't needed, this can be disabled to speed up the sim start time
+        .ENABLE_BOOTLOADER(1)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
@@ -62,7 +62,11 @@ module ics32_tb(
         .flash_csn(flash_csn),
         .flash_in_en(flash_in_en),
         .flash_in(flash_in),
-        .flash_out(flash_out)
+        .flash_out(flash_out),
+
+        .audio_output_valid(audio_valid),
+        .audio_output_l(audio_l),
+        .audio_output_r(audio_r)
     );
 
     // --- Flash sim blackbox ---
@@ -121,6 +125,18 @@ module ics32_tb(
         .out(flash_out_bb)
     );
 
+    // --- Audio DAC blackbox ---
+
+    wire audio_valid;
+    wire [15:0] audio_l, audio_r;
+
+    audio_dac_bb audio(
+        .clk(clk_2x),
+        .valid(audio_valid),
+        .in_l(audio_l),
+        .in_r(audio_r)
+    );
+
 endmodule
 
 (* cxxrtl_blackbox *)
@@ -131,6 +147,18 @@ module flash_bb(
     input [3:0] in /* verilator public */,
     (* cxxrtl_sync *) output [3:0] out /* verilator public */,
     (* cxxrtl_sync *) output [3:0] out_en /* verilator public */
+);
+
+/* verilator public_module */
+
+endmodule
+
+(* cxxrtl_blackbox *)
+module audio_dac_bb(
+    (* cxxrtl_edge = "p" *) input clk /* verilator public */,
+    input valid /* verilator public */,
+    input [15:0] in_l /* verilator public */,
+    input [15:0] in_r /* verilator public */
 );
 
 /* verilator public_module */

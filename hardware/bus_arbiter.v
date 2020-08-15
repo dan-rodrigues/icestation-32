@@ -16,11 +16,13 @@ module bus_arbiter #(
     input clk,
 
     // CPU inputs
+
     input [3:0] cpu_wstrb,
     input [15:0] cpu_address,
     input [31:0] cpu_write_data,
 
-    // address decoder inputs
+    // Address decoder inputs
+
     input bootloader_en,
     input vdp_en,
     input flash_read_en,
@@ -30,12 +32,16 @@ module bus_arbiter #(
     input pad_en,
     input cop_en,
     input flash_ctrl_en,
+    input audio_ctrl_en,
 
-    // ready inputs from read sources
+    // Ready-inputs from peripherals
+
     input flash_read_ready,
     input vdp_ready,
+    input audio_ready,
 
-    // data inputs from read sources
+    // Data inputs from peripherals
+
     input [31:0] bootloader_read_data,
     input [31:0] cpu_ram_read_data,
     input [31:0] flash_read_data,
@@ -43,14 +49,18 @@ module bus_arbiter #(
     input [31:0] dsp_read_data,
     input [1:0] pad_read_data,
     input [3:0] flash_ctrl_read_data,
+    input [7:0] audio_cpu_read_data,
 
     // CPU outputs
+
     output reg cpu_mem_ready,
     output [31:0] cpu_read_data
 );
     wire cpu_ram_ready, peripheral_ready;
     
-    wire any_peripheral_ready = ((vdp_en && vdp_ready) || flash_ctrl_en || status_en || dsp_en || pad_en || cop_en || bootloader_en);
+    wire any_peripheral_ready = ((vdp_en && vdp_ready)
+        || flash_ctrl_en || status_en || dsp_en || pad_en
+        || cop_en || bootloader_en || audio_ready);
 
     generate
         // using !cpu_mem_ready only works in CPU clk is full speed
@@ -83,7 +93,7 @@ module bus_arbiter #(
         end else if (READ_SOURCES & `BA_FLASH) begin
             cpu_read_data_ps = flash_read_data;
         end else begin
-            cpu_read_data_ps = 'bx;
+            cpu_read_data_ps = {32{1'bx}};
         end
 
         // the && with the parameters looks strange here but without it, it doesn't get optimized
@@ -104,6 +114,8 @@ module bus_arbiter #(
             cpu_read_data_ps = cpu_ram_read_data;
         end else if (flash_ctrl_en && (READ_SOURCES & `BA_FLASH_CTRL)) begin
             cpu_read_data_ps[3:0] = flash_ctrl_read_data;
+        end else if (audio_ctrl_en && (READ_SOURCES & `BA_AUDIO)) begin
+            cpu_read_data_ps[7:0] = audio_cpu_read_data;
         end
     end
 

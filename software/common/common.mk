@@ -15,6 +15,12 @@ LDS_P = sections_p.lds
 
 BIN = prog.bin
 
+RC_OBJ := $(RC_SOURCES:%.c=rc_%.o)
+RC_HEADERS := $(RC_SOURCES:%.c=%.h) 
+
+rc_%.o: %.c
+	$(CROSS)gcc -o $@ -c $^
+
 $(BIN): prog.elf
 	$(CROSS)objcopy -O binary prog.elf $(BIN)
 
@@ -24,8 +30,8 @@ dasm: prog.elf
 $(LDS_P): $(LDS)
 	$(CROSS)cpp -P -o $@ $^
 
-prog.elf: $(LDS_P) $(HEADERS) $(SOURCES)
-	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -o prog.elf $(SOURCES) -lgcc
+prog.elf: $(LDS_P) $(HEADERS) $(SOURCES) $(RC_OBJ) $(RC_HEADERS)
+	$(CROSS)gcc $(CFLAGS) -Wl,-Bstatic,-T,$(LDS_P),--strip-debug -o prog.elf $(SOURCES) $(RC_OBJ) -lgcc
 
 clean:
 	rm -f prog.elf prog.hex $(BIN)

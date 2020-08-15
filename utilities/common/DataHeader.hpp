@@ -58,7 +58,7 @@ void DataHeader::write_h(
     stream << "#include <stdint.h>" << "\n\n";
 
     stream << "extern const " << header_type << " " << identifier << "[];" << "\n";
-    stream << "extern const size_t " << identifier << "_length = " << std::setfill('0') << std::dec << data.size() << ";" << "\n";
+    stream << "extern const size_t " << identifier << "_length;" << "\n";
 }
 
 template<typename T>

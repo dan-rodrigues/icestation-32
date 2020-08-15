@@ -57,6 +57,21 @@ void VerilatorSimulation::step(uint64_t time) {
 #endif
 }
 
+bool VerilatorSimulation::get_samples(int16_t *left, int16_t *right) {
+    auto dac = tb->ics32_tb->audio;
+    bool has_sample = dac->valid && dac->clk;
+
+    if (has_sample) {
+        assert(left);
+        assert(right);
+
+        *left = dac->in_l;
+        *right = dac->in_r;
+    }
+
+    return has_sample;
+}
+
 #if VCD_WRITE
 
 void VerilatorSimulation::trace_update(uint64_t time) {

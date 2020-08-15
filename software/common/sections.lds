@@ -6,21 +6,23 @@ MEMORY
     // Instead it is copied to the SPRAM
     // FLASH_IPL (xr) : ORIGIN = 0x00080000, LENGTH = 0x010000
 
-    FLASH_ASSETS (xr) : ORIGIN = 0x00090000, LENGTH = 0x070000
+    FLASH_ASSETS (xr) : ORIGIN = 0x00110000, LENGTH = 0x7f0000
 }
 
 SECTIONS {
     .assets : AT (0x10000)
+	SUBALIGN(1024)
     {
         . = ALIGN(4);
         _flash_assets_start = .;
 
         // -flto means some sections don't get matched here depending on how
         // the file is used. The .gnu.lto.* sections containing the data do
-        // not get included here. -flto is disabled for rc-* files because of
+        // not get included here. -flto is disabled for rc_* files because of
         // this
-        rc-*(.*)
+        rc_*(.rodata)
 
+        . = ALIGN(4);
         _flash_assets_end = .;
     } >FLASH_ASSETS
 
