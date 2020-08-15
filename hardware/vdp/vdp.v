@@ -485,7 +485,7 @@ module vdp #(
     // Sprites and scroll layers can optionally have their graphics data flipped horizontally.
     // Since only 1 of these can be read at a time, this reversing logic can be shared between all.
 
-    wire map_pixel_row_needs_x_flip = |(scroll_gen_hflip & scroll_char_load);
+    wire map_pixel_row_needs_x_flip = |(scroll_x_flip & scroll_char_load);
     wire sprite_pixel_row_needs_x_flip = vram_sprite_read_data_needs_x_flip && vram_sprite_read_data_valid;
     wire should_reverse_pixel_row = map_pixel_row_needs_x_flip || sprite_pixel_row_needs_x_flip;
 
@@ -511,12 +511,7 @@ module vdp #(
 
     localparam [1:0] LAYER_LAST = LAYERS_TOTAL - 1;
 
-    wire [31:0] scroll_output_pixel;
-
-    wire [7:0] scroll0_output_pixel = scroll_output_pixel[7:0];
-    wire [7:0] scroll1_output_pixel = scroll_output_pixel[15:8];
-    wire [7:0] scroll2_output_pixel = scroll_output_pixel[23:16];
-    wire [7:0] scroll3_output_pixel = scroll_output_pixel[31:24];
+    wire [7:0] scroll_output_pixel [0:3];
 
     generate
         genvar i;
@@ -529,12 +524,12 @@ module vdp #(
                 .scroll_x_granular(scroll_x[i][2:0]),
                 .raster_x_granular(raster_x_offset[2:0]),
                 .pixel_row(pixel_row_ordered),
-                .palette_number(scroll_gen_palette[i * 4 + 3: i * 4]),
+                .palette_number(scroll_palette[i]),
                 .meta_load_enable(scroll_meta_load[i]),
                 .tile_row_load_enable(scroll_char_load[i]),
                 .shifter_preload_load_enable(load_all_scroll_row_data),
 
-                .pixel(scroll_output_pixel[i * 8 + 7: i * 8])
+                .pixel(scroll_output_pixel[i])
             );
         end
     endgenerate
@@ -553,15 +548,15 @@ module vdp #(
 
     wire [4:0] layer_mask;
 
-    wire [7:0] selected_layer_pixel = affine_enabled ? affine_output_pixel : scroll0_output_pixel;
+    wire [7:0] selected_layer_pixel = affine_enabled ? affine_output_pixel : scroll_output_pixel[0];
 
     vdp_priority_compute priority_compute(
         .clk(clk),
 
         .scroll0_pixel(selected_layer_pixel),
-        .scroll1_pixel(scroll1_output_pixel),
-        .scroll2_pixel(scroll2_output_pixel),
-        .scroll3_pixel(scroll3_output_pixel),
+        .scroll1_pixel(scroll_output_pixel[1]),
+        .scroll2_pixel(scroll_output_pixel[2]),
+        .scroll3_pixel(scroll_output_pixel[3]),
 
         .sprite_pixel(sprite_pixel),
         .sprite_priority(sprite_pixel_priority),
@@ -591,8 +586,8 @@ module vdp #(
     reg load_all_scroll_row_data;
     reg vram_written;
 
-    wire [15:0] scroll_gen_palette;
-    wire [3:0] scroll_gen_hflip;
+    wire [3:0] scroll_palette [0:3];
+    wire [3:0] scroll_x_flip;
 
     vdp_vram_bus_arbiter_standard bus_arbiter(
         .clk(clk),
@@ -638,11 +633,11 @@ module vdp #(
 
         // Output scroll attributes
 
-        .scroll_palette_0(scroll_gen_palette[3:0]), .scroll_palette_1(scroll_gen_palette[7:4]),
-        .scroll_palette_2(scroll_gen_palette[11:8]), .scroll_palette_3(scroll_gen_palette[15:12]),
+        .scroll_palette_0(scroll_palette[0]), .scroll_palette_1(scroll_palette[1]),
+        .scroll_palette_2(scroll_palette[2]), .scroll_palette_3(scroll_palette[3]),
 
-        .scroll_x_flip_0(scroll_gen_hflip[0]), .scroll_x_flip_1(scroll_gen_hflip[1]),
-        .scroll_x_flip_2(scroll_gen_hflip[2]), .scroll_x_flip_3(scroll_gen_hflip[3]),
+        .scroll_x_flip_0(scroll_x_flip[0]), .scroll_x_flip_1(scroll_x_flip[1]),
+        .scroll_x_flip_2(scroll_x_flip[2]), .scroll_x_flip_3(scroll_x_flip[3]),
 
         // VRAM interface
 
