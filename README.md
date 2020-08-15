@@ -112,5 +112,4 @@ Note the 848x480 video has two clock domains because the up5k cannot run the CPU
 * More demo software for sprites / scrolling layers / raster effects etc.
 * Many bits of cleanup and optimization
 * Gamepad support, when the PMODs become available
-* Integrating the [ADPCM sound module](https://github.com/dan-rodrigues/ics-adpcm)
 

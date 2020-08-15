@@ -53,7 +53,8 @@ ICEBREAKER_SRCS := \
 ULX3S_SRCS := \
 	$(addprefix ulx3s/, \
 		pll_ecp5.v \
-		generated_pll.v \
+		generated_pll_25.v \
+		generated_pll_33_75.v \
 		hdmi_encoder.v \
 		dacpwm.v \
 		../common/spram_256k.v \
