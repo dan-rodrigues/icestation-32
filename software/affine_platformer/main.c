@@ -177,10 +177,10 @@ int main() {
 
         for (uint32_t x = 0; x < 4; x++) {
             uint8_t pixel_lo = (row >> 28) & 0xf;
-            pixel_lo |= ball_palette_id << 4;
+            pixel_lo |= (pixel_lo ? ball_palette_id << 4 : 0);
 
             uint8_t pixel_hi = (row >> 24) & 0xf;
-            pixel_hi |= ball_palette_id << 4;
+            pixel_hi |= (pixel_lo ? ball_palette_id << 4 : 0);
 
             vdp_write_vram(pixel_lo | pixel_hi << 8);
             row <<= 8;

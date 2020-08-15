@@ -554,6 +554,8 @@ module vdp #(
         .clk(clk),
 
         .scroll0_pixel(selected_layer_pixel),
+        .scroll0_is_8bpp(affine_enabled),
+
         .scroll1_pixel(scroll_output_pixel[1]),
         .scroll2_pixel(scroll_output_pixel[2]),
         .scroll3_pixel(scroll_output_pixel[3]),

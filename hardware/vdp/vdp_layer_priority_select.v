@@ -26,12 +26,13 @@ module vdp_layer_priority_select(
     output reg [2:0] resolved_priority
 );
     wire sprite_opaque = layer_mask[`LAYER_SPRITES];
+    wire sprite_opaque_r = layer_mask_r[`LAYER_SPRITES];
 
     // 1a: Register inputs for output (2.)
 
     reg [7:0] scroll_pixel_r [0:3];
     reg [7:0] sprite_pixel_r;
-    reg sprite_opaque_r;
+    reg [4:0] layer_mask_r;
 
     always @(posedge clk) begin
         scroll_pixel_r[0] <= scroll0_pixel;
@@ -39,7 +40,7 @@ module vdp_layer_priority_select(
         scroll_pixel_r[2] <= scroll2_pixel;
         scroll_pixel_r[3] <= scroll3_pixel;
         sprite_pixel_r <= sprite_pixel;
-        sprite_opaque_r <= sprite_opaque;
+        layer_mask_r <= layer_mask;
     end
 
     // 1b: Determine priority of layers / sprites
@@ -49,41 +50,41 @@ module vdp_layer_priority_select(
     reg [1:0] layer_encoded_priority;
     reg [3:0] layer_prioritized_ohe;
 
-    always @* begin
+    always @(posedge clk) begin
         // if (layer_mask[3]) begin...
-        layer_encoded_priority = 0;
-        layer_prioritized_ohe = `LAYER_SCROLL3_OHE; 
+        layer_encoded_priority <= 0;
+        layer_prioritized_ohe <= `LAYER_SCROLL3_OHE; 
 
         if (layer_mask[2]) begin
-            layer_encoded_priority = 1;
-            layer_prioritized_ohe = `LAYER_SCROLL2_OHE;
+            layer_encoded_priority <= 1;
+            layer_prioritized_ohe <= `LAYER_SCROLL2_OHE;
         end
         if (layer_mask[1]) begin
-            layer_encoded_priority = 2;
-            layer_prioritized_ohe = `LAYER_SCROLL1_OHE;
+            layer_encoded_priority <= 2;
+            layer_prioritized_ohe <= `LAYER_SCROLL1_OHE;
         end
         if (layer_mask[0]) begin
-            layer_encoded_priority = 3;
-            layer_prioritized_ohe = `LAYER_SCROLL0_OHE;
+            layer_encoded_priority <= 3;
+            layer_prioritized_ohe <= `LAYER_SCROLL0_OHE;
         end
     end
 
-    // 1c: Use above priorities to select the topmost pixel
+    // 2a: Use above priorities to select the topmost pixel
 
-    always @(posedge clk) begin
-        if (sprite_opaque && (sprite_priority_score > layer_priority_score)) begin
-            prioritized_layer <= `LAYER_SPRITES_OHE;
-            resolved_priority <= sprite_priority_score;
-        end else if (|layer_mask[3:0]) begin
-            prioritized_layer <= layer_prioritized_ohe;
-            resolved_priority <= layer_priority_score;
+    always @* begin
+        if (sprite_opaque_r && (sprite_priority_score > layer_priority_score)) begin
+            prioritized_layer = `LAYER_SPRITES_OHE;
+            resolved_priority = sprite_priority_score;
+        end else if (|layer_mask_r[3:0]) begin
+            prioritized_layer = layer_prioritized_ohe;
+            resolved_priority = layer_priority_score;
         end else begin
-            prioritized_layer <= 0;
-            resolved_priority <= 0;
+            prioritized_layer = 0;
+            resolved_priority = 0;
         end
     end
 
-    // 2: Output pixel according to topmost pixel using the outputs from above 
+    // 2b: Output pixel according to topmost pixel using the outputs from above 
 
     always @* begin
         // 0 at the end of this ternary is required to default to color 0 when no others are on screen

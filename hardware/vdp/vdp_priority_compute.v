@@ -10,6 +10,8 @@ module vdp_priority_compute(
     input clk,
 
     input [7:0] scroll0_pixel,
+    input scroll0_is_8bpp,
+
     input [7:0] scroll1_pixel,
     input [7:0] scroll2_pixel,
     input [7:0] scroll3_pixel,
@@ -28,11 +30,11 @@ module vdp_priority_compute(
 );
 
     wire [4:0] layer_opacity = {
-        sprite_pixel[3:0] != 0,
-        scroll3_pixel[3:0] != 0,
-        scroll2_pixel[3:0] != 0,
-        scroll1_pixel[3:0] != 0,
-        scroll0_pixel[3:0] != 0
+        |sprite_pixel[3:0],
+        |scroll3_pixel[3:0],
+        |scroll2_pixel[3:0],
+        |scroll1_pixel[3:0],
+        |(scroll0_is_8bpp ? scroll0_pixel[7:0] : scroll0_pixel[3:0])
     };
 
     wire [4:0] primary_layers = layer_enable & layer_opacity & layer_mask;
