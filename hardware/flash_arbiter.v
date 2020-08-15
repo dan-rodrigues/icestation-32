@@ -29,7 +29,7 @@ module flash_arbiter(
     output [3:0] flash_in_en,
     input [3:0] flash_out
 );
-    localparam FLASH_USER_BASE = 24'h100000;
+    localparam FLASH_USER_BASE = 24'h200000;
 
     // --- Arbitration between reader A/B ---
 

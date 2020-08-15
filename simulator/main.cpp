@@ -95,7 +95,7 @@ int main(int argc, const char **argv) {
         return EXIT_FAILURE;
     }
 
-    const size_t flash_user_base = 0x100000;
+    const size_t flash_user_base = 0x200000;
     const size_t flash_ipl_size = 0x10000;
 
     // Prepare flash before initializing the core sim instance

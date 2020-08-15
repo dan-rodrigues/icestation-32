@@ -69,7 +69,7 @@ Demo software is included under `/software` and can be programmed separately. Fo
 ```
 cd software/sprites/
 make
-iceprog -o 1M prog.bin
+iceprog -o 2M prog.bin
 ```
 
 ### ULX3S
@@ -77,7 +77,7 @@ iceprog -o 1M prog.bin
 ```
 cd software/sprites/
 make
-fujprog -j flash -f 0x100000 prog.bin
+fujprog -j flash -f 0x200000 prog.bin
 ```
 
 ### Running simulator (Verilator or CXXRTL, plus SDL2)
