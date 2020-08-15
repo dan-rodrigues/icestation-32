@@ -44,10 +44,12 @@ module vdp_priority_compute(
     wire [4:0] masked_layer_nx;
     wire [7:0] masked_pixel_nx;
 
-    wire [1:0] primary_resolved_priority;
-    wire [1:0] masked_resolved_priority;
+    wire [2:0] primary_resolved_priority;
+    wire [2:0] masked_resolved_priority;
 
     vdp_layer_priority_select primary_priority_select(
+        .clk(clk),
+
         .layer_mask(primary_layers),
         .sprite_priority(sprite_priority),
 
@@ -63,6 +65,8 @@ module vdp_priority_compute(
     );
 
     vdp_layer_priority_select masked_priority_select(
+        .clk(clk),
+
         .layer_mask(masked_layers),
         .sprite_priority(sprite_priority),
 
