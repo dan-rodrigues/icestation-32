@@ -1,5 +1,7 @@
 #include "CXXRTLSimulation.hpp"
 
+// Flash blackbox:
+
 class SPIFlashBlackBox : public cxxrtl_design::bb_p_flash__bb {
 
 public:
@@ -17,10 +19,66 @@ private:
     QSPIFlashSim flash;
 };
 
+// Audio blackbox:
+
+class AudioDACSampleSink {
+
+public:
+    static AudioDACSampleSink default_sink;
+
+    void set_samples(int16_t left, int16_t right) {
+        samples_pending_fetch = true;
+        this->left = left;
+        this->right = right;
+    }
+
+    bool get_samples(int16_t *left, int16_t *right) {
+        if (!samples_pending_fetch) {
+            return false;
+        }
+
+        assert(left);
+        assert(right);
+
+        *left = this->left;
+        *right = this->right;
+        samples_pending_fetch = false;
+
+        return true;
+    }
+
+private:
+    bool samples_pending_fetch = false;
+    int16_t left = 0, right = 0;
+};
+
+AudioDACSampleSink AudioDACSampleSink::default_sink = AudioDACSampleSink();
+
+class AudioDACBlackBox : public cxxrtl_design::bb_p_audio__dac__bb {
+
+public:
+    AudioDACBlackBox(AudioDACSampleSink sample_sink) : sample_sink(sample_sink) {};
+
+    bool eval() override {
+        if (posedge_p_clk()) {
+            sample_sink.set_samples(static_cast<int16_t>(p_in__l.get<uint16_t>()), static_cast<int16_t>(p_in__r.get<uint16_t>()));
+        }
+
+        return bb_p_audio__dac__bb::eval();
+    }
+
+private:
+    AudioDACSampleSink sample_sink;
+};
+
 namespace cxxrtl_design {
 
 std::unique_ptr<bb_p_flash__bb> bb_p_flash__bb::create(std::string name, metadata_map parameters, metadata_map attributes) {
     return std::make_unique<SPIFlashBlackBox>(Simulation::default_flash);
+}
+
+std::unique_ptr<bb_p_audio__dac__bb> bb_p_audio__dac__bb::create(std::string name, metadata_map parameters, metadata_map attributes) {
+    return std::make_unique<AudioDACBlackBox>(AudioDACSampleSink::default_sink);
 }
 
 }
@@ -85,6 +143,10 @@ void CXXRTLSimulation::step(uint64_t time) {
 #if VCD_WRITE
     update_trace(time);
 #endif
+}
+
+bool CXXRTLSimulation::get_samples(int16_t *left, int16_t *right) {
+    return AudioDACSampleSink::default_sink.get_samples(left, right);
 }
 
 #if VCD_WRITE

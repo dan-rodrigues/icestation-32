@@ -236,7 +236,6 @@ module vdp_vram_bus_arbiter_standard(
                 vram_address_nx = vram_sprite_address;
 
                 // next next: s0 tile address
-                // (this could be packaged up in a seprate block considering it's the same pattern)
                 tile_address_layer_select = `LAYER_SCROLL0;
             end
             2: begin

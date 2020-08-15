@@ -104,7 +104,7 @@ module ics32_top_icebreaker #(
     wire [3:0] flash_in_en;
     wire flash_csn_io;
     wire [1:0] flash_clk_ddr;
-
+    
     ics32 #(
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
         .ENABLE_FAST_CPU(0),
@@ -136,7 +136,7 @@ module ics32_top_icebreaker #(
         .flash_csn(flash_csn_io),
         .flash_in_en(flash_in_en),
         .flash_in(flash_in),
-        .flash_out(flash_out),
+        .flash_out(flash_out)
     );
 
 endmodule

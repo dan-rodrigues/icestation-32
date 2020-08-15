@@ -10,8 +10,9 @@
  	bus_arbiter.v \
  	reset_generator.v \
  	cpu_peripheral_sync.v \
+ 	flash_reader.v \
+	ics_adpcm.v \
  	cop_ram.v \
- 	flash_reader.v
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \
@@ -54,6 +55,7 @@ ULX3S_SRCS := \
 		pll_ecp5.v \
 		generated_pll.v \
 		hdmi_encoder.v \
+		dacpwm.v \
 		../common/spram_256k.v \
 	)
 	

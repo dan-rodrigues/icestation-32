@@ -523,7 +523,7 @@ module vdp #(
         for (i = 0; i < LAYERS_TOTAL; i = i + 1) begin : scroll_pixel_gen
             vdp_scroll_pixel_generator #(
                 .STAGE_PIXEL_ROW(i != LAYER_LAST)
-            ) scroll_pixel_generator(
+            ) scroll_pixel_generator (
                 .clk(clk),
 
                 .scroll_x_granular(scroll_x[i][2:0]),

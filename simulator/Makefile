@@ -11,13 +11,16 @@ dummy:
 
 ### Common ###
 
-SIM_SRCS = main.cpp Simulation.cpp QSPIFlashSim.cpp
+SIM_SRCS = main.cpp Simulation.cpp QSPIFlashSim.cpp tinywav/tinywav.cpp
 SIM_HEADERS =  Simulation.hpp
 
 HDL_TOP = ics32_tb
 HDL_DIR = ../hardware
 
-VEX_USE_BOOTLOADER = 0
+# This must be set if ics32_tb.ENABLE_BOOTLOADER is also set
+# The Pico has parameters for the reset vector but the Vex doesn't
+# (This should be made a build-time-configurable top level param)
+VEX_USE_BOOTLOADER = 1
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
@@ -35,6 +38,7 @@ CXXRTL_HEADERS = $(CXXRTL_SRCS:%.cpp=%.hpp)
 CXXRTL_INCLUDES := $(shell yosys-config --datdir/include)
 CXXRTL_CFLAGS := \
 	-Wall \
+	-Itinywav/ \
 	$(shell sdl2-config --cflags) \
 	-DSIM_CXXRTL \
 	-DCXXRTL_INCLUDE_CAPI_IMPL
@@ -83,7 +87,7 @@ VLT_FLAGS =	\
 	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS -DSIMULATOR
 
 VLT_CXX_SOURCES = $(SIM_SRCS) ../VerilatorSimulation.cpp
-VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -DSIM_VERILATOR
+VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -I../tinywav/ -DSIM_VERILATOR
 VLT_LDFLAGS := $(shell sdl2-config --libs)
 
 verilator_sim_trace: VLT_CFLAGS += -DVCD_WRITE=1

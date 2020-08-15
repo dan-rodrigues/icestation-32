@@ -36,6 +36,8 @@ public:
     virtual bool hsync() const = 0;
     virtual bool vsync() const = 0;
 
+    virtual bool get_samples(int16_t *left, int16_t *right) = 0;
+
     virtual void final() = 0;
 
     virtual bool finished() const = 0;

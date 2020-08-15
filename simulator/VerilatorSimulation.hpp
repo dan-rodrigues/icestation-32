@@ -31,10 +31,12 @@ public:
     bool hsync() const override;
     bool vsync() const override;
 
+    bool get_samples(int16_t *left, int16_t *right) override;
+
     void final() override;
 
     bool finished() const override;
-
+    
 private:
     std::unique_ptr<Vics32_tb> tb = std::unique_ptr<Vics32_tb>(new Vics32_tb);
     QSPIFlashSim flash;

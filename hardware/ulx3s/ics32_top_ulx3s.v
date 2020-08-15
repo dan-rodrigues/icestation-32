@@ -15,6 +15,9 @@ module ics32_top_ulx3s #(
     output [3:0] gpdi_dp,
     output [3:0] gpdi_dn,
 
+    output [3:0] audio_l,
+    output [3:0] audio_r,
+
     output [7:0] led,
 
     input [6:0] btn,
@@ -54,6 +57,27 @@ module ics32_top_ulx3s #(
 
         .gpdi_dp(gpdi_dp),
         .gpdi_dn(gpdi_dn)
+    );
+
+    // --- DAC ---
+
+    reg [15:0] audio_output_l_valid, audio_output_r_valid;
+
+    always @(posedge clk_2x) begin
+        if (audio_output_valid) begin
+            audio_output_l_valid <= audio_output_l;
+            audio_output_r_valid <= audio_output_r;
+        end
+    end
+
+    dacpwm #(
+        .C_pcm_bits(16),
+        .C_dac_bits(4)
+    ) dacpwm [1:0] (
+        .clk(clk_2x),
+
+        .pcm({audio_output_l_valid, audio_output_r_valid}),
+        .dac({audio_l, audio_r})
     );
 
     // --- ECP5 Flash IO ---
@@ -132,9 +156,8 @@ module ics32_top_ulx3s #(
     // * DDR primitive can't be used with USRMCLK
     // * There is no built in supported to route a global clock USRMCLK
 
-    wire flash_clk_out = clk_2x ? flash_clk_ddr_r[0] : flash_clk_ddr_r[1];
-
     wire [1:0] flash_clk_ddr_r;
+    wire flash_clk_out = clk_2x ? flash_clk_ddr_r[0] : flash_clk_ddr_r[1];
 
     (* BEL="X2/Y93/SLICEA" *) TRELLIS_SLICE ddr_ff_0 (
         .CLK(clk_2x),
@@ -160,6 +183,9 @@ module ics32_top_ulx3s #(
 
     wire [3:0] vga_r, vga_g, vga_b;
     wire vga_de, vga_vsync, vga_hsync;
+
+    wire audio_output_valid;
+    wire [15:0] audio_output_l, audio_output_r;
 
     ics32 #(
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
@@ -190,7 +216,11 @@ module ics32_top_ulx3s #(
         .flash_csn(flash_csn_io),
         .flash_in_en(flash_in_en),
         .flash_in(flash_in),
-        .flash_out(flash_out_r)
+        .flash_out(flash_out_r),
+
+        .audio_output_l(audio_output_l),
+        .audio_output_r(audio_output_r),
+        .audio_output_valid(audio_output_valid)
     );
 
 endmodule
