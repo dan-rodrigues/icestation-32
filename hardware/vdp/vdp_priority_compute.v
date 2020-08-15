@@ -10,6 +10,8 @@ module vdp_priority_compute(
     input clk,
 
     input [7:0] scroll0_pixel,
+    input scroll0_is_8bpp,
+
     input [7:0] scroll1_pixel,
     input [7:0] scroll2_pixel,
     input [7:0] scroll3_pixel,
@@ -28,11 +30,11 @@ module vdp_priority_compute(
 );
 
     wire [4:0] layer_opacity = {
-        sprite_pixel[3:0] != 0,
-        scroll3_pixel[3:0] != 0,
-        scroll2_pixel[3:0] != 0,
-        scroll1_pixel[3:0] != 0,
-        scroll0_pixel[3:0] != 0
+        |sprite_pixel[3:0],
+        |scroll3_pixel[3:0],
+        |scroll2_pixel[3:0],
+        |scroll1_pixel[3:0],
+        |(scroll0_is_8bpp ? scroll0_pixel[7:0] : scroll0_pixel[3:0])
     };
 
     wire [4:0] primary_layers = layer_enable & layer_opacity & layer_mask;
@@ -44,10 +46,12 @@ module vdp_priority_compute(
     wire [4:0] masked_layer_nx;
     wire [7:0] masked_pixel_nx;
 
-    wire [1:0] primary_resolved_priority;
-    wire [1:0] masked_resolved_priority;
+    wire [2:0] primary_resolved_priority;
+    wire [2:0] masked_resolved_priority;
 
     vdp_layer_priority_select primary_priority_select(
+        .clk(clk),
+
         .layer_mask(primary_layers),
         .sprite_priority(sprite_priority),
 
@@ -63,6 +67,8 @@ module vdp_priority_compute(
     );
 
     vdp_layer_priority_select masked_priority_select(
+        .clk(clk),
+
         .layer_mask(masked_layers),
         .sprite_priority(sprite_priority),
 
