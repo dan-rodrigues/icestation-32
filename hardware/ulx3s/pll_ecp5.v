@@ -16,12 +16,24 @@ module pll_ecp5 #(
     output clk_2x,
     output clk_10x
 );
-    generated_pll generated_pll(
-        .clkin(clk_25m),
-        .clkout0(clk_10x),
-        .clkout3(clk_1x),
-        .clkout2(clk_2x),
-        .locked(locked)
-    );
+    generate
+        if (ENABLE_FAST_CLK) begin
+            generated_pll_33_75 generated_pll(
+                .clkin(clk_25m),
+                .clkout0(clk_10x),
+                .clkout3(clk_1x),
+                .clkout2(clk_2x),
+                .locked(locked)
+            );
+        end else begin
+            generated_pll_25 generated_pll(
+                .clkin(clk_25m),
+                .clkout0(clk_10x),
+                .clkout3(clk_1x),
+                .clkout2(clk_2x),
+                .locked(locked)
+            );
+        end
+    endgenerate
 
 endmodule
