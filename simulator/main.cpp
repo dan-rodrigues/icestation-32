@@ -72,6 +72,9 @@ int main(int argc, const char **argv) {
         }
     }
 
+    bool wav_output_required = !wav_output_path.empty();
+    bool audio_capture_required = enable_audio_output || wav_output_required;
+
     // 1. Load test program...
 
     if (optind >= argc) {
@@ -267,15 +270,21 @@ int main(int argc, const char **argv) {
 
         vga_vsync_previous = sim.vsync();
 
-        // Audio capture
+        // Audio capture (optional)
 
-        int16_t audio_left, audio_right;
-        if (sim.get_samples(&audio_left, &audio_right)) {
-            audio_callback_samples.push_back(audio_left);
-            audio_callback_samples.push_back(audio_right);
+        if (audio_capture_required) {
+            int16_t audio_left, audio_right;
+            if (sim.get_samples(&audio_left, &audio_right)) {
+                if (enable_audio_output) {
+                    audio_callback_samples.push_back(audio_left);
+                    audio_callback_samples.push_back(audio_right);
+                }
 
-            audio_samples.push_back(audio_left);
-            audio_samples.push_back(audio_right);
+                if (wav_output_required) {
+                    audio_samples.push_back(audio_left);
+                    audio_samples.push_back(audio_right);
+                }
+            }
         }
 
         // Exit check
@@ -305,7 +314,7 @@ int main(int argc, const char **argv) {
 
     std::free(pixels);
 
-    if (!wav_output_path.empty()) {
+    if (wav_output_required) {
         if (!write_captured_audio(wav_output_path, audio_samples)) {
             return EXIT_FAILURE;
         }
