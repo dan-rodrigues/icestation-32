@@ -416,13 +416,13 @@ module vdp #(
     // --- Raster offset for scrolling layers ---
 
     localparam SCROLL_START_LEAD_TIME = 32;
-    localparam SCROLL_OFFSCREEN_ADVANCE = -8;
+    localparam SCROLL_OFFSCREEN_ADVANCE = -7;
 
     reg [9:0] raster_x_offset;
 
     localparam HEIGHT_DIFF = HEIGHT_TOTAL - 512;
 
-    wire scroll_base_x_start = raster_x == (OFFSCREEN_X_TOTAL - SCROLL_START_LEAD_TIME + 0);
+    wire scroll_base_x_start = raster_x == (OFFSCREEN_X_TOTAL - SCROLL_START_LEAD_TIME);
 
     // the +1 is to preserve alignment between raster_x[2:0] (used to sequence VRAM access)
     localparam SCROLL_BASE_X_INITIAL = SCROLL_OFFSCREEN_ADVANCE + 1;
@@ -433,7 +433,7 @@ module vdp #(
 
     // --- Raster offset for sprites ---
 
-    localparam SPRITE_X_INITIAL = -2;
+    localparam SPRITE_X_INITIAL = -3;
     localparam SPRITE_START_LEAD_TIME = 10;
     localparam SPRITE_HOLD_TIME = HEIGHT_TOTAL - 512;
 
@@ -693,7 +693,7 @@ module vdp #(
     reg [9:0] affine_x;
     wire [8:0] affine_y = raster_y;
 
-    wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 16);
+    wire affine_x_start = raster_x == (OFFSCREEN_X_TOTAL - 17);
     wire affine_x_end = line_ended;
 
     reg affine_offscreen;

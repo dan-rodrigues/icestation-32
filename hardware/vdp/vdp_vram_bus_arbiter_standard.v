@@ -218,7 +218,7 @@ module vdp_vram_bus_arbiter_standard(
 
         vram_sprite_read_data_valid = 0;
 
-        case (raster_x[2:0])
+        case (raster_x_offset[2:0])
             0: begin
                 // now: s0 map data
                 scroll_meta_load = `LAYER_SCROLL0_OHE;
