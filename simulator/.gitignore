@@ -13,3 +13,7 @@
 /cxxrtl_sim*
 /verilator_sim*
 
+# Simulator output
+
+/*.wav
+
