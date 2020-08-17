@@ -49,7 +49,7 @@ BALL_PNG = ball.png
 CLOUD_PNG = cloud_small.png
 
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
-PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
+PNG_CONVERTER = $(PNG_CONVERTER_DIR)png_convert
 
 $(PNG_CONVERTER):
 	$(MAKE) -C $(PNG_CONVERTER_DIR)

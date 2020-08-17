@@ -19,7 +19,7 @@ include ../common/common.mk
 # Ensure utility dependencies are up to date
 
 PNG_CONVERTER_DIR = ../../utilities/png_convert/
-PNG_CONVERTER = $(PNG_CONVERTER_DIR)ics-png-convert
+PNG_CONVERTER = $(PNG_CONVERTER_DIR)png_convert
 
 pre-build:
 	@$(MAKE) -C $(PNG_CONVERTER_DIR)
