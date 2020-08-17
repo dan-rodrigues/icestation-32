@@ -672,11 +672,17 @@ module ics32 #(
         .read_en_a(flash_read_en),
         .ready_a(flash_read_ready),
 
+        // 32bit reads (full size)
+        .size_a(1),
+
         // Reader B: ADPCM DSP
 
         .read_address_b({pcm_read_address, 1'b0}),
         .read_en_b(pcm_read_en),
         .ready_b(pcm_data_ready),
+        
+        // 16bit reads
+        .size_b(0),
 
         // Flash read data
 
