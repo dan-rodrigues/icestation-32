@@ -24,16 +24,12 @@ RC_SOURCES = snare.c kick.c cymbal.c
 include ../common/common.mk
 
 HEADER_GEN_DIR = ../../utilities/header_gen
-HEADER_GEN := $(HEADER_GEN_DIR)/header-gen
-
-SIN_GEN_DIR = ../../utilities/sin_gen
-SIN_GEN := $(SIN_GEN_DIR)/ics-sin-gen
+HEADER_GEN := $(HEADER_GEN_DIR)/header_gen
 
 # Ensure utility dependencies are up to date
 
 pre-build:
 	@$(MAKE) -C $(HEADER_GEN_DIR)
-	@$(MAKE) -C $(SIN_GEN_DIR)
 
 main-build: pre-build
 	@$(MAKE) --no-print-directory $(BIN)
