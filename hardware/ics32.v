@@ -668,7 +668,7 @@ module ics32 #(
 
         // Reader A: CPU
 
-        .read_address_a({5'b0, cpu_address[18:0]}),
+        .read_address_a({5'b0, cpu_address[18:2], 2'b00}),
         .read_en_a(flash_read_en),
         .ready_a(flash_read_ready),
 
