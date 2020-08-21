@@ -46,10 +46,6 @@ module flash_arbiter(
     reg read_en_a_edge, read_en_b_edge;
 
     always @(posedge clk) begin
-        if (reset) begin
-            read_active <= 0;
-        end
-
         read_en_a_r <= read_en_a;
         read_en_b_r <= read_en_b;
         read_en_a_edge <= (read_en_a && !read_en_a_r) || read_en_a_edge;
@@ -84,6 +80,10 @@ module flash_arbiter(
 
             read_active <= 0;
         end
+
+        if (reset) begin
+            read_active <= 0;
+        end
     end
 
     // --- Register flash reader inputs ---
@@ -94,7 +94,7 @@ module flash_arbiter(
 
     always @(posedge clk) begin
         flash_read_address <= (reader_selected ? read_address_a : read_address_b) + FLASH_USER_BASE;
-        flash_read_en <= (reader_selected ? read_en_a : read_en_b);
+        flash_read_en <= (reader_selected ? read_en_a : read_en_b) && read_active;
         flash_read_size <= (reader_selected ? size_a : size_b);
     end
 
