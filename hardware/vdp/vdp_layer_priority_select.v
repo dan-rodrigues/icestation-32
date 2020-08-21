@@ -25,13 +25,13 @@ module vdp_layer_priority_select(
     output reg [7:0] prioritized_pixel,
     output reg [2:0] resolved_priority
 );
-    wire sprite_opaque = layer_mask[`LAYER_SPRITES];
     wire sprite_opaque_r = layer_mask_r[`LAYER_SPRITES];
 
     // 1a: Register inputs for output (2.)
 
     reg [7:0] scroll_pixel_r [0:3];
     reg [7:0] sprite_pixel_r;
+    reg [1:0] sprite_priority_r;
     reg [4:0] layer_mask_r;
 
     always @(posedge clk) begin
@@ -39,13 +39,16 @@ module vdp_layer_priority_select(
         scroll_pixel_r[1] <= scroll1_pixel;
         scroll_pixel_r[2] <= scroll2_pixel;
         scroll_pixel_r[3] <= scroll3_pixel;
+
         sprite_pixel_r <= sprite_pixel;
+        sprite_priority_r <= sprite_priority;
+
         layer_mask_r <= layer_mask;
     end
 
     // 1b: Determine priority of layers / sprites
 
-    wire [2:0] sprite_priority_score = {sprite_priority, 1'b1};
+    wire [2:0] sprite_priority_score = {sprite_priority_r, 1'b1};
     wire [2:0] layer_priority_score = {layer_encoded_priority, 1'b0};
     reg [1:0] layer_encoded_priority;
     reg [3:0] layer_prioritized_ohe;
