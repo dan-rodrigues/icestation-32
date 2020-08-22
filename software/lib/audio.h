@@ -10,9 +10,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-static const void *const AUDIO_BASE = (void *)0x80000;
+static const void *const AUDIO_BASE = (uint32_t *)0x80000;
 
-typedef volatile uint16_t *const AUDIO_REG;
+typedef volatile uint32_t *const AUDIO_REG;
 
 typedef enum {
     AUDIO_FLAG_LOOP = (1 << 0)
