@@ -410,7 +410,7 @@ module ics32 #(
     wire audio_ctrl_ch_write_en = audio_ctrl_write_en && !cpu_address[9];
     wire audio_ctrl_gb_write_en = audio_ctrl_write_en && cpu_address[9];
 
-    wire [7:0] audio_ctrl_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
+    wire [7:0] audio_ctrl_ch_write_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
     wire [1:0] audio_ctrl_write_byte_mask = cpu_wstrb_decoder[1:0] | cpu_wstrb_decoder[3:2];
     wire [7:0] audio_ctrl_cpu_read_data;
 
@@ -426,18 +426,18 @@ module ics32 #(
         .clk(vdp_clk),
         .reset(vdp_reset),
 
-        .ch_write_address(audio_ctrl_address),
+        .ch_write_address(audio_ctrl_ch_write_address),
         .ch_write_data(cpu_write_data[15:0]),
         .ch_write_byte_mask(audio_ctrl_write_byte_mask),
         .ch_write_en(audio_ctrl_ch_write_en),
         .ch_write_ready(audio_ctrl_ch_write_ready),
 
-        .gb_write_address(audio_ctrl_address[0]),
+        .gb_write_address(cpu_address[3:2]),
         .gb_write_data(cpu_write_data[15:0]),
         .gb_write_en(audio_ctrl_gb_write_en),
         .gb_write_ready(audio_gb_write_ready),
 
-        .status_read_address(audio_ctrl_address[1:0]),
+        .status_read_address(cpu_address[3:2]),
         .status_read_request(audio_ctrl_read_request),
         .status_read_ready(audio_ctrl_read_ready),
         .status_read_data(audio_ctrl_cpu_read_data),
