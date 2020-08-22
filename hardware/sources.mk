@@ -57,6 +57,7 @@ ULX3S_SRCS := \
 		generated_pll_33_75.v \
 		hdmi_encoder.v \
 		dacpwm.v \
+		spdif_tx.v \
 		../common/spram_256k.v \
 	)
 	

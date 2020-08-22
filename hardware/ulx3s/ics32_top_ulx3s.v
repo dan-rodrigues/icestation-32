@@ -17,6 +17,7 @@ module ics32_top_ulx3s #(
 
     output [3:0] audio_l,
     output [3:0] audio_r,
+    output [3:0] audio_v,
 
     output [7:0] led,
 
@@ -61,6 +62,8 @@ module ics32_top_ulx3s #(
 
     // --- DAC ---
 
+    // Analog:
+
     reg [15:0] audio_output_l_valid, audio_output_r_valid;
 
     always @(posedge clk_2x) begin
@@ -69,6 +72,25 @@ module ics32_top_ulx3s #(
             audio_output_r_valid <= audio_output_r;
         end
     end
+
+    // SPDIF:
+
+    localparam SPDIF_CLOCK = ENABLE_WIDESCREEN ? 33750000 : 25175000;
+
+    // TODO: stereo?
+    wire [23:0] pcm_24s = {audio_output_l_valid, 8'b0};
+
+    wire spdif;
+    assign audio_v = {2'b00, spdif, 1'b0};
+
+    spdif_tx #(
+      .C_clk_freq(SPDIF_CLOCK),
+      .C_sample_freq(44100)
+    ) spdif_tx (
+      .clk(clk_2x),
+      .data_in(pcm_24s),
+      .spdif_out(spdif)
+    );
 
     dacpwm #(
         .C_pcm_bits(16),
