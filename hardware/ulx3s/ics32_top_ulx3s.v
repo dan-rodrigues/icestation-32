@@ -77,10 +77,11 @@ module ics32_top_ulx3s #(
 
     localparam SPDIF_CLOCK = ENABLE_WIDESCREEN ? 33750000 : 25175000;
 
-    // TODO: stereo?
-    wire [23:0] pcm_24s = {audio_output_l_valid, 8'b0};
+    wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
+    wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
 
     wire spdif;
+    wire spdif_channel_select;
     assign audio_v = {2'b00, spdif, 1'b0};
 
     spdif_tx #(
@@ -88,7 +89,8 @@ module ics32_top_ulx3s #(
       .C_sample_freq(44100)
     ) spdif_tx (
       .clk(clk_2x),
-      .data_in(pcm_24s),
+      .data_in(spdif_pcm_in),
+      .address_out(spdif_channel_select),
       .spdif_out(spdif)
     );
 
