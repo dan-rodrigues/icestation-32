@@ -7,8 +7,11 @@
 `default_nettype none
 
 `include "bus_arbiter.vh"
+`include "clocks.vh"
 
 module ics32 #(
+    parameter integer CLK_1X_FREQ = `CLK_1X_WIDESCREEN,
+    parameter integer CLK_2X_FREQ = `CLK_2X_WIDESCREEN,
     parameter [0:0] USE_VEXRISCV = 1,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0,
@@ -419,7 +422,7 @@ module ics32 #(
     wire pcm_data_ready;
 
     ics_adpcm #(
-        .OUTPUT_INTERVAL(33750000 / 44100),
+        .OUTPUT_INTERVAL(CLK_2X_FREQ / 44100),
         .CHANNELS(8),
         .ADPCM_STEP_LUT_PATH(ADPCM_STEP_LUT_PATH)
     ) ics_adpcm (
@@ -527,7 +530,7 @@ module ics32 #(
     ) bus_arbiter (
         .clk(vdp_clk),
 
-        // inputs
+        // Inputs
 
         .cpu_address(cpu_address),
         .cpu_write_data(cpu_write_data),
@@ -557,7 +560,7 @@ module ics32 #(
         .flash_ctrl_read_data(flash_ctrl_read_data),
         .audio_cpu_read_data(audio_ctrl_cpu_read_data),
 
-        // outputs
+        // Outputs
 
         .cpu_mem_ready(cpu_mem_ready),
         .cpu_read_data(cpu_read_data)

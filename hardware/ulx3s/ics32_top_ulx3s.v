@@ -6,6 +6,8 @@
 
 `default_nettype none
 
+`include "clocks.vh"
+
 module ics32_top_ulx3s #(
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0
@@ -26,6 +28,11 @@ module ics32_top_ulx3s #(
     output flash_csn,
     inout [3:0] flash_io
 );
+    // --- Clocks ---
+
+    localparam integer CLK_2X_FREQ = ENABLE_WIDESCREEN ? `CLK_2X_WIDESCREEN : `CLK_2X_STANDARD;
+    localparam integer CLK_1X_FREQ = ENABLE_WIDESCREEN ? `CLK_1X_WIDESCREEN : `CLK_1X_STANDARD;
+
     // --- ECP5 PLL (640x480 or 848x480 clock selection) ---
 
     wire clk_1x, clk_2x, clk_10x;
@@ -62,6 +69,25 @@ module ics32_top_ulx3s #(
 
     // --- DAC ---
 
+    // SPDIF:
+
+    wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
+    wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
+
+    wire spdif;
+    wire spdif_channel_select;
+    assign audio_v = {2'b00, spdif, 1'b0};
+
+    spdif_tx #(
+      .C_clk_freq(CLK_2X_FREQ),
+      .C_sample_freq(44100)
+    ) spdif_tx (
+      .clk(clk_2x),
+      .data_in(spdif_pcm_in),
+      .address_out(spdif_channel_select),
+      .spdif_out(spdif)
+    );
+
     // Analog:
 
     reg [15:0] audio_output_l_valid, audio_output_r_valid;
@@ -72,27 +98,6 @@ module ics32_top_ulx3s #(
             audio_output_r_valid <= audio_output_r;
         end
     end
-
-    // SPDIF:
-
-    localparam SPDIF_CLOCK = ENABLE_WIDESCREEN ? 33750000 : 25175000;
-
-    wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
-    wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
-
-    wire spdif;
-    wire spdif_channel_select;
-    assign audio_v = {2'b00, spdif, 1'b0};
-
-    spdif_tx #(
-      .C_clk_freq(SPDIF_CLOCK),
-      .C_sample_freq(44100)
-    ) spdif_tx (
-      .clk(clk_2x),
-      .data_in(spdif_pcm_in),
-      .address_out(spdif_channel_select),
-      .spdif_out(spdif)
-    );
 
     dacpwm #(
         .C_pcm_bits(16),
@@ -212,6 +217,8 @@ module ics32_top_ulx3s #(
     wire [15:0] audio_output_l, audio_output_r;
 
     ics32 #(
+        .CLK_1X_FREQ(CLK_1X_FREQ),
+        .CLK_2X_FREQ(CLK_2X_FREQ),
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
         .ENABLE_FAST_CPU(ENABLE_FAST_CPU),
         .RESET_DURATION_EXPONENT(24),
