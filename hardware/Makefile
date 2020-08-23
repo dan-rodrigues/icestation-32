@@ -36,9 +36,9 @@ count: TOP = ics32_top_icebreaker
 
 include sources.mk
 
-icebreaker.json: SOURCES += $(ICEBREAKER_SRCS) icebreaker/$(TOP).v
-ulx3s.json: SOURCES += $(ULX3S_SRCS) ulx3s/$(TOP).v
-count: SOURCES += $(ICEBREAKER_SRCS) icebreaker/$(TOP).v
+icebreaker.json: SOURCES += $(ICEBREAKER_SOURCES) icebreaker/$(TOP).v
+ulx3s.json: SOURCES += $(ULX3S_SOURCES) ulx3s/$(TOP).v
+count: SOURCES += $(ICEBREAKER_SOURCES) icebreaker/$(TOP).v
 
 # Timing constraints vary according to video mode
 TIMING_PY := constraints/$(VIDEO_MODE).py 
@@ -87,10 +87,10 @@ ifneq ($(BOOT_BUILD_STATUS), 0)
 $(error Failed to build firmware (boot.hex). Run "make" in ../firmware/ to see error details.)
 endif
 
-ulx3s.json: $(SOURCES) $(ULX3S_SRCS) ulx3s/ics32_top_ulx3s.v $(BOOT_HEX)
+ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_HEX)
 	$(call synth, -json $@)
 
-icebreaker.json: $(SOURCES) $(ICEBREAKER_SRCS) icebreaker/ics32_top_icebreaker.v $(BOOT_HEX)
+icebreaker.json: $(SOURCES) $(ICEBREAKER_SOURCES) icebreaker/ics32_top_icebreaker.v $(BOOT_HEX)
 	$(call synth, -json $@)
 
 count: $(SOURCES) $(BOOT_HEX)

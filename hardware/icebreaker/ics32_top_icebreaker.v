@@ -25,9 +25,7 @@ module ics32_top_icebreaker #(
     output led_b,
 
     input btn_u,
-    input btn_1,
-    input btn_2,
-    input btn_3,
+    input [2:0] btn,
 
     output flash_clk,
     output flash_csn,
@@ -105,11 +103,55 @@ module ics32_top_icebreaker #(
         .D_OUT_1(flash_clk_ddr[1])
     );
 
+    // --- Gamepad reading ---
+
+    // Only the 3 buttons on the breakboard are used as a partial gamepad
+    // This can be extended later with an actual gamepad PMOD
+
+    wire [11:0] pad_btn = {btn_r[0], btn_r[2], 5'b0, btn_r[1]};
+
+    wire [1:0] pad_read_data;
+    assign pad_read_data[1] = ~btn_r[3];
+
+    mock_gamepad mock_gamepad(
+        .clk(clk_2x),
+
+        .pad_clk(pad_clk),
+        .pad_btn(pad_btn),
+        .pad_latch(pad_latch),
+
+        .pad_out(pad_read_data[0])
+    );
+
+    // Breakboard board buttons:
+
+    wire [3:0] btn_r;
+
+    SB_IO #(
+        .PIN_TYPE(6'b100000),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) btn_sbio [3:0] (
+        .PACKAGE_PIN({btn_u, btn}),
+        .OUTPUT_ENABLE(1'b0),
+        .INPUT_CLK(clk_2x),
+        .CLOCK_ENABLE(1'b1),
+        .D_IN_0(btn_r),
+
+        // This isn't used but nextpnr will error without this:
+        .OUTPUT_CLK(clk_2x)
+    );
+
+    // --- icestation-32 ---
+
     wire [3:0] flash_in;
     wire [3:0] flash_in_en;
     wire flash_csn_io;
     wire [1:0] flash_clk_ddr;
     
+    wire pad_latch, pad_clk;
+
     ics32 #(
         .CLK_1X_FREQ(CLK_1X_FREQ),
         .CLK_2X_FREQ(CLK_2X_FREQ),
@@ -132,10 +174,9 @@ module ics32_top_icebreaker #(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
-        .btn_u(~btn_u),
-        .btn_1(btn_1),
-        .btn_2(btn_2),
-        .btn_3(btn_3),
+        .pad_latch(pad_latch),
+        .pad_clk(pad_clk),
+        .pad_data(pad_read_data),
 
         .led({led_r, led_b}),
 

@@ -32,9 +32,9 @@ set_io flash_io[1] 17
 set_io flash_io[2] 12
 set_io flash_io[3] 13
 
-set_io -nowarn btn_1 20
-set_io -nowarn btn_2 19
-set_io -nowarn btn_3 18
+set_io btn[0] 20
+set_io btn[1] 19
+set_io btn[2] 18
 
 set_io uart_rx 6
 set_io uart_tx 9

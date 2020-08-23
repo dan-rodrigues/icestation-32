@@ -1,7 +1,7 @@
 # Options:
 
 # If set, a boot prompt is displayed before loading user program from flash
-BOOT_PROMPT = 0
+BOOT_PROMPT = 1
 
 ###
 

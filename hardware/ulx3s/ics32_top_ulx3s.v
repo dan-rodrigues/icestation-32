@@ -9,6 +9,8 @@
 `include "clocks.vh"
 
 module ics32_top_ulx3s #(
+    parameter [0:0] ENABLE_USB_GAMEPAD = 1,
+    parameter [0:0] USB_GAMEPAD_LED = 1,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0
 ) (
@@ -26,7 +28,13 @@ module ics32_top_ulx3s #(
     input [6:0] btn,
 
     output flash_csn,
-    inout [3:0] flash_io
+    inout [3:0] flash_io,
+
+    input usb_fpga_dp,
+    inout usb_fpga_bd_dp,
+    inout usb_fpga_bd_dn,
+    output usb_fpga_pu_dp,
+    output usb_fpga_pu_dn
 );
     // --- Clocks ---
 
@@ -35,18 +43,32 @@ module ics32_top_ulx3s #(
 
     // --- ECP5 PLL (640x480 or 848x480 clock selection) ---
 
+    // Main PLL:
+
     wire clk_1x, clk_2x, clk_10x;
     wire pll_locked;
 
     pll_ecp5 #(
         .ENABLE_FAST_CLK(ENABLE_WIDESCREEN)
-    ) pll (
+    ) pll_main (
         .clk_25m(clk_25mhz),
 
         .locked(pll_locked),
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
         .clk_10x(clk_10x)
+    );
+
+    // USB PLL (6MHz):
+
+    wire clk_usb;
+    wire pll_locked_usb;
+
+    generated_pll_usb pll_usb (
+        .clkin(clk_25mhz),
+
+        .clkout1(clk_usb),
+        .locked(pll_locked_usb)
     );
 
     // --- HDMI ---
@@ -205,7 +227,55 @@ module ics32_top_ulx3s #(
         .USRMCLKTS(1'b0)
     );
 
+    // --- USB gamepad (US2) ---
+
+    assign usb_fpga_pu_dp = 1'b0;
+    assign usb_fpga_pu_dn = 1'b0;
+
+    wire [11:0] usb_btn;
+
+    usb_gamepad_reader usb_gamepad_reader(
+        .clk(clk_usb),
+        .reset(~pll_locked_usb),
+
+        .usb_dif(usb_fpga_dp),
+        .usb_dp(usb_fpga_bd_dp),
+        .usb_dn(usb_fpga_bd_dn),
+
+        .usb_btn(usb_btn)
+    );
+
+    // --- Gamepad reading ---
+
+    wire [11:0] pad_btn = ENABLE_USB_GAMEPAD ? usb_btn_cdc : {btn[6], btn[5], 5'b0, btn[1]};
+
+    wire [1:0] pad_read_data;
+
+    mock_gamepad mock_gamepad(
+        .clk(clk_2x),
+
+        .pad_clk(pad_clk),
+        .pad_btn(pad_btn),
+        .pad_latch(pad_latch),
+
+        .pad_out(pad_read_data[0])
+    );
+
+    // P2 input is used as a special user button
+    wire btn_u = btn[3];
+    assign pad_read_data[1] = btn_u;
+
+    reg [11:0] buttons_cdc [0:1];
+    wire [11:0] usb_btn_cdc = buttons_cdc[1];
+
+    always @(posedge clk_2x) begin
+        buttons_cdc[1] <= buttons_cdc[0];
+        buttons_cdc[0] <= usb_btn;
+    end
+
     // --- icestation-32 ---
+
+    assign led = USB_GAMEPAD_LED ? usb_btn : status_led;
 
     wire flash_csn_io;
     wire [1:0] flash_clk_ddr;
@@ -215,6 +285,10 @@ module ics32_top_ulx3s #(
 
     wire audio_output_valid;
     wire [15:0] audio_output_l, audio_output_r;
+
+    wire pad_latch, pad_clk;
+
+    wire [7:0] status_led;
 
     ics32 #(
         .CLK_1X_FREQ(CLK_1X_FREQ),
@@ -236,12 +310,11 @@ module ics32_top_ulx3s #(
         .vga_hsync(vga_hsync),
         .vga_vsync(vga_vsync),
 
-        .btn_u(btn[3]),
-        .btn_1(btn[4]),
-        .btn_2(btn[5]),
-        .btn_3(btn[6]),
+        .pad_latch(pad_latch),
+        .pad_clk(pad_clk),
+        .pad_data(pad_read_data),
 
-        .led(led),
+        .led(status_led),
 
         .flash_clk_ddr(flash_clk_ddr),
         .flash_csn(flash_csn_io),
