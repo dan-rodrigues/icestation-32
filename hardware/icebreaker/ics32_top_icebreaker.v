@@ -33,6 +33,11 @@ module ics32_top_icebreaker #(
     output flash_csn,
     inout [3:0] flash_io
 );
+    // --- Clocks ---
+
+    localparam integer CLK_2X_FREQ = ENABLE_WIDESCREEN ? `CLK_2X_WIDESCREEN : `CLK_2X_STANDARD;
+    localparam integer CLK_1X_FREQ = ENABLE_WIDESCREEN ? `CLK_1X_WIDESCREEN : `CLK_1X_STANDARD;
+
     // --- iCE40 PLL (640x480 or 848x480 clock selection) ---
 
     wire clk_1x, clk_2x;
@@ -106,6 +111,8 @@ module ics32_top_icebreaker #(
     wire [1:0] flash_clk_ddr;
     
     ics32 #(
+        .CLK_1X_FREQ(CLK_1X_FREQ),
+        .CLK_2X_FREQ(CLK_2X_FREQ),
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(24),

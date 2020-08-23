@@ -28,6 +28,8 @@ module ics32_tb(
     input btn_3
 );
     ics32 #(
+        .CLK_1X_FREQ(`CLK_1X_WIDESCREEN),
+        .CLK_2X_FREQ(`CLK_2X_WIDESCREEN),
         .ENABLE_WIDESCREEN(1),
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(2),
