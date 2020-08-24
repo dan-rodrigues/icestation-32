@@ -51,6 +51,21 @@ module ics32_top_icebreaker #(
         .clk_2x(clk_2x)
     );
 
+    // --- HDMI (PMOD with DVI over HDMI port) ---
+
+    SB_IO #(
+        .PIN_TYPE(6'b010000),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) vga_clk_sbio (
+        .PACKAGE_PIN(vga_clk),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(clk_2x),
+        .D_OUT_0(1'b0),
+        .D_OUT_1(1'b1)
+    );
+
     // --- iCE40 Flash IO ---
 
     wire [3:0] flash_out;
@@ -123,7 +138,7 @@ module ics32_top_icebreaker #(
         .pad_out(pad_read_data[0])
     );
 
-    // Breakboard board buttons:
+    // Breakout board board buttons:
 
     wire [3:0] btn_r;
 
@@ -170,8 +185,6 @@ module ics32_top_icebreaker #(
 
         .vga_hsync(vga_hsync),
         .vga_vsync(vga_vsync),
-
-        .vga_clk(vga_clk),
         .vga_de(vga_de),
 
         .pad_latch(pad_latch),
