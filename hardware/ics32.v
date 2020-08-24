@@ -40,10 +40,9 @@ module ics32 #(
 
     output [7:0] led,
 
-    input btn_u,
-    input btn_1,
-    input btn_2,
-    input btn_3,
+    output pad_latch,
+    output pad_clk,
+    input [1:0] pad_data,
 
     output [1:0] flash_clk_ddr,
     output flash_csn,
@@ -473,50 +472,19 @@ module ics32 #(
         .read_data(cpu_ram_read_data)
     );
 
-    // --- Gamepad reading --- (TODO, 3 buttons on breakout board for now)
+    // --- Gamepad IO ---
 
-    wire [1:0] pad_read_data;
+    // cleanup as needed..
+
     reg [1:0] pad_ctrl;
 
-    wire pad_latch = pad_ctrl[0];
-    wire pad_clk = pad_ctrl[1];
-
-    reg pad_clk_r;
+    assign pad_latch = pad_ctrl[0];
+    assign pad_clk = pad_ctrl[1];
 
     always @(posedge vdp_clk) begin
         if (pad_write_en) begin
             pad_ctrl <= cpu_write_data[1:0];
         end
-    end
-
-    // --- Gamepad mocking using iCEBreaker buttons (temporary) ---
-
-    reg [15:0] pad_mock_state;
-    assign pad_read_data[0] = pad_mock_state[0];
-    // Instead of P2 data, return the user button state
-    assign pad_read_data[1] = user_button_r;
-
-    always @(posedge vdp_clk) begin
-        if (pad_latch) begin
-            // left, right, B inputs respectively
-            pad_mock_state <= {btn_1, btn_3, 5'b0, btn_2};
-        end
-
-        if (pad_clk && !pad_clk_r) begin
-            pad_mock_state <= {1'b0, pad_mock_state[15:1]};
-        end
-
-        pad_clk_r <= pad_clk;
-    end
-
-    // --- User button ---
-
-    reg user_button_r;
-
-    // Not bothering to debounce this since its uses don't rely on it
-
-    always @(posedge vdp_clk) begin
-        user_button_r <= btn_u;
     end
 
     // --- Bus arbiter ---
@@ -556,7 +524,7 @@ module ics32 #(
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
-        .pad_read_data(pad_read_data),
+        .pad_read_data(pad_data),
         .flash_ctrl_read_data(flash_ctrl_read_data),
         .audio_cpu_read_data(audio_ctrl_cpu_read_data),
 

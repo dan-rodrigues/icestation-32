@@ -53,10 +53,9 @@ module ics32_tb(
         .vga_clk(vga_clk),
         .vga_de(vga_de),
 
-        .btn_u(~btn_u),
-        .btn_1(btn_1),
-        .btn_2(btn_2),
-        .btn_3(btn_3),
+        .pad_latch(pad_latch),
+        .pad_clk(pad_clk),
+        .pad_data(pad_read_data),
 
         .led(led),
 
@@ -69,6 +68,28 @@ module ics32_tb(
         .audio_output_valid(audio_valid),
         .audio_output_l(audio_l),
         .audio_output_r(audio_r)
+    );
+
+    // --- Gamepad reading ---
+
+    // Only the 3 buttons on the breakboard are used as a partial gamepad
+    // This can be extended later with an actual gamepad PMOD
+
+    wire [11:0] pad_btn = {btn_1, btn_3, 5'b0, btn_2};
+
+    wire [1:0] pad_read_data;
+    assign pad_read_data[1] = ~btn_u;
+
+    wire pad_latch, pad_clk;
+
+    mock_gamepad mock_gamepad(
+        .clk(clk_2x),
+
+        .pad_clk(pad_clk),
+        .pad_btn(pad_btn),
+        .pad_latch(pad_latch),
+
+        .pad_out(pad_read_data[0])
     );
 
     // --- Flash sim blackbox ---

@@ -1,4 +1,4 @@
- SOURCES := \
+SOURCES := \
  	ics32.v \
  	picorv32.v \
 	vexriscv/vexriscv_shared_bus.v \
@@ -13,6 +13,7 @@
  	flash_reader.v \
 	ics_adpcm.v \
  	cop_ram.v \
+ 	mock_gamepad.v \
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \
@@ -44,15 +45,29 @@ else
 	VEX = $(VEX_RESET_RAM)
 endif
 
-ICEBREAKER_SRCS := \
+ICEBREAKER_SOURCES := \
 	$(addprefix icebreaker/, \
 		pll_ice40.v \
 		spram_256k.v \
 	)
 
-ULX3S_SRCS := \
+USB_HID_SOURCES := \
+	$(addprefix usb/, \
+		usb_phy.v \
+		usb_rx_phy.v \
+		usb_tx_phy.v \
+		usbh_crc5.v \
+		usbh_crc16.v \
+		usbh_host_hid.v \
+		usbh_sie.v \
+		gamepads/usbh_report_decoder_buffalo.v \
+		gamepads/usb_gamepad_reader.v \
+	)
+
+ULX3S_SOURCES := \
 	$(addprefix ulx3s/, \
 		pll_ecp5.v \
+		generated_pll_usb.v \
 		generated_pll_25.v \
 		generated_pll_33_75.v \
 		hdmi_encoder.v \
@@ -60,7 +75,9 @@ ULX3S_SRCS := \
 		spdif_tx.v \
 		../common/spram_256k.v \
 	)
+
+ULX3S_SOURCES += $(USB_HID_SOURCES)
 	
-SOURCES +=  $(VDP_SOURCES)
+SOURCES += $(VDP_SOURCES)
 SOURCES += $(VEX)
 
