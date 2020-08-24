@@ -34,8 +34,6 @@ module ics32 #(
 
     output vga_hsync,
     output vga_vsync,
-
-    output vga_clk,
     output vga_de,
 
     output [7:0] led,
@@ -119,8 +117,6 @@ module ics32 #(
     );
 
     // --- Clock Assignment ---
-
-    assign vga_clk = clk_2x;
 
     wire cpu_clk, vdp_clk;
     wire cpu_reset, vdp_reset;

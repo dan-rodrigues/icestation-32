@@ -51,6 +51,37 @@ module ics32_top_icebreaker #(
         .clk_2x(clk_2x)
     );
 
+    // --- HDMI (PMOD with DVI over HDMI port) ---
+
+    // CLK
+
+    SB_IO #(
+        .PIN_TYPE(6'b010000),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) vga_clk_sbio (
+        .PACKAGE_PIN(vga_clk),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(clk_2x),
+        .D_OUT_0(1'b0),
+        .D_OUT_1(1'b1)
+    );
+
+    // RGBS + DE
+
+    SB_IO #(
+        .PIN_TYPE(6'b010100),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) vga_rgbsde_sbio [14:0] (
+        .PACKAGE_PIN({vga_de, vga_vsync, vga_hsync, vga_r, vga_g, vga_b}),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(clk_2x),
+        .D_OUT_0({vga_de_io, vga_vsync_io, vga_hsync_io, vga_r_io, vga_g_io, vga_b_io}),
+    );
+
     // --- iCE40 Flash IO ---
 
     wire [3:0] flash_out;
@@ -123,7 +154,7 @@ module ics32_top_icebreaker #(
         .pad_out(pad_read_data[0])
     );
 
-    // Breakboard board buttons:
+    // Breakout board board buttons:
 
     wire [3:0] btn_r;
 
@@ -152,6 +183,9 @@ module ics32_top_icebreaker #(
     
     wire pad_latch, pad_clk;
 
+    wire vga_hsync_io, vga_vsync_io, vga_de_io;
+    wire [3:0] vga_r_io, vga_g_io, vga_b_io;
+
     ics32 #(
         .CLK_1X_FREQ(CLK_1X_FREQ),
         .CLK_2X_FREQ(CLK_2X_FREQ),
@@ -164,15 +198,13 @@ module ics32_top_icebreaker #(
         .clk_2x(clk_2x),
         .pll_locked(pll_locked),
 
-        .vga_r(vga_r),
-        .vga_g(vga_g),
-        .vga_b(vga_b),
+        .vga_r(vga_r_io),
+        .vga_g(vga_g_io),
+        .vga_b(vga_b_io),
 
-        .vga_hsync(vga_hsync),
-        .vga_vsync(vga_vsync),
-
-        .vga_clk(vga_clk),
-        .vga_de(vga_de),
+        .vga_hsync(vga_hsync_io),
+        .vga_vsync(vga_vsync_io),
+        .vga_de(vga_de_io),
 
         .pad_latch(pad_latch),
         .pad_clk(pad_clk),

@@ -16,8 +16,6 @@ module ics32_tb(
 
     output vga_hsync,
     output vga_vsync,
-
-    output vga_clk,
     output vga_de,
 
     output [7:0] led,
@@ -49,8 +47,6 @@ module ics32_tb(
 
         .vga_hsync(vga_hsync),
         .vga_vsync(vga_vsync),
-
-        .vga_clk(vga_clk),
         .vga_de(vga_de),
 
         .pad_latch(pad_latch),
