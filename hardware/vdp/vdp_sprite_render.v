@@ -120,23 +120,6 @@ module vdp_sprite_render(
 
     // --- Sprite x_block / g_block reading ---
 
-    // pipelines from hit_list
-    reg [3:0] xb_line_offset;
-    reg xb_width_select_r;
-
-    // FIXME: separate relevant bits instead...
-
-    // x_block
-    reg [9:0] target_x_r;
-    reg flip_x_r;
-
-    assign vram_read_data_needs_x_flip = flip_x_r;
-
-    // g_block
-    reg [9:0] character_r;
-    reg [3:0] palette_r;
-    reg [1:0] priority_r;
-
     reg [1:0] x_block_loaded;
     reg x_block_data_valid;
 
@@ -144,6 +127,26 @@ module vdp_sprite_render(
     reg x_block_finished;
 
     wire x_block_dependency_ready = vram_fetcher_ready;
+    
+    // Inputs from hitlist:
+
+    reg [3:0] xb_line_offset;
+    reg xb_width_select_r;
+
+    // Outputs to VRAM fetcher:
+
+    // x_block
+    reg [9:0] target_x_r;
+    reg flip_x_r;
+    assign vram_read_data_needs_x_flip = flip_x_r;
+
+    // y_block
+    reg width_r;
+
+    // g_block
+    reg [9:0] character_r;
+    reg [3:0] palette_r;
+    reg [1:0] priority_r;
 
     always @(posedge clk) begin
         if (restart) begin
@@ -162,6 +165,10 @@ module vdp_sprite_render(
                 // x_block
                 target_x_r <= target_x;
                 flip_x_r <= flip_x;
+
+                // y_block
+                width_r <= xb_width_select_r;
+
                 // g_block
                 character_r <= character;
                 palette_r <= palette;
@@ -263,7 +270,7 @@ module vdp_sprite_render(
 
                     // 8pixel / 16pixel width handling
 
-                    if (xb_width_select_r && !fetching_second_row) begin
+                    if (width_r && !fetching_second_row) begin
                         // setup to read next 8px row...
                         vram_read_address <= vram_read_address + 8;
                         vram_load_counter <= 0;
@@ -308,7 +315,7 @@ module vdp_sprite_render(
 
 `endif
 
-    // --- blitter ---
+    // --- Blitter ---
 
     wire blitter_input_valid = sprite_row_is_valid;
     wire [9:0] blitter_x_start = vf_target_x + (char_x ^ vf_flip) * 8;
