@@ -409,7 +409,12 @@ module ics32 #(
     wire audio_ctrl_gb_write_en = audio_ctrl_write_en && cpu_address[9];
 
     wire [7:0] audio_ctrl_ch_write_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
-    wire [1:0] audio_ctrl_write_byte_mask = cpu_wstrb_decoder[1:0] | cpu_wstrb_decoder[3:2];
+
+    wire [1:0] audio_ctrl_write_byte_mask = {
+        cpu_wstrb_decoder[0] | cpu_wstrb_decoder[2],
+        cpu_wstrb_decoder[1] | cpu_wstrb_decoder[3]
+    };
+
     wire [7:0] audio_ctrl_cpu_read_data;
 
     wire [22:0] pcm_read_address;
