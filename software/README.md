@@ -15,7 +15,7 @@ The `CROSS` variable in `common/cross.mk` must be set according to the name of y
 2. Build the simulator
 3. Launch the demo in the simulator
 
-## Running on FPA
+## Running on FPGA
 
 In any demo directory, running one of the following commands will build and flash the software onto a given board:
 
