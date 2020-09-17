@@ -132,7 +132,7 @@ int main(int argc, char **argv)  {
         return success ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
-    // was a custom palette provided?
+    // Was a custom palette provided?
 
     std::vector<uint8_t> palette_data;
     if (!palette_path.empty()) {
