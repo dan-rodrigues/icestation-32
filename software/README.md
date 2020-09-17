@@ -3,6 +3,7 @@
 ## Prerequisites
 
 * GNU RISC-V toolchain
+* GNU Make (any version >= 3.81 should work)
 
 The `CROSS` variable in `common/cross.mk` must be set according to the name of your RISC-V installation.
 
@@ -13,6 +14,15 @@ The `CROSS` variable in `common/cross.mk` must be set according to the name of y
 1. Build the demo software
 2. Build the simulator
 3. Launch the demo in the simulator
+
+## Running on FPA
+
+In any demo directory, running one of the following commands will build and flash the software onto a given board:
+
+```
+make icebreaker_prog
+make ulx3s_prog
+```
 
 ## `affine_platformer/`
 
