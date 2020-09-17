@@ -44,9 +44,9 @@ count: SOURCES += $(ICEBREAKER_SOURCES) icebreaker/$(TOP).v
 TIMING_PY := constraints/$(VIDEO_MODE).py 
 
 ifeq ($(VIDEO_MODE), VM_848x480)
-	ENABLE_WIDESCREEN = 1
+ENABLE_WIDESCREEN = 1
 else
-	ENABLE_WIDESCREEN = 0
+ENABLE_WIDESCREEN = 0
 endif
 
 ### Supported board targets:

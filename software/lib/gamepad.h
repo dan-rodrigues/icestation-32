@@ -8,6 +8,7 @@
 #define gamepad_h
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     GP_B        = 1 << 0,
@@ -24,6 +25,18 @@ typedef enum {
     GP_R        = 1 << 11
 } PadInput;
 
+typedef struct {
+    bool b, y, select, start;
+    bool up, down, left, right;
+    bool a, x;
+    bool l, r;
+
+    uint16_t raw;
+} PadInputDecoded;
+
+extern const PadInputDecoded PAD_INPUT_DECODED_NO_INPUT;
+
 void pad_read(uint16_t *p1_current, uint16_t *p2_current, uint16_t *p1_edge, uint16_t *p2_edge);
+void pad_decode_input(uint16_t encoded_input, PadInputDecoded *decoded_input);
 
 #endif /* gamepad_h */

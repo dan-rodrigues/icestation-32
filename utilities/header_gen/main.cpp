@@ -3,7 +3,6 @@
 #include <optional>
 #include <getopt.h>
 #include <stdint.h>
-#include <filesystem>
 
 #include "DataHeader.hpp"
 
@@ -42,27 +41,19 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    bool is8bit = (type_name == "uint8_t");
+
     std::string input_path = argv[optind];
     std::fstream stream(input_path);
     std::istreambuf_iterator<char> it(stream);
     std::istreambuf_iterator<char> end;
-    std::vector<uint16_t> data;
 
     if (stream.fail()) {
         std::cerr << "Failed to open file: " << input_path << std::endl;
         return EXIT_FAILURE;
     }
 
-    // 16bit only for now
-    uint8_t low_byte = 0;
-    for (size_t i = 0; it != end && i < max_length; i++) {
-        if (i & 1) {
-            data.push_back((*it++ << 8) | low_byte);
-        } else {
-            low_byte = (*it++ & 0xff);
-        }
-    }
-
+    std::vector<uint8_t> data(std::istreambuf_iterator<char>(stream), {});
     stream.close();
 
     if (data.empty()) {
@@ -78,7 +69,7 @@ int main(int argc, char **argv) {
     }
 
     if (split_sources) {
-        DataHeader::write_h(data, type_name, identifier, h_stream);
+        std::vector<uint16_t> words;
 
         auto c_file_path = output_file_prefix + ".c";
         std::ofstream c_stream(c_file_path, std::ios::out);
@@ -86,7 +77,19 @@ int main(int argc, char **argv) {
             std::cerr << "Failed to open .c for writing: " << c_file_path << std::endl;
             return EXIT_FAILURE;
         }
-        DataHeader::write_c(data, type_name, identifier, c_stream);
+
+        if (is8bit) {
+            DataHeader::write_h(data, type_name, identifier, h_stream);
+            DataHeader::write_c(data, type_name, identifier, c_stream);
+        } else {
+            for (size_t i = 0; i < data.size() / 2; i++) {
+                words.push_back(data[i * 2] | data[i * 2 + 1] << 8);
+            }
+
+            DataHeader::write_h(words, type_name, identifier, h_stream);
+            DataHeader::write_c(words, type_name, identifier, c_stream);
+        }
+
         c_stream.close();
     } else {
         DataHeader::write_combined_h(data, type_name, identifier, h_stream);

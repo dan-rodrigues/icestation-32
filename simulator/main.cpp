@@ -32,6 +32,8 @@ const std::string title = "cxxrtl";
 
 // Audio:
 
+ #define AUDIO_SUPPORT
+
 void audio_callback(void *userdata, Uint8 *stream, int len);
 std::deque<int16_t> audio_callback_samples;
 
@@ -51,16 +53,27 @@ int main(int argc, const char **argv) {
     int opt = 0;
     while ((opt = getopt_long(argc, (char **)argv, "w:t:na", NULL, NULL)) != -1) {
         switch (opt) {
-            case 'w': {
+            case 'w':
+#ifdef AUDIO_SUPPORT
+            {
                 wav_output_path = optarg;
                 if (wav_output_path.empty()) {
                     std::cerr << "WAV output path must not be empty" << std::endl;
                     return EXIT_FAILURE;
                 }
-            }  break;
+            } break;
+#else
+            std::cerr << "Can't enable WAV dumping (wasn't built with AUDIO_SUPPORT)" << std::endl;
+            return EXIT_FAILURE;
+#endif
             case 'a':
+#ifdef AUDIO_SUPPORT
                 enable_audio_output = true;
                 break;
+#else
+                std::cerr << "Can't enable audio output (wasn't built with AUDIO_SUPPORT)" << std::endl;
+                return EXIT_FAILURE;
+#endif
             case 't':
                 sim_cycles = strtol(optarg, NULL, 10);
                 if (sim_cycles <= 0) {
@@ -72,8 +85,13 @@ int main(int argc, const char **argv) {
         }
     }
 
+#ifdef AUDIO_SUPPORT
     bool wav_output_required = !wav_output_path.empty();
     bool audio_capture_required = enable_audio_output || wav_output_required;
+#else
+    bool wav_output_required = false;
+    bool audio_capture_required = false;
+#endif
 
     // 1. Load test program...
 
@@ -259,6 +277,19 @@ int main(int argc, const char **argv) {
             sim.button_2 = state[SDL_SCANCODE_RSHIFT];
             sim.button_3 = state[SDL_SCANCODE_LEFT];
 
+            sim.button_up = state[SDL_SCANCODE_UP];
+            sim.button_down = state[SDL_SCANCODE_DOWN];
+
+            sim.button_l = state[SDL_SCANCODE_Q];
+            sim.button_r = state[SDL_SCANCODE_W];
+
+            sim.button_x = state[SDL_SCANCODE_A];
+            sim.button_a = state[SDL_SCANCODE_S];
+            sim.button_y = state[SDL_SCANCODE_Z];
+
+            sim.button_start = state[SDL_SCANCODE_E];
+            sim.button_select = state[SDL_SCANCODE_R];
+            
             // Measure time spent to render frame
 
             uint64_t current_ticks = SDL_GetTicks();

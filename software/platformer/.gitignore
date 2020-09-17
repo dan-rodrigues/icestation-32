@@ -8,13 +8,13 @@
 
 # Generated sources
 
-/tiles.h
-/palette.h
-/sin_table.h
-/fg_palette.h
-/fg_tiles.h
-/sprite_palette.h
-/sprite_tiles.h
+/*_tiles.h
+/*_tiles.c
+/*_tiles.bin
+/*_palette.h
+/*_palette.c
+/*_palette.bin
+test.png
 
 # Optional disassembly
 

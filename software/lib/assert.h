@@ -8,8 +8,16 @@
 #define assert_h
 
 #include <stdbool.h>
+#include <stdnoreturn.h>
 
-void assert(bool assertion);
-void fatal_error(void);
+#define assert(x) assert_impl(x, __FILE__, __LINE__)
+#define fatal_error() fatal_error_impl(__FILE__, __LINE__)
+
+typedef void (*AssertHandler)(const char *file, int line);
+
+void assert_impl(bool assertion, const char *file, int line);
+noreturn void fatal_error_impl(const char *file, int line);
+
+void assert_set_handler(AssertHandler handler);
 
 #endif /* assert_h */

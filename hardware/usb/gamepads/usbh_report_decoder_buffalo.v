@@ -6,7 +6,7 @@ module usbh_report_decoder_buffalo(
     input  wire        i_clk,
     input  wire [63:0] i_report,
     input  wire        i_report_valid,
-    output reg   [7:0] o_btn
+    output reg   [11:0] o_btn
 );
     wire left = i_report[7:0] == 0;
     wire right = i_report[7:0] == 8'hff;
@@ -27,8 +27,9 @@ module usbh_report_decoder_buffalo(
     always @(posedge i_clk) begin
         if (i_report_valid) begin
             o_btn <= {
+                r, l, x, a,
                 right, left, down, up,
-                start, select, a, b
+                start, select, y, b
             };
         end
     end

@@ -1,4 +1,15 @@
+# GCC
+
+/**/*.d
+/**/*.o
+
 # Xcode
 
 /*.xcodeproj
+
+# Makefile
+
+/**/gfx_convert_log
+/**/header_gen_log
+/**/sections_p.lds
 

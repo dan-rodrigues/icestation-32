@@ -255,6 +255,7 @@ module ics32 #(
         .pad_en(0),
         .cop_en(0),
         .flash_ctrl_en(0),
+        .audio_ctrl_en(0),
 
         .flash_read_ready(0),
         .vdp_ready(0),
@@ -267,6 +268,7 @@ module ics32 #(
         .vdp_read_data(0),
         .pad_read_data(0),
         .flash_ctrl_read_data(0),
+        .audio_cpu_read_data(0),
 
         // outputs
 
@@ -640,7 +642,7 @@ module ics32 #(
 
         // Reader A: CPU
 
-        .read_address_a({5'b0, cpu_address[18:2], 2'b00}),
+        .read_address_a({4'b0, cpu_address[19:2], 2'b00}),
         .read_en_a(flash_read_en),
         .ready_a(flash_read_ready),
 

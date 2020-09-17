@@ -99,7 +99,7 @@ void vdp_seek_vram(uint16_t address) {
     VDP_VRAM_ADDRESS = address;
 }
 
-void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, const uint16_t *palette_start) {
+void vdp_write_palette_range(uint8_t color_id_start, uint32_t count, const uint16_t *palette_start) {
     VDP_PALETTE_ADDRESS = color_id_start;
 
     for (uint32_t i = 0; i < count; i++) {
@@ -131,11 +131,15 @@ void vdp_set_vram_increment(uint8_t increment) {
 }
 
 void vdp_write_vram_block(const uint16_t *data, uint16_t size) {
-    uint32_t size_32 = size;
-    while (size_32 != 0) {
-        VDP_VRAM_WRITE_DATA = *data++;
-        size_32--;
+    if (!size) {
+        return;
     }
+    
+    // gcc generates suboptimal loop with a while()
+    const uint16_t *end = data + size;
+    do {
+        VDP_VRAM_WRITE_DATA = *data++;
+    } while (data != end);
 }
 
 void vdp_write_single_sprite_meta(uint8_t sprite_id, uint16_t x_block, uint16_t y_block, uint16_t g_block) {

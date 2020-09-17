@@ -65,39 +65,20 @@ void Image::init_from_png(std::vector<uint8_t> data) {
 void Image::init_from_snes(std::vector<uint8_t> tile_data, std::vector<uint8_t> palette_data) {
     this->tiles = Tiles(tile_data);
 
-    std::vector<uint32_t> rgba32_palette;
-
-    // was a palette provided?
+    // Was a palette provided?..
     if (!palette_data.empty()) {
-        auto palette_size = palette_data.size();
-        if (palette_size % 3) {
-            std::cerr << "Warning: expected palette to byte 3 bytes per color" << std::endl;
-            palette_size -= palette_size % 3;
-        }
-
-        // (eventually 256 color support needed)
-        const auto palette_size_4bpp = 16;
-        const auto rgb24_size = 3;
-
-        for (auto i = 0; i < palette_size_4bpp; i++) {
-            size_t index = i * rgb24_size;
-            uint8_t r = palette_data[index];
-            uint8_t g = palette_data[index + 1];
-            uint8_t b = palette_data[index + 2];
-            uint32_t color = 0xff << 24 | r | g << 8 | b << 16;
-
-            rgba32_palette.push_back(color);
-        }
+        this->palette = Palette(palette_data);
     } else {
         // ...if not, generate a simple monochrome one
+        std::vector<uint8_t> mono_palette;
         for (auto i = 0; i < 16 * 16; i++) {
             uint8_t component = i << 4;
-            uint32_t color = component | component << 8 | component << 16;
-            color |= 0xff << 24;
-            rgba32_palette.push_back(color);
+            mono_palette.push_back(component);
+            mono_palette.push_back(component);
+            mono_palette.push_back(component);
         }
-    }
 
-    this->palette = Palette(rgba32_palette);
+        this->palette = Palette(mono_palette);
+    }
 }
 

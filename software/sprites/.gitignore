@@ -8,9 +8,7 @@
 
 # Generated sources
 
-/tiles.h
-/palette.h
-/sin_table.h
+/crystal_*
 
 # Optional disassembly
 

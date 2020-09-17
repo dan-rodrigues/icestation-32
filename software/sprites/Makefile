@@ -1,40 +1,25 @@
 SOURCES = \
 	main.c \
-	../common/vectors.S \
-	../common/start.S \
+	crystal_tiles.c \
+	crystal_palette.c \
 	../lib/vdp.c \
 	../lib/math_util.c \
-	../common/font.c \
+	../common/font.c
 
-HEADERS = \
-	../common/font.h \
-	../common/font8x8_basic.h \
-	../lib/vdp.h \
-	../lib/math_util.h \
-	tiles.h \
-	palette.h
+GFX_CONVERT_NEEDED = 1
+HEADER_GEN_NEEDED = 1
 
-include ../common/common.mk
-
-# Ensure utility dependencies are up to date
-
-PNG_CONVERTER_DIR = ../../utilities/png_convert/
-PNG_CONVERTER = $(PNG_CONVERTER_DIR)png_convert
-
-pre-build:
-	@$(MAKE) -C $(PNG_CONVERTER_DIR)
-
-main-build: pre-build
-	@$(MAKE) --no-print-directory $(BIN)
-
-.PHONY: main-build
-
-.DEFAULT_GOAL := main-build
+include ../common/core.mk
 
 ###
 
-PNG = crystal-32-ia.png
+PNG = crystal.png
 
-tiles.h palette.h: $(PNG) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) -f png $(PNG)
+main.o: crystal_tiles.h crystal_palette.h
+
+%_tiles.bin %_palette.bin: %.png $(GFX_CONVERT)
+	$(GFX_CONVERT) -f png -o $*_ $<
+
+%.c %.h: %.bin $(HEADER_GEN)
+	$(HEADER_GEN) -t uint16_t -s -i $(basename $(<F)) -o $(@D)/$(*F) $<
 

@@ -12,7 +12,7 @@ Tiles::Tiles(std::vector<uint8_t> bitmap, uint16_t width, uint16_t height) {
 }
 
 // 4bpp conversion
-std::vector<uint32_t> Tiles::ics_tiles() {
+std::vector<uint32_t> Tiles::ics_tiles() const {
     std::vector<uint32_t> tiles;
 
     const uint8_t tiles_x_total = this->width / 8;
@@ -56,7 +56,7 @@ std::vector<uint32_t> Tiles::ics_tiles() {
 
 // packed 4bpp conversion
 
-std::vector<uint8_t> Tiles::packed_4bpp_tiles() {
+std::vector<uint8_t> Tiles::packed_4bpp_tiles() const {
     std::vector<uint8_t> tiles;
     uint8_t high_pixel = 0;
 

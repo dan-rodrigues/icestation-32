@@ -17,8 +17,8 @@ public:
     uint16_t height;
     std::vector<uint8_t> bitmap;
     
-    std::vector<uint32_t> ics_tiles();
-    std::vector<uint8_t> packed_4bpp_tiles();
+    std::vector<uint32_t> ics_tiles() const;
+    std::vector<uint8_t> packed_4bpp_tiles() const;
 };
 
 #endif /* Tiles_hpp */

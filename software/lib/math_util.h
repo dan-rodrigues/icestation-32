@@ -14,7 +14,12 @@
 #define ABS(a) (((a) < 0) ? (-a) : (a))
 #define SIGN(a) ((a) < 0)
 
-int32_t sys_multiply(int16_t a, int16_t b);
+// Signed s16xs16=s32 multiply
+//
+// The int32_t parameter types are only so compiler generated code doesn't
+// unnecessarily truncate the upper bits when it has no ill effect.
+
+int32_t sys_multiply(int32_t a, int32_t b);
 
 static const uint16_t SIN_PERIOD = 0x400;
 static const int16_t SIN_MAX = 0x4000;

@@ -54,7 +54,7 @@ typedef enum {
     PEACE_SIGN
 } HeroFrame;
 
-static const HeroFrame IDLE_HERO_FRAME = RUN2;
+static const HeroFrame HERO_IDLE_FRAME = RUN2;
 
 static const uint8_t HERO_FRAME_MAX_TILES = 2;
 static const int16_t HERO_FRAME_TILES_END = -1;
@@ -69,7 +69,7 @@ typedef struct {
 
     // const int16_t tiles[HERO_FRAME_MAX_TILES]
     const int16_t tiles[2];
-} SpriteFrame;
+} HeroFrameLayout;
 
 // Sprite positioning / updating
 
@@ -97,9 +97,9 @@ typedef struct {
     SpriteDirection direction;
 } Hero;
 
-void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge);
+void hero_update_state(Hero *hero, uint16_t pad, uint16_t pad_edge);
 void draw_hero_sprites(Hero *hero, int16_t sprite_tile);
-void apply_velocity(SpriteVelocity *velocity, SpritePosition *position);
+void sa_apply_velocity(SpriteVelocity *velocity, SpritePosition *position);
 
 // Cloud sprites
 
@@ -143,7 +143,7 @@ int16_t affine_scroll_x, affine_scroll_y;
 int32_t scroll_x_acc = 0;
 
 void write_copper_program(void);
-void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile);
+void queue_16x16_sprite_upload(uint16_t source_tile_base, uint16_t sprite_tile);
 
 static const int16_t GROUND_OFFSET = 432;
 
@@ -171,9 +171,9 @@ int main() {
     vdp_seek_vram(0x0001);
     vdp_set_vram_increment(2);
 
-    for (size_t i = 0; i < ball_tiles_length; i++) {
-        // Graphics are 4bit color and must be padded to the 8bit format
-        uint32_t row = ball_tiles[i];
+    for (size_t i = 0; i < ball_tiles_length / 2; i++) {
+        // Graphics are 4bit indexes and must be padded to the 8bit format
+        uint32_t row = ((uint32_t *)ball_tiles)[i];
 
         for (uint32_t x = 0; x < 4; x++) {
             uint8_t pixel_lo = (row >> 28) & 0xf;
@@ -208,7 +208,7 @@ int main() {
 
     // Affine palette
 
-    vdp_write_palette_range(ball_palette_id * 0x10, (uint8_t)ball_palette_length, ball_palette);
+    vdp_write_palette_range(ball_palette_id * 0x10, ball_palette_length, ball_palette);
 
     // Foreground tiles
 
@@ -216,7 +216,7 @@ int main() {
 
     // Load tileset to the 3rd "page" of 128 tiles, where it is expected
     vdp_seek_vram(SCROLL_TILE_BASE + 0x1800);
-    vdp_write_vram_block((uint16_t *)fg_tiles, fg_tiles_length * 2);
+    vdp_write_vram_block(fg_tiles, fg_tiles_length);
 
     // Foreground map
 
@@ -242,7 +242,7 @@ int main() {
     // Cloud sprites
 
     vdp_seek_vram(SPRITE_TILE_BASE + CLOUD_SPRITE_TILE_BASE * 0x10);
-    vdp_write_vram_block((uint16_t *)cloud_small_tiles, cloud_small_tiles_length * 2);
+    vdp_write_vram_block(cloud_small_tiles, cloud_small_tiles_length);
 
     // Cloud palette
 
@@ -257,7 +257,7 @@ int main() {
     SpriteVelocity hero_velocity = {0, 0};
 
     Hero hero = {
-        .frame = IDLE_HERO_FRAME,
+        .frame = HERO_IDLE_FRAME,
         .frame_counter = 0,
         .direction = RIGHT,
         .position = hero_position,
@@ -275,7 +275,7 @@ int main() {
         sprite_meta_cache_pointer = &sprite_meta[0];
 
         update_ball(p1_pad);
-        update_hero_state(&hero, p1_pad, p1_pad_edge);
+        hero_update_state(&hero, p1_pad, p1_pad_edge);
         scroll_x_acc += current_ball_speed();
 
         draw_hero_sprites(&hero, 0);
@@ -295,7 +295,7 @@ int main() {
     return 0;
 }
 
-void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
+void hero_update_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
     SpriteVelocity *velocity = &hero->velocity;
     SpritePosition *position = &hero->position;
 
@@ -325,7 +325,7 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
     // Update hero position according to newly set velocity
 
     velocity->x = current_ball_speed();
-    apply_velocity(velocity, position);
+    sa_apply_velocity(velocity, position);
 
     // Correct position if hero has "fallen through the ground"
 
@@ -346,7 +346,7 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
             case RUN0: case RUN1: case RUN2:
                 break;
             default:
-                hero->frame = IDLE_HERO_FRAME;
+                hero->frame = HERO_IDLE_FRAME;
                 break;
         }
 
@@ -360,7 +360,7 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
             int32_t frame_counter_delta = ABS(hero->velocity.x);
             frame_counter -= frame_counter_delta;
         } else {
-            hero->frame = IDLE_HERO_FRAME;
+            hero->frame = HERO_IDLE_FRAME;
         }
 
         hero->frame_counter = frame_counter;
@@ -371,7 +371,7 @@ void update_hero_state(Hero *hero, uint16_t pad, uint16_t pad_edge) {
     }
 }
 
-void apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {
+void sa_apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {
     // X position is fixed, so only update Y position here
     int32_t y_full = position->y * Q_1 | (position->y_fraction & 0xffff);
     y_full += velocity->y;
@@ -380,7 +380,7 @@ void apply_velocity(SpriteVelocity *velocity, SpritePosition *position) {
 }
 
 void draw_hero_sprites(Hero *hero, int16_t sprite_tile) {
-    static const SpriteFrame hero_frames[] = {
+    static const HeroFrameLayout hero_frames[] = {
         {RUN0, 0, -1, 0, {0x000, 0x0e0}},
         {RUN1, 0, 0, 0, {0x002, 0x0e0}},
         {RUN2, 0, 0, 0, {0x004, 0x0e0}},
@@ -397,13 +397,13 @@ void draw_hero_sprites(Hero *hero, int16_t sprite_tile) {
         {PEACE_SIGN, 0, 0, 0, {0x16e, 0x166}},
     };
 
-    static const size_t hero_frame_count = sizeof(hero_frames) / sizeof(SpriteFrame);
+    static const size_t hero_frame_count = sizeof(hero_frames) / sizeof(HeroFrameLayout);
 
     const uint8_t hero_palette = 0;
     const uint8_t hero_priority = 3;
     const int16_t hero_y_offset = -18;
 
-    const SpriteFrame *sprite_frame = NULL;
+    const HeroFrameLayout *sprite_frame = NULL;
     for (uint16_t i = 0; i < hero_frame_count; i++) {
         if (hero_frames[i].frame == hero->frame) {
             sprite_frame = &hero_frames[i];
@@ -438,7 +438,7 @@ void draw_hero_sprites(Hero *hero, int16_t sprite_tile) {
         g_block |= hero_priority << SPRITE_PRIORITY_SHIFT | hero_palette << SPRITE_PAL_SHIFT;
 
         // upload sprite graphics (only one hero frame is in VRAM at any given time)
-        upload_16x16_sprite(frame_tile, sprite_tile);
+        queue_16x16_sprite_upload(frame_tile, sprite_tile);
 
         // set sprite metadata (pointing to the graphics uploaded in previous step)
         write_cached_sprite_meta(x_block, y_block, g_block);
@@ -448,10 +448,10 @@ void draw_hero_sprites(Hero *hero, int16_t sprite_tile) {
     }
 }
 
-void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile) {
+void queue_16x16_sprite_upload(uint16_t source_tile_base, uint16_t sprite_tile) {
     vdp_seek_vram(SPRITE_TILE_BASE + sprite_tile * 0x10);
 
-    uint16_t *source_tiles = (uint16_t *)(sprite_tiles + source_tile_base * 8);
+    const uint16_t *source_tiles = sprite_tiles + source_tile_base * 0x10;
     const uint16_t frame_row_word_size = 0x10 * 2;
 
     // first row (upper 16x8 half)

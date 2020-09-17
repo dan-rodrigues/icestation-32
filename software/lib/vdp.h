@@ -85,7 +85,7 @@ void vdp_write_vram(uint16_t word);
 void vdp_write_vram_block(const uint16_t *data, uint16_t size);
 void vdp_set_vram_increment(uint8_t increment);
 
-void vdp_write_palette_range(uint8_t color_id_start, uint8_t count, const uint16_t *palette_start);
+void vdp_write_palette_range(uint8_t color_id_start, uint32_t count, const uint16_t *palette_start);
 
 void vdp_set_single_palette_color(uint8_t color_id, uint16_t color);
 void vdp_seek_palette(uint8_t palette_id);
