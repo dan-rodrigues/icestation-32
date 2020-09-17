@@ -25,6 +25,7 @@ module flash_arbiter(
     output [31:0] read_data,
 
     // QSPI flash
+    
     output flash_clk_en,
     output flash_csn,
     output [3:0] flash_in,

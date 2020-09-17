@@ -40,6 +40,19 @@ void VerilatorSimulation::step(uint64_t time) {
     tb->btn_2 = button_2;
     tb->btn_3 = button_3;
 
+    tb->btn_y = button_y;
+    tb->btn_up = button_up;
+    tb->btn_down = button_down;
+
+    tb->btn_l = button_l;
+    tb->btn_r = button_r;
+
+    tb->btn_x = button_x;
+    tb->btn_a = button_a;
+
+    tb->btn_start = button_start;
+    tb->btn_select = button_select;
+
     tb->eval();
 
     auto flash_bb = tb->ics32_tb->flash;

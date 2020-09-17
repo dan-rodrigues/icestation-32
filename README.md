@@ -4,17 +4,16 @@ This is a compact open-source FPGA game console targetting the Lattice iCE40 Ult
 
 This repo is still in its early stages and its and contents (including this README) are changing rapidly.
 
-*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required
+*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required.
 
 ![Demo photo](photos/main.jpg)
 
 ## Features
 
 * RISC-V CPU (configurable with VexRiscV or PicoRV32)
-* 64kbyte of CPU RAM (2x SPRAM)
-* 64kbyte VDP RAM (2x SPRAM)
 * Custom VDP for smooth-scrolling layers and sprites
 * Custom "copper" coprocessor integrated into VDP to perform raster effects
+* [Custom multichannel ADPCM decoder / mixer](https://github.com/dan-rodrigues/ics-adpcm)
 * Configurable video modes of 640x480@60hz or 848x480@60hz
 * 4bpp graphics assembled from 8x8 tiles
 * ARGB16 colors arranged into 16 palettes of 16 colors each
@@ -23,7 +22,11 @@ This repo is still in its early stages and its and contents (including this READ
 * 1x 1024x1024 pixel affine-transformable layer*
 * 256x sprites of up to 16x16 pixels each
 * 1060+ sprite pixels per line depending on clock and video mode
+* 64kbyte of CPU RAM (2x iCE40 SPRAM)
+* 64kbyte VDP RAM (2x iCE40 SPRAM)
 * (S)NES-compatible pad interface***
+
+The system doesn't require any RAM beyond what is available in the iCE40 UP5K.
 
 *: Only one of these layer types can be enabled at any given time but they can be toggled multiple times in a frame using raster-timed updates. The 4x layer implementation is still included in this repo but was disabled due to VRAM usage constraints.
 
@@ -39,6 +42,7 @@ This repo is still in its early stages and its and contents (including this READ
 * [nextpnr](https://github.com/YosysHQ/nextpnr) (-ice40 for iCEBreaker, -ecp5 for ULX3S)
 * [icetools](https://github.com/YosysHQ/icestorm) (if building for iCEBreaker)
 * [GNU RISC-V toolchain](https://github.com/riscv/riscv-gnu-toolchain) (newlib)
+* [fujprog](https://github.com/kost/fujprog) (if flash to ULX3s)
 
 While the RISC-V toolchain can be built from source, the PicoRV32 repo [includes a Makefile](https://github.com/cliffordwolf/picorv32#building-a-pure-rv32i-toolchain) with convenient build-and-install targets. This project only uses the `RV32I` ISA. Those with case-insensitive file systems will likely have issues building the toolchain from source. If so, binaries of the toolchain for various platforms are available [here](https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/tag/v8.3.0-1.1).
 
@@ -68,16 +72,14 @@ Demo software is included under `/software` and can be programmed separately. Fo
 
 ```
 cd software/sprites/
-make
-iceprog -o 2M prog.bin
+make icebreaker_prog
 ```
 
 ### ULX3S
 
 ```
 cd software/sprites/
-make
-fujprog -j flash -f 0x200000 prog.bin
+make ulx3s_prog
 ```
 
 ### Running simulator (Verilator or CXXRTL, plus SDL2)

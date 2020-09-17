@@ -6,14 +6,27 @@
 
 #include "assert.h"
 
-void assert(bool assertion) {
-    // for now we'll just trap the cpu
-    // eventually this can upload a font, print some context etc.
-    if (!assertion) {
-        __asm__("ebreak");
+static AssertHandler custom_handler;
+
+void assert_impl(bool assertion, const char *file, int line) {
+#ifdef ASSERT_ENABLED
+    if (assertion) {
+        return;
     }
+
+    if (custom_handler) {
+        custom_handler(file, line);
+    } else {
+        __asm("ebreak");
+    }
+#endif
 }
 
-void fatal_error() {
-    assert(false);
+noreturn void fatal_error_impl(const char *file, int line) {
+    assert_impl(false, file, line);
+    while(true) {}
+}
+
+void assert_set_handler(AssertHandler handler) {
+    custom_handler = handler;
 }

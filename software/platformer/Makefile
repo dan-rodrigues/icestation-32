@@ -1,52 +1,34 @@
 SOURCES = \
 	main.c \
-	../common/vectors.S \
-	../common/start.S \
 	../lib/vdp.c \
 	../lib/math_util.c \
 	../lib/assert.c \
-	../lib/gamepad.c
+	../lib/gamepad.c \
+	fg_tiles.c \
+	fg_palette.c \
+	miyamoto_tiles.c \
+	miyamoto_palette.c
 
-HEADERS = \
-	../lib/vdp.h \
-	../lib/math_util.h \
-	../lib/assert.h \
-	../lib/gamepad.h \
-	fg_tiles.h \
-	fg_palette.h \
-	fg_map.h \
-	sprite_tiles.h \
-	sprite_palette.h
+GFX_CONVERT_NEEDED = 1
+HEADER_GEN_NEEDED = 1
 
-include ../common/common.mk
+include ../common/core.mk
 
-# Ensure utility dependencies are up to date
-
-pre-build:
-	@$(MAKE) -C $(PNG_CONVERTER_DIR)
-
-main-build: pre-build
-	@$(MAKE) --no-print-directory $(BIN)
-
-.PHONY: main-build
-
-.DEFAULT_GOAL := main-build
+main.o: fg_tiles.h fg_palette.h fg_map.h miyamoto_tiles.h miyamoto_palette.h
 
 ###
 
-FG_GFX = fg_tiles.bin
+FG_GFX = fg_tiles_snes.bin
 FG_PAL = fg_palette.pal
 
 SPRITE_PNG = miyamoto.png
 
-PNG_CONVERTER_DIR = ../../utilities/png_convert/
-PNG_CONVERTER = $(PNG_CONVERTER_DIR)png_convert
+%_tiles.bin %_palette.bin: %.png $(GFX_CONVERT)
+	$(GFX_CONVERT) -f png -o $(GFX_DIR)$*_ $<
 
-$(PNG_CONVERTER):
-	$(MAKE) -C $(PNG_CONVERTER_DIR)
+fg_tiles.bin fg_palette.bin: $(FG_GFX) $(FG_PAL) $(GFX_CONVERT)
+	$(GFX_CONVERT) -f snes -p $(FG_PAL) -i 2 $(FG_GFX) -o fg_
 
-fg_tiles.h fg_palette.h: $(FG_GFX) $(FG_PAL) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) -f snes -p $(FG_PAL) -i 2 $(FG_GFX) -o fg_
+%.c %.h: %.bin $(HEADER_GEN)
+	$(HEADER_GEN) -t uint16_t -s -i $(basename $(<F)) -o $(@D)/$(*F) $<
 
-sprite_tiles.h sprite_palette.h: $(SPRITE_PNG) $(PNG_CONVERTER)
-	$(PNG_CONVERTER) -f png $(SPRITE_PNG) -o sprite_

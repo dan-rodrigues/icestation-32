@@ -40,9 +40,9 @@ VEX_RESET_BOOT = vexriscv/vexriscv_reset_60000.v
 VEX_RESET_RAM = vexriscv/vexriscv_reset_00000.v
 
 ifeq ($(VEX_USE_BOOTLOADER), 1)
-	VEX = $(VEX_RESET_BOOT)
+VEX = $(VEX_RESET_BOOT)
 else
-	VEX = $(VEX_RESET_RAM)
+VEX = $(VEX_RESET_RAM)
 endif
 
 ICEBREAKER_SOURCES := \

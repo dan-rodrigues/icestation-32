@@ -23,7 +23,20 @@ module ics32_tb(
     input btn_u,
     input btn_1,
     input btn_2,
-    input btn_3
+    input btn_3,
+
+    input btn_down,
+    input btn_up,
+
+    input btn_l,
+    input btn_r,
+
+    input btn_y,
+    input btn_x,
+    input btn_a,
+
+    input btn_select,
+    input btn_start
 );
     ics32 #(
         .CLK_1X_FREQ(`CLK_1X_WIDESCREEN),
@@ -32,6 +45,9 @@ module ics32_tb(
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(2),
         .ADPCM_STEP_LUT_PATH("../hardware/adpcm_step_lut.hex"),
+
+        // Vex is smaller but for simulation the Pico is faster (fully synchronous)
+        .USE_VEXRISCV(0),
 
         // The boot code configures the QSPI flash which is needed to access any flash resources such as audio
         // If this isn't needed, this can be disabled to speed up the sim start time
@@ -71,7 +87,11 @@ module ics32_tb(
     // Only the 3 buttons on the breakboard are used as a partial gamepad
     // This can be extended later with an actual gamepad PMOD
 
-    wire [11:0] pad_btn = {btn_1, btn_3, 5'b0, btn_2};
+    wire [11:0] pad_btn = {
+        btn_r, btn_l, btn_x, btn_a,
+        btn_1, btn_3, btn_down, btn_up,
+        btn_start, btn_select, btn_y, btn_2
+    };
 
     wire [1:0] pad_read_data;
     assign pad_read_data[1] = ~btn_u;

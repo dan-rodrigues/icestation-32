@@ -63,3 +63,37 @@ void pad_read(uint16_t *p1_current, uint16_t *p2_current, uint16_t *p1_edge, uin
         *p2_current = p2_new;
     }
 }
+
+void pad_decode_input(uint16_t encoded_input, PadInputDecoded *decoded_input) {
+    assert(decoded_input);
+
+    PadInputDecoded input = {
+        .a = !!(encoded_input & GP_A),
+        .b = !!(encoded_input & GP_B),
+        .x = !!(encoded_input & GP_X),
+        .y = !!(encoded_input & GP_Y),
+
+        .up = !!(encoded_input & GP_UP),
+        .down = !!(encoded_input & GP_DOWN),
+        .left = !!(encoded_input & GP_LEFT),
+        .right = !!(encoded_input & GP_RIGHT),
+
+        .l = !!(encoded_input & GP_L),
+        .r = !!(encoded_input & GP_R),
+
+        .start = !!(encoded_input & GP_START),
+        .select = !!(encoded_input & GP_SELECT),
+
+        .raw = encoded_input
+    };
+    
+    *decoded_input = input;
+}
+
+const PadInputDecoded PAD_INPUT_DECODED_NO_INPUT = {
+    .b = 0, .y = 0, .select = 0, .start = 0,
+    .up = 0, .down = 0, .left = 0, .right = 0,
+    .a = 0, .x = 0, .l = 0, .r = 0,
+    
+    .raw = 0
+};

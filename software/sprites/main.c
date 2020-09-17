@@ -10,10 +10,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "tiles.h"
-#include "palette.h"
+#include "crystal_tiles.h"
+#include "crystal_palette.h"
 
-void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y);
+static void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y);
 
 // sprite pattern arrangement
 
@@ -71,31 +71,27 @@ int main() {
 
     vdp_set_vram_increment(1);
     vdp_seek_vram(tile_base);
-
-    for (uint16_t i = 0; i < tiles_length; i++) {
-        vdp_write_vram(tiles[i] & 0xffff);
-        vdp_write_vram(tiles[i] >> 16);
-    }
+    vdp_write_vram_block(crystal_tiles, crystal_tiles_length);
 
     // palette upload
 
     vdp_seek_palette(0);
 
     // yellow
-    for (uint16_t i = 0; i < palette_length; i++) {
-        vdp_write_palette_color(palette[i]);
+    for (uint16_t i = 0; i < crystal_palette_length; i++) {
+        vdp_write_palette_color(crystal_palette[i]);
     }
     // red
-    for (uint16_t i = 0; i < palette_length; i++) {
-        vdp_write_palette_color(palette[i] & 0xff00);
+    for (uint16_t i = 0; i < crystal_palette_length; i++) {
+        vdp_write_palette_color(crystal_palette[i] & 0xff00);
     }
     // green
-    for (uint16_t i = 0; i < palette_length; i++) {
-        vdp_write_palette_color(palette[i] & 0xf0f0);
+    for (uint16_t i = 0; i < crystal_palette_length; i++) {
+        vdp_write_palette_color(crystal_palette[i] & 0xf0f0);
     }
     // magenta
-    for (uint16_t i = 0; i < palette_length; i++) {
-        uint16_t color = palette[i];
+    for (uint16_t i = 0; i < crystal_palette_length; i++) {
+        uint16_t color = crystal_palette[i];
         vdp_write_palette_color((color & 0xff00) | (color & 0x00f0) >> 4);
     }
 
@@ -157,7 +153,7 @@ int main() {
     }
 }
 
-void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y) {
+static void draw_crystal_sprite(uint8_t *base_sprite_id, uint16_t base_tile, uint8_t palette, uint16_t x, uint16_t y) {
     const int16_t sprite_x_offset = -16;
     const int16_t sprite_y_offset = -16;
 

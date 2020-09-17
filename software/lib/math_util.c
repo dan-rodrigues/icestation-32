@@ -12,14 +12,12 @@
 
 static volatile uint32_t *const SYS_MUL_BASE = (uint32_t *)0x030000;
 
-#define SYS_MUL_A (*((volatile int16_t *)SYS_MUL_BASE + 0))
-#define SYS_MUL_B (*((volatile int16_t *)SYS_MUL_BASE + 2))
+#define SYS_MUL_A (*((volatile int32_t *)SYS_MUL_BASE + 0))
+#define SYS_MUL_B (*((volatile int32_t *)SYS_MUL_BASE + 1))
 
 #define SYS_MUL_RESULT (*((volatile int32_t *)SYS_MUL_BASE + 0))
 
-// Only signed 16x16=32 multipleis are supported for now
-
-int32_t sys_multiply(int16_t a, int16_t b) {
+int32_t sys_multiply(int32_t a, int32_t b) {
     SYS_MUL_A = a;
     SYS_MUL_B = b;
 

@@ -119,7 +119,7 @@ int main() {
     vp_printf(vp_center_string_x(title), context_y, 0, SCROLL0, MAP_BASE_FG, title);
     vp_printf(vp_center_string_x(subtitle), context_y + 1, 0, SCROLL0, MAP_BASE_FG, subtitle);
 
-    vp_printf(vp_center_string_x(context_1), context_y + 4, 3, SCROLL0, MAP_BASE_FG, context_1);
+    vp_printf(vp_center_string_x(context_1), context_y + 4, 0, SCROLL0, MAP_BASE_FG, context_1);
     vp_printf(vp_center_string_x(context_2), context_y + 6, 0, SCROLL0, MAP_BASE_FG, context_2);
     vp_printf(vp_center_string_x(context_3), context_y + 8, 0, SCROLL0, MAP_BASE_FG, context_3);
 

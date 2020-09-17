@@ -58,6 +58,14 @@ static AUDIO_REG AUDIO_GB_BASE = (AUDIO_REG)(AUDIO_BASE + 0x200);
 
 // Utility functions:
 
+typedef struct {
+    uint16_t start;
+    uint16_t end;
+    uint16_t loop;
+} AudioAlignedAddresses;
+
 void audio_set_aligned_addresses(volatile AudioChannel *channel, const int16_t *start, size_t length);
+
+void audio_aligned_addresses(const int16_t *start, size_t length, AudioAlignedAddresses *addresses);
 
 #endif /* audio_h */

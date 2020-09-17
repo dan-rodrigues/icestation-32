@@ -16,8 +16,8 @@
 #include "fg_map.h"
 #include "fg_palette.h"
 
-#include "sprite_tiles.h"
-#include "sprite_palette.h"
+#include "miyamoto_tiles.h"
+#include "miyamoto_palette.h"
 
 // vram layout constants
 
@@ -116,7 +116,7 @@ int main() {
 
     // this loads tileset to the 3rd "page" of 128 tiles, where it is expected
     vdp_seek_vram(0 + 0x1800);
-    vdp_write_vram_block((uint16_t *)fg_tiles, fg_tiles_length * 2);
+    vdp_write_vram_block(fg_tiles, fg_tiles_length);
 
     // foreground map
 
@@ -137,7 +137,7 @@ int main() {
     vdp_set_sprite_tile_base(SPRITE_TILE_BASE);
 
     vdp_seek_palette(0);
-    vdp_write_palette_range(0, palette_size, sprite_palette);
+    vdp_write_palette_range(0, miyamoto_palette_length, miyamoto_palette);
 
     // background color
 
@@ -367,7 +367,7 @@ void draw_hero_sprites(uint8_t *base_sprite_id, Hero *hero, int16_t sprite_tile)
 void upload_16x16_sprite(uint16_t source_tile_base, uint16_t sprite_tile) {
     vdp_seek_vram(SPRITE_TILE_BASE + sprite_tile * 0x10);
 
-    uint16_t *source_tiles = (uint16_t *)(sprite_tiles + source_tile_base * 8);
+    const uint16_t *source_tiles = miyamoto_tiles + source_tile_base * 0x10;
     const uint16_t frame_row_word_size = 0x10 * 2;
 
     // first row (upper 16x8 half)

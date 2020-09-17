@@ -54,7 +54,7 @@ int main() {
     // Configure channel context
 
     static const int16_t *sample_pointers[] = {snare, kick, cymbal};
-    size_t sample_lengths[] = {snare_length, kick_length, cymbal_length};
+    const size_t sample_lengths[] = {snare_length, kick_length, cymbal_length};
 
     const int8_t volume = 0x0c;
 
