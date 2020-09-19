@@ -113,3 +113,6 @@ verilator_sim_trace:
 	$(build-verilator-sim)
 
 .PHONY: verilator_sim verilator_sim_trace
+
+.DEFAULT_GOAL = verilator_sim
+
