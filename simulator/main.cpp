@@ -322,9 +322,8 @@ int main(int argc, const char **argv) {
 
         if (!(--sdl_poll_counter)) {
             SDL_Event e;
-            SDL_PollEvent(&e);
-
-            if (e.type == SDL_QUIT) {
+            if (SDL_PollEvent(&e) && (e.type == SDL_QUIT)) {
+                std::cout << "Quitting.." << "\n";
                 break;
             }
 
