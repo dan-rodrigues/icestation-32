@@ -206,7 +206,7 @@ bool vdp_layer_is_odd(VDPLayer layer) {
     case SCROLL1: case SCROLL3:
         return true;
     default:
-        fatal_error();
+        fatal_error("Unexpected VDPLayer param");
         return false;
     }
 }

@@ -42,9 +42,10 @@ $(call build_util,$(HEADER_GEN_NEEDED),$(HEADER_GEN_DIR),header_gen)
 
 ###
 
-ASM = \
-	../common/vectors.S \
-	../common/start.S
+ASM := $(addprefix $(MK_DIR), \
+	vectors.S \
+	start.S \
+	)
 
 ifeq ($(OPT_LEVEL),)
 OPT_LEVEL := -Os
@@ -78,7 +79,7 @@ RC_CFLAGS := \
 	
 DFLAGS = --line-numbers
  
-LDS = ../common/sections.lds
+LDS = $(MK_DIR)sections.lds
 LDS_P = sections_p.lds
 
 BIN = prog.bin
