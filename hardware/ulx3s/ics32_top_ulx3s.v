@@ -247,7 +247,8 @@ module ics32_top_ulx3s #(
 
     // --- Gamepad reading ---
 
-    wire [11:0] pad_btn = ENABLE_USB_GAMEPAD ? usb_btn_cdc : {btn[6], btn[5], 5'b0, btn[1]};
+    wire [11:0] pcb_btn = {btn[6], btn[5], 1'b0, btn[3], 1'b0, !btn[0], btn[1], btn[2]};
+    wire [11:0] pad_btn = ENABLE_USB_GAMEPAD ? usb_btn_cdc : pcb_btn;
 
     wire [1:0] pad_read_data;
 
