@@ -68,7 +68,7 @@ ifeq ($(ASSERT_ENABLED), 1)
 CFLAGS += -DASSERT_ENABLED
 endif
 
-../lib/assert.o: $(ASSERT_ENABLED_FLAG_PATH)
+$(MK_DIR)../lib/assert.o: $(ASSERT_ENABLED_FLAG_PATH)
 
 ###
 
