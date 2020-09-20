@@ -1,12 +1,16 @@
 # icestation-32
 
-This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker) and [ULX3S](https://github.com/emard/ulx3s)* boards. It requires the 12bpp HDMI PMOD for video output.
-
-This repo is still in its early stages and its and contents (including this README) are changing rapidly.
+This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker)** and [ULX3S](https://github.com/emard/ulx3s)* boards.
 
 *: Only the ECP5-45F and 85F have the 128kbyte of block RAM required.
 
+**: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
+
+## Demo running on iCEBreaker
 ![Demo photo](photos/main.jpg)
+
+## Video capture from ULX3S (DVI video)
+![HDMI capture from ULX3S](photos/ulx3s_hdmi_capture.jpg)
 
 ## Features
 
@@ -31,8 +35,6 @@ The system doesn't require any RAM beyond what is available in the iCE40 UP5K.
 *: Only one of these layer types can be enabled at any given time but they can be toggled multiple times in a frame using raster-timed updates. The 4x layer implementation is still included in this repo but was disabled due to VRAM usage constraints.
 
 **: Visual artefacts can been seen if more than one alpha-enabled layer intersects with another i.e. using overlapping sprites.
-
-***: While the system does have the pad interface implemented, it is only connected to a mock interface on the iCEBreaker board to use the 3 available buttons. Atleast one SNES PMOD is in development. When the ULX3S target is ready, more options for input will be available (i.e. more buttons, USB, Bluetooth...)
 
 ## Usage
 
@@ -113,5 +115,6 @@ Note the 848x480 video has two clock domains because the up5k cannot run the CPU
 * A better README file!
 * More demo software for sprites / scrolling layers / raster effects etc.
 * Many bits of cleanup and optimization
-* Gamepad support, when the PMODs become available
+* Support for more USB gamepads
+* Support for original SNES gamepad (using PMOD)
 
