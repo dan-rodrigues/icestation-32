@@ -1,13 +1,6 @@
-# Ensure bootloader file is up to date
+# Include rules needed to build the boot firmware
 
-BOOT_DIR = ../firmware
-BOOT_HEX = $(BOOT_DIR)/boot.hex
-
-.PHONY: dummy
-dummy:
-	@$(MAKE) -C $(BOOT_DIR)
-
--include dummy
+include ../firmware/boot.mk
 
 ### Common ###
 
@@ -93,7 +86,7 @@ VLT_LDFLAGS := $(shell sdl2-config --libs)
 verilator_sim_trace: VLT_CFLAGS += -DVCD_WRITE=1
 verilator_sim_trace: VLT_FLAGS += --trace
 
-# Verilator already manages dependnecies, generates its own Makefile, forwards your C/LDFLAGS etc.
+# Verilator already manages dependencies, generates its own Makefile, forwards your C/LDFLAGS etc.
 # There is no need to duplicate that effort here, just invokve it everytime and it'll only do
 # work if necessary.
 
@@ -106,10 +99,10 @@ define build-verilator-sim
 	cp obj_dir/$(VLT_SIM_NAME) $@
 endef
 
-verilator_sim:
+verilator_sim: $(BOOT_HEX)
 	$(build-verilator-sim)
 
-verilator_sim_trace:
+verilator_sim_trace: $(BOOT_HEX)
 	$(build-verilator-sim)
 
 .PHONY: verilator_sim verilator_sim_trace

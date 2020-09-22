@@ -9,6 +9,12 @@ VIDEO_MODE = VM_848x480
 
 ###
 
+# Boot firmware rules
+
+include ../firmware/boot.mk
+
+###
+
 ICEBREAKER_PREFIX = icebreaker
 ULX3S_PREFIX = ulx3s
 
@@ -77,16 +83,6 @@ YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
 
 ### Common ###
 
-# Build firmware and any downstream dependencies if needed
-
-# .SHELLSTATUS could be used instead of doing this but is limited to newer Make verisons
-# Ideally the error could be printed here instead of having to be redirected to /dev/null
-
-BOOT_BUILD_STATUS := $(shell $(MAKE) -C $(BOOT_DIR) > /dev/null 2>&1; echo $$?)
-ifneq ($(BOOT_BUILD_STATUS), 0)
-$(error Failed to build firmware (boot.hex). Run "make" in ../firmware/ to see error details.)
-endif
-
 ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_HEX)
 	$(call synth, -json $@)
 
@@ -96,7 +92,7 @@ icebreaker.json: $(SOURCES) $(ICEBREAKER_SOURCES) icebreaker/ics32_top_icebreake
 count: $(SOURCES) $(BOOT_HEX)
 	$(call synth, -noflatten)
 
-clean:
+clean: boot_clean
 	rm -f \
 		$(ICEBREAKER_PREFIX).asc $(ICEBREAKER_PREFIX).rpt $(ICEBREAKER_PREFIX).bit $(ICEBREAKER_PREFIX).json \
 		$(ULX3S_PREFIX).config $(ULX3S_PREFIX).svf $(ULX3S_PREFIX).json
