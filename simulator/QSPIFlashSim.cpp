@@ -125,7 +125,8 @@ QSPIFlashSim::CMD QSPIFlashSim::cmd_from_op(uint8_t cmd_op) {
         CMD::WRITE_ENABLE_VOLATILE,
         CMD::READ_STATUS_REG_2, CMD::WRITE_STATUS_REG_2,
         CMD::RELEASE_POWER_DOWN, CMD::POWER_DOWN,
-        CMD::ENTER_QPI, CMD::EXIT_QPI
+        CMD::ENTER_QPI, CMD::EXIT_QPI,
+        CMD::READ_JEDEC_ID
     };
 
     static const std::map<uint8_t, QSPIFlashSim::CMD> cmd_op_map = []() {
@@ -225,6 +226,10 @@ void QSPIFlashSim::handle_new_cmd() {
             powered_down = true;
             transition_io_state(IOState::IDLE);
             break;
+        case CMD::READ_JEDEC_ID:
+            io_mode = IOMode::SINGLE;
+            transition_io_state(IOState::REG_READ);
+            break;
         default:
             log_error("Unrecognized command (" + format_hex(new_cmd_op) + ")");
             io_mode = IOMode::SINGLE;
@@ -245,7 +250,8 @@ const std::string QSPIFlashSim::cmd_name(CMD cmd) {
         {CMD::RELEASE_POWER_DOWN, "Release Power-Down"},
         {CMD::POWER_DOWN, "Power-Down"},
         {CMD::ENTER_QPI, "Enter QPI"},
-        {CMD::EXIT_QPI, "Exit QPI"}
+        {CMD::EXIT_QPI, "Exit QPI"},
+        {CMD::READ_JEDEC_ID, "Read JEDEC Manufacturer ID"}
     };
     
     auto name = map.find(cmd);
@@ -348,6 +354,8 @@ uint8_t QSPIFlashSim::status_for_cmd() {
     switch (cmd) {
         case CMD::READ_STATUS_REG_2:
             return status_2;
+        case CMD::READ_JEDEC_ID:
+            return static_cast<uint8_t>(mfid);
         default:
             assert(false);
             return 0;

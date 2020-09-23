@@ -2,6 +2,8 @@
 
 include ../firmware/boot.mk
 
+BOOT_HEX_SELECTED := $(BOOT_MULTI_HEX)
+
 ### Common ###
 
 SIM_SRCS = main.cpp Simulation.cpp QSPIFlashSim.cpp tinywav/tinywav.cpp
@@ -43,7 +45,7 @@ CXXRTL_HDL_DEFINES = -DSIMULATOR -DEXTERNAL_CLOCKS -DDEBUGNETS -DALPHA_LUT="alph
 
 define write-cxxrtl-sim
 	yosys -p \
-		'verilog_defines -DBOOTLOADER="$(BOOT_HEX)" $(CXXRTL_HDL_DEFINES); \
+		'verilog_defines -DBOOTLOADER="$(BOOT_HEX_SELECTED)" $(CXXRTL_HDL_DEFINES); \
 		read_verilog -I$(HDL_DIR) $(CXXRTL_SIM_MODELS) $(HDL_SOURCES); \
 		hierarchy -check -top $(HDL_TOP); \
 		proc; flatten; clean; splitnets -driver; clean -purge; \
@@ -77,7 +79,7 @@ VLT_FLAGS =	\
 	-cc --language 1364-2005 -v config.vlt -O3 --assert \
 	-Wall -Wno-fatal -Wno-WIDTH -Wno-TIMESCALEMOD \
 	-I$(HDL_DIR) \
-	-DBOOTLOADER=\"$(BOOT_HEX)\" -DEXTERNAL_CLOCKS -DSIMULATOR
+	-DBOOTLOADER=\"$(BOOT_HEX_SELECTED)\" -DEXTERNAL_CLOCKS -DSIMULATOR
 
 VLT_CXX_SOURCES = $(SIM_SRCS) ../VerilatorSimulation.cpp
 VLT_CFLAGS := -std=c++14 $(CXX_OPT) $(shell sdl2-config --cflags) -I../ -I../tinywav/ -DSIM_VERILATOR
@@ -99,10 +101,10 @@ define build-verilator-sim
 	cp obj_dir/$(VLT_SIM_NAME) $@
 endef
 
-verilator_sim: $(BOOT_HEX)
+verilator_sim: $(BOOT_HEX_SELECTED)
 	$(build-verilator-sim)
 
-verilator_sim_trace: $(BOOT_HEX)
+verilator_sim_trace: $(BOOT_HEX_SELECTED)
 	$(build-verilator-sim)
 
 .PHONY: verilator_sim verilator_sim_trace
