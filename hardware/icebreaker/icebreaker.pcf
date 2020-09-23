@@ -32,10 +32,21 @@ set_io flash_io[1] 17
 set_io flash_io[2] 12
 set_io flash_io[3] 13
 
-set_io btn[0] 20
-set_io btn[1] 19
-set_io btn[2] 18
+# set_io btn[0] 20
+# set_io btn[1] 19
+# set_io btn[2] 18
 
 set_io uart_rx 6
 set_io uart_tx 9
+
+# PMOD 2
+
+set_io pmod2_1 27
+set_io pmod2_2 25
+set_io pmod2_3 21
+set_io pmod2_4 19
+set_io pmod2_7 26
+set_io pmod2_8 23
+set_io pmod2_9 20
+set_io pmod2_10 18
 

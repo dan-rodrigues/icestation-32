@@ -49,6 +49,7 @@ ICEBREAKER_SOURCES := \
 	$(addprefix icebreaker/, \
 		pll_ice40.v \
 		spram_256k.v \
+		pdm_dac.v \
 	)
 
 USB_HID_SOURCES := \
