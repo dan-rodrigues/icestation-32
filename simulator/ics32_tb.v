@@ -45,6 +45,7 @@ module ics32_tb(
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(2),
         .ADPCM_STEP_LUT_PATH("../hardware/adpcm_step_lut.hex"),
+        .BOOTLOADER_SIZE(512),
 
         // Vex is smaller but for simulation the Pico is faster (fully synchronous)
         .USE_VEXRISCV(0),

@@ -9,8 +9,8 @@
 `include "clocks.vh"
 
 module ics32_top_ulx3s #(
-    parameter [0:0] ENABLE_USB_GAMEPAD = 1,
-    parameter [0:0] USB_GAMEPAD_LED = 1,
+    parameter [0:0] ENABLE_USB_GAMEPAD = 0,
+    parameter [0:0] USB_GAMEPAD_LED = 0,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0
 ) (
@@ -297,7 +297,8 @@ module ics32_top_ulx3s #(
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
         .ENABLE_FAST_CPU(ENABLE_FAST_CPU),
         .RESET_DURATION_EXPONENT(24),
-        .ENABLE_BOOTLOADER(1)
+        .ENABLE_BOOTLOADER(1),
+        .BOOTLOADER_SIZE(512)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

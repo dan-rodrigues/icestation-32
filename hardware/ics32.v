@@ -17,6 +17,7 @@ module ics32 #(
     parameter [0:0] ENABLE_FAST_CPU = 0,
     parameter integer RESET_DURATION_EXPONENT = 2,
     parameter [0:0] ENABLE_BOOTLOADER = 1,
+    parameter integer BOOTLOADER_SIZE = 256,
     parameter ADPCM_STEP_LUT_PATH = "adpcm_step_lut.hex",
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
@@ -54,7 +55,9 @@ module ics32 #(
 );
     // --- Bootloader ---
 
-    reg [31:0] bootloader [0:255];
+    localparam BOOTLOADER_ADDRESS_WIDTH = $clog2(BOOTLOADER_SIZE);
+
+    reg [31:0] bootloader [0:BOOTLOADER_SIZE - 1];
 
     reg [31:0] bootloader_read_data;
 
@@ -63,7 +66,7 @@ module ics32 #(
     end
 
     always @(posedge cpu_clk) begin
-        bootloader_read_data <= bootloader[cpu_address_1x[9:2]];
+        bootloader_read_data <= bootloader[cpu_address_1x[BOOTLOADER_ADDRESS_WIDTH + 1:2]];
     end
 
     // --- LEDs ---

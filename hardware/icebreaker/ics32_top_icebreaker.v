@@ -192,7 +192,8 @@ module ics32_top_icebreaker #(
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
         .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(24),
-        .ENABLE_BOOTLOADER(1)
+        .ENABLE_BOOTLOADER(1),
+        .BOOTLOADER_SIZE(256),
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

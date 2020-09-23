@@ -1,6 +1,6 @@
 // Minimized 8x8 font based on the font8x8_basic.h
 
-const char font8x8_minimal[35][8] = {
+const char font8x8_minimal[26][8] = {
     // Alpha chars only for now:
     { 0x0C, 0x1E, 0x33, 0x33, 0x3F, 0x33, 0x33, 0x00},   // U+0041 (A)
     { 0x3F, 0x66, 0x66, 0x3E, 0x66, 0x66, 0x3F, 0x00},   // U+0042 (B)

@@ -1,34 +1,11 @@
+#include "boot_defines.S"
+
 .global _start
 
-.equ CPU_RAM_BASE, 0x00000
-.equ FLASH_CTRL_BASE, 0x70000
-.equ FLASH_BASE, 0x100000
-
-.equ IPL_LENGTH, 0x10000
-.equ IPL_START, FLASH_BASE
-.equ IPL_END, IPL_START + IPL_LENGTH
-
-.equ FLASH_CTRL_ACTIVE, (1 << 15)
-.equ FLASH_CTRL_CLK, (1 << 8)
-.equ FLASH_CTRL_CSN, (1 << 9)
-.equ FLASH_CTRL_IN_SHIFT, 0
-.equ FLASH_CTRL_IN_EN_SHIFT, 4
-
-.equ FLASH_SR2_QE, (1 << 1)
-
-.equ PAD_DATA, 0x40000
-.equ PAD_USER_BUTTON, (1 << 1)
-
-.equ LED_DATA, 0x20000
-
-#define QPI_MODE 0
+.global spi_transfer
+.global spi_complete_cmd
 
 _start:
-
-#if BOOT_PROMPT
-
-    // C code shouldn't be complex enough to use the stack
-    // It's initialized here anyway just to be safe
     la sp, CPU_RAM_BASE + 0x10000
 
     jal bp_print_init
@@ -37,6 +14,7 @@ _start:
     la a1, prompt_string
     jal bp_print
 
+#ifdef BOOT_PROMPT
     sw a0, (a1)
     la a0, PAD_DATA
     la a2, LED_DATA
@@ -50,60 +28,72 @@ loop_wait_button:
     lw a1, (a0)
     andi a1, a1, PAD_USER_BUTTON
     beqz a1, loop_wait_button
+
+    // LEDs cleared once user advances
+    sw x0, (a2)
 #endif
 
 // Flash configuration:
 
     la a2, FLASH_CTRL_BASE
 
-    // begin with deactivated flash
+    // Begin with deactivated flash
     li a0, FLASH_CTRL_CSN
     sh a0, (a2)
 
-    // activate flash, clock low
+    // Activate flash, clock low
     li a0, FLASH_CTRL_ACTIVE
     sh a0, (a2)
 
-    // power up
+    // Power up
     li a0, 0xab
     jal spi_transfer
     jal spi_complete_cmd
 
-    // read SR2
-    li a0, 0x35
-    jal spi_transfer
-    jal spi_transfer
-    // SR2 |= QE
-    ori s0, a0, FLASH_SR2_QE
-    jal spi_complete_cmd
+#ifdef ASSUME_WINBOND
 
-    // volatile status reg write enable, immediately before the write
-    li a0, 0x50
-    jal spi_transfer
-    jal spi_complete_cmd
+    jal gp, winbond_configure
 
-    // write updated SR2
-    li a0, 0x31
-    jal spi_transfer
-    mv a0, s0
-    jal spi_transfer
-    jal spi_complete_cmd
+#else
 
-#if QPI_MODE
+    // Determine flash based on MFID
+    jal gp, flash_detect
+    li a1, RESULT_WINBOND
+    bne a0, a1, try_issi
 
-    // enter QPI mode prior to the initial CRM command
-    li a0, 0x38
-    jal spi_transfer
-    jal spi_complete_cmd
+    li a0, 0x2041 + (2 * 0x40)
+    la a1, winbond_flash_string
+    jal bp_print
+    li a2, FLASH_CTRL_BASE
+
+    jal gp, winbond_configure
+    j crm_setup
+
+try_issi:
+    li a1, RESULT_ISSI
+    bne a0, a1, unknown_flash
+
+    li a0, 0x2041 + (2 * 0x40)
+    la a1, issi_flash_string
+    jal bp_print
+    li a2, FLASH_CTRL_BASE
+
+    jal gp, issi_configure
+    j crm_setup
+
+unknown_flash:
+    li a0, 0x2041 + (2 * 0x40)
+    la a1, unknown_flash_string
+    jal bp_print
+    ebreak
 
 #endif
 
-// CRM setup
-
+crm_setup:
     // Quad read (setup for hardware flash controller)
     li a0, 0xeb
 
-#if QPI_MODE
+#ifdef QPI_MODE
     jal qpi_transfer
 #else
     jal spi_transfer
@@ -116,11 +106,10 @@ loop_wait_button:
     jal qpi_transfer
     li a0, 0
     jal qpi_transfer
-    // M5-4 = 2'b10 to enable CRM
-    li a0, 0x20
+    li a0, CRM_BYTE
     jal qpi_transfer
 
-#if !QPI_MODE
+#ifndef QPI_MODE
 
     // 4x dummy bytes
     jal qpi_transfer
@@ -146,11 +135,8 @@ loop_ipl:
 
     j CPU_RAM_BASE
 
-prompt_string:
-    .string "PRESS BUTTON   "
-
+// Sends one QPI byte
 // a0: byte to send
-// returns: (nothing)
 
 qpi_transfer:
     li t0, 0
@@ -158,7 +144,7 @@ qpi_transfer:
     li t2, 0
 
 loop_send_qpi:
-    // lower clk, set output nybble
+    // Lower clk, set output nybble
     li a1, FLASH_CTRL_ACTIVE | (0xf << FLASH_CTRL_IN_EN_SHIFT)
     andi t3, a0, 0xf0
     slli a0, a0, 4
@@ -179,8 +165,9 @@ loop_send_qpi:
 
     ret
 
+// Sends and receives one SPI byte 
 // a0: byte to send
-// returns: byte received
+// Returns: byte received
 
 spi_transfer:
     li t0, 0
@@ -216,7 +203,7 @@ loop_send_spi:
 
     // a0 = read byte
     mv a0, t2
-
+    
     ret
 
 // deasserts, then reasserts CSN to make the flash ready for next command
@@ -229,3 +216,14 @@ spi_complete_cmd:
 
     ret
 
+prompt_string:
+    .string "PRESS BUTTON"
+unknown_flash_string:
+    .string "UNRECOGNIZED FLASH VENDOR "
+
+winbond_flash_string:
+    .string "WINBOND"
+issi_flash_string:
+    .string "ISSI   "
+
+.align 4

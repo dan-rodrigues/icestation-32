@@ -33,7 +33,9 @@ module flash_reader #(
 );
     localparam DUMMY_CYCLES = ASSUME_QPI ? 0 : 4;
 
-    localparam CRM_BYTE = 8'h20;
+    // Winbond: byte[5:4] == 2'b10
+    // ISSI: byte[7:4] == 4'b1001
+    localparam [7:0] CRM_BYTE = 8'h20 | 8'h80;
 
     reg [4:0] state;
     

@@ -20,8 +20,13 @@
 class QSPIFlashSim {
 
 public:
+    enum class MFID: uint8_t {
+        WINBOND = 0xef,
+        ISSI = 0x9d
+    };
+
     /// Initializes the flash model with a given maximum size.
-    QSPIFlashSim(size_t max_size = 0x1000000) : max_size(max_size) {};
+    QSPIFlashSim(size_t max_size = 0x1000000, MFID mfid = MFID::WINBOND) : max_size(max_size), mfid(mfid) {};
 
     /// Loads the entire contents of source into the given offset in flash memory.
     /// By default, errors are logged on attempts to access flash memory outside of the loaded regions.
@@ -61,6 +66,7 @@ private:
         READ_STATUS_REG_2 = 0x35, WRITE_STATUS_REG_2 = 0x31,
         ENTER_QPI = 0x38, EXIT_QPI = 0xff,
         RELEASE_POWER_DOWN = 0xab, POWER_DOWN = 0xb9,
+        READ_JEDEC_ID = 0x9f,
         UNDEFINED = 0x00
     };
 
@@ -77,6 +83,8 @@ private:
     enum class IOMode {
         SINGLE, DUAL, QUAD
     };
+
+    MFID mfid = MFID::WINBOND;
 
     bool csn = true, clk = false;
 

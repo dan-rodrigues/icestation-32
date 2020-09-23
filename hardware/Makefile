@@ -33,9 +33,6 @@ ECP5_SIZE = 85
 ICEBREAKER_PIN_DEF = icebreaker/icebreaker.pcf
 ULX3S_PIN_DEF = ulx3s/ulx3s_v20.lpf
 
-BOOT_DIR = ../firmware/
-BOOT_HEX = $(BOOT_DIR)boot.hex
-
 icebreaker.json: TOP = ics32_top_icebreaker
 ulx3s.json: TOP = ics32_top_ulx3s
 count: TOP = ics32_top_icebreaker
@@ -79,11 +76,14 @@ icebreaker.json: YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top $(TOP)
 ulx3s.json: YOSYS_SYNTH_FLAGS = -top $(TOP)
 count: YOSYS_SYNTH_FLAGS = -dffe_min_ce_use 4 -dsp -top $(TOP)
 
-YOSYS_DEFINE_ARGS := -f 'verilog -DBOOTLOADER="$(BOOT_HEX)"'
+icebreaker.json: BOOT_HEX_SELECTED = $(BOOT_HEX)
+ulx3s.json: BOOT_HEX_SELECTED = $(BOOT_MULTI_HEX)
+
+YOSYS_DEFINE_ARGS = -f 'verilog -DBOOTLOADER="$(BOOT_HEX_SELECTED)"'
 
 ### Common ###
 
-ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_HEX)
+ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_MULTI_HEX)
 	$(call synth, -json $@)
 
 icebreaker.json: $(SOURCES) $(ICEBREAKER_SOURCES) icebreaker/ics32_top_icebreaker.v $(BOOT_HEX)
