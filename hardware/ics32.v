@@ -29,6 +29,9 @@ module ics32 #(
     input clk_2x,
     input pll_locked,
 
+    output reset_1x,
+    output reset_2x,
+
     output [3:0] vga_r,
     output [3:0] vga_g,
     output [3:0] vga_b,
@@ -105,8 +108,6 @@ module ics32 #(
     end
 
     // --- Reset generator ---
-
-    wire reset_1x, reset_2x;
 
     reset_generator #(
         .DURATION_EXPONENT(RESET_DURATION_EXPONENT)
