@@ -8,6 +8,7 @@
 _start:
     la sp, CPU_RAM_BASE + 0x10000
 
+#ifdef BOOT_DISPLAY
     jal bp_print_init
 
     li a0, 0x2041   
@@ -31,6 +32,8 @@ loop_wait_button:
 
     // LEDs cleared once user advances
     sw x0, (a2)
+#endif
+
 #endif
 
 // Flash configuration:

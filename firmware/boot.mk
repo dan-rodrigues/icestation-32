@@ -3,6 +3,9 @@
 # If set, a boot prompt is displayed before loading user program from flash
 BOOT_PROMPT ?= 0
 
+# If set, a character display is shown on boot
+BOOT_DISPLAY ?= 1
+
 # QPI is disabled by default due to certain issues with the official iceprog
 QPI_MODE ?= 0
 
@@ -45,6 +48,10 @@ endif
 
 ifeq ($(QPI_MODE), 1)
 FW_MULTI_CFLAGS += -DQPI_MODE
+endif
+
+ifeq ($(BOOT_DISPLAY), 1)
+FW_MULTI_CFLAGS += -DBOOT_DISPLAY
 endif
 
 FW_CFLAGS := $(FW_MULTI_CFLAGS) -DASSUME_WINBOND
