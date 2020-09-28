@@ -11,7 +11,7 @@
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define ABS(a) (((a) < 0) ? (-a) : (a))
+#define ABS(a) (((a) < 0) ? (-(a)) : (a))
 #define SIGN(a) ((a) < 0)
 
 // Signed s16xs16=s32 multiply
