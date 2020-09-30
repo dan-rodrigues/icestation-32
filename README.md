@@ -2,7 +2,9 @@
 
 This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker)** and [ULX3S](https://github.com/emard/ulx3s)* boards.
 
-*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required.
+A WIP retro-inspired platformer game for this system can be found [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
+
+*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required. Potentially boards with a 25F can be supported by moving the CPU RAM to external memory.
 
 **: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
 
@@ -35,6 +37,8 @@ The system doesn't require any RAM beyond what is available in the iCE40 UP5K.
 *: Only one of these layer types can be enabled at any given time but they can be toggled multiple times in a frame using raster-timed updates. The 4x layer implementation is still included in this repo but was disabled due to VRAM usage constraints.
 
 **: Visual artefacts can been seen if more than one alpha-enabled layer intersects with another i.e. using overlapping sprites.
+
+***: PCB push buttons are used by default. although an original SNES gamepad can be used.
 
 ## Usage
 
@@ -103,18 +107,30 @@ One of two RISC-V implementations can be selected. The implementation is chosen 
 
 One of two video modes can be selected and only when the project is built. The video modes can't be toggled in software. The `VIDEO_MODE` variable in [/hardware/Makefile](hardware/Makefile) selects which video mode to use. This Makefile variable in turn determines the value of the `ENABLE_WIDESCREEN` parameter in the `ics32` module.
 
-Currently only an iCEBreaker target is provided with these configurations:
-
 * 640x480@60hz: 25.175MHz VDP/CPU clock
 * 848x480@60hz: 33.75MHz VDP clock, 16.88MHz CPU clock
 
 Note the 848x480 video has two clock domains because the up5k cannot run the CPU at 33.75MHz and meet timing. The dual clock domain setup is automatically enabled when `ENABLE_WIDESCREEN` is set. The `FORCE_FAST_CPU` parameter is also available to force the single clock domain setup which fails timing in the 848x480 case, although the author hasn't seen it break even with substantial overclock.
 
+### Controls
+
+The assumed controller layout matches an original SNES gamepad.
+
+By default, the controller is implemented using push buttons on the PCBs. Both the ULX3S and iCEBreaker buttons (on break out board) can be used but inputs are limited.
+
+#### iCEBreaker
+
+The `GAMEPAD_PMOD` parameter in the [top level module](/hardware/icebreaker/ics32_top_icebreaker.v) can be set to use the gamepad / audio PMOD rather than the 3 buttons on the breakout board. Note this hasn't been fully tested yet.
+
+#### ULX3S
+
+The `ENABLE_USB_GAMEPAD` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) can be used to optional enable a USB gamepad on port US2. HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
+
 ## TODO
 
 * A better README file!
-* More demo software for sprites / scrolling layers / raster effects etc.
 * Many bits of cleanup and optimization
 * Support for more USB gamepads
-* Support for original SNES gamepad (using PMOD)
+* Confirmed working support for original SNES gamepad (using PMOD)
+* Confirm ULX3S boards with ISSI flash work as expected
 

@@ -42,14 +42,8 @@ module vexriscv_shared_bus(
     reg vex_i_bus_active;
     wire vex_d_bus_active = !vex_i_bus_active;
 
-    reg vex_i_ready;
-    reg vex_dbus_cmd_ready;
-
     reg [31:0] vex_address_r;
     reg [31:0] vex_data_r;
-
-    reg [1:0] vex_dbus_cmd_size;
-    reg vex_dbus_cmd_write_en;
     reg [3:0] vex_wstrb;
 
     wire vex_mem_ready = vex_bus_active && mem_ready;
@@ -64,34 +58,38 @@ module vexriscv_shared_bus(
     wire [31:0] vex_i_address;
     wire [31:0] vex_d_address;
 
+    // iBus_cmd_ready can be driven using comb. logic with iBus_cmd_valid..
+    wire vex_i_ready = vex_i_valid && !vex_bus_active;
+    // ..but dBus_cmd_ready can't usse iBus_cmd_valid without logic loops, so register it
+    reg vex_d_started;
+    wire vex_d_ready = vex_d_started && vex_d_valid && vex_bus_active;
+
     always @(posedge clk) begin
         if (reset) begin
             vex_bus_active <= 0;
+            vex_d_started <= 0;
         end else begin
-            vex_i_ready <= 0;
-            vex_dbus_cmd_ready <= 0;
+            vex_d_started <= 0;
 
             if (!vex_bus_active) begin
                 if (vex_i_valid) begin
                     vex_i_bus_active <= 1;
                     vex_bus_active <= 1;
-                    vex_i_ready <= 1;
 
                     vex_address_r <= vex_i_address;
                 end else if (vex_d_valid) begin
                     vex_i_bus_active <= 0;
                     vex_bus_active <= 1;
-                    vex_dbus_cmd_ready <= 1;
+                    vex_d_started <= 1;
 
                     vex_address_r <= vex_d_address;
                     vex_data_r <= vex_d_write_data;
                     vex_wstrb <= vex_d_write_en ? (((1 << (1 << vex_write_size)) - 1) << vex_d_address[1:0]) : 0;
                 end
-            end else begin
-                if (vex_i_rsp_valid || vex_d_rsp_valid) begin
-                    vex_bus_active <= 0;
-                    vex_wstrb <= 0;
-                end
+            end else if (vex_mem_ready) begin
+                vex_bus_active <= 0;
+                vex_wstrb <= 0;
+                vex_d_started <= 0;
             end
         end
     end
@@ -112,7 +110,7 @@ module vexriscv_shared_bus(
         .dBus_cmd_payload_size(vex_write_size),
         .dBus_cmd_payload_wr(vex_d_write_en),
         .dBus_cmd_valid(vex_d_valid),
-        .dBus_cmd_ready(vex_dbus_cmd_ready),
+        .dBus_cmd_ready(vex_d_ready),
 
         .dBus_rsp_ready(vex_d_rsp_valid),
         .dBus_rsp_data(mem_rdata),

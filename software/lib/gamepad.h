@@ -26,10 +26,16 @@ typedef enum {
 } PadInput;
 
 typedef struct {
-    bool b, y, select, start;
-    bool up, down, left, right;
-    bool a, x;
-    bool l, r;
+    union {
+        struct {
+            bool b, y, select, start;
+            bool up, down, left, right;
+            bool a, x;
+            bool l, r;
+        };
+
+        bool indexed[12];
+    };
 
     uint16_t raw;
 } PadInputDecoded;

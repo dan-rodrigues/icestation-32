@@ -25,7 +25,7 @@ SECTIONS {
 		// the file is used. The .gnu.lto.* sections containing the data do
 		// not get included here. -flto is disabled for rc_* files because of
 		// this
-		*flash_cpu_*(.rodata)
+		*flash_cpu_*(.*)
 
 		_flash_cpu_end = .;
 	} >FLASH_ASSETS
@@ -36,7 +36,7 @@ SECTIONS {
 		_flash_adpcm_start = .;
 
 		// Same -flto constraints apply to this too
-		*adpcm_*(.rodata)
+		*adpcm_*(.*)
 
 		flash_adpcm_end = .;
 	} >FLASH_ASSETS
