@@ -66,15 +66,20 @@ $(eval $(call persisted_var_path,ASSERT_ENABLED,$(ASSERT_ENABLED_FLAG_PATH)))
 
 ifeq ($(ASSERT_ENABLED), 1)
 CFLAGS += -DASSERT_ENABLED
+RC_CFLAGS += -DASSERT_ENABLED
 endif
 
-$(MK_DIR)../lib/assert.o: $(ASSERT_ENABLED_FLAG_PATH)
+$(abspath $(MK_DIR)../lib/assert.o): $(ASSERT_ENABLED_FLAG_PATH)
 
 ###
 
-RC_CFLAGS := \
+LIB_SOURCES := $(addprefix $(MK_DIR)../lib/, $(LIB_SOURCES))
+SOURCES += $(foreach source, $(LIB_SOURCES), $(abspath $(source)))
+
+RC_CFLAGS += \
 	-std=c11 \
-	-Wall -MMD -MP -march=rv32i -mabi=ilp32 \
+	-Wall $(OPT_LEVEL) -MMD -MP -march=rv32i -mabi=ilp32 \
+	-I$(MK_DIR)../common -I$(MK_DIR)../lib \
 	-ffreestanding -nostdlib
 	
 DFLAGS = --line-numbers
@@ -96,7 +101,7 @@ define flash_dep
 $1$3$2.o: $1$2.c
 # No -flto option on these
 # Linker errors such as section overflows appear otherwise
-	$(CROSS)gcc $(RC_CFLAGS) -c $$< -o $$@
+	$(CROSS)gcc $$(RC_CFLAGS) -c $$< -o $$@
 endef
 
 define flash_obj
