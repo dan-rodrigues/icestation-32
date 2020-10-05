@@ -213,11 +213,6 @@ module ics32 #(
 
     // --- CPU 1x memory decoder / arbiter ---
 
-    wire [23:0] cpu_address;
-    wire cpu_mem_valid;
-    wire [3:0] cpu_wstrb;
-    wire [31:0] cpu_write_data;
-
     wire bootloader_en;
     wire cpu_ram_en, cpu_ram_write_en;
 
@@ -496,6 +491,10 @@ module ics32 #(
 
     // --- Bus arbiter ---
 
+    wire [31:0] cpu_address;
+    wire cpu_mem_valid;
+    wire [3:0] cpu_wstrb;
+    wire [31:0] cpu_write_data;
     wire [31:0] cpu_read_data;
     wire cpu_mem_ready;
 
@@ -646,7 +645,7 @@ module ics32 #(
 
         // Reader A: CPU
 
-        .read_address_a({4'b0, cpu_address[19:2], 2'b00}),
+        .read_address_a({cpu_address[23:2], 2'b00}),
         .read_en_a(flash_read_en),
         .ready_a(flash_read_ready),
 

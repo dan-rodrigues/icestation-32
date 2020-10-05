@@ -14,7 +14,7 @@ module address_decoder #(
     input clk,
     input reset,
 
-    input [20:0] cpu_address,
+    input [24:0] cpu_address,
     input cpu_mem_valid,
     input [3:0] cpu_wstrb,
     output reg [3:0] cpu_wstrb_decoder,
@@ -46,7 +46,7 @@ module address_decoder #(
     output reg flash_ctrl_en,
     output reg flash_ctrl_write_en
 );
-    reg [20:0] cpu_address_r;
+    reg [24:0] cpu_address_r;
     reg cpu_mem_valid_r;
 
     generate
@@ -81,7 +81,7 @@ module address_decoder #(
         flash_ctrl_en = 0; flash_ctrl_write_en = 0;
 
         if (cpu_mem_valid_r && !reset) begin
-            if (cpu_address_r[20]) begin
+            if (cpu_address_r[24]) begin
                 flash_read_en = 1;
             end else begin
                 case (cpu_address_r[19:16])

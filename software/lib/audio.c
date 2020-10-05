@@ -16,11 +16,11 @@ void audio_set_aligned_addresses(volatile AudioChannel *channel, const int16_t *
 }
 
 void audio_aligned_addresses(const int16_t *start, size_t length, AudioAlignedAddresses *addresses) {
-    const size_t cpu_flash_base = 0x100000;
+    const uintptr_t cpu_flash_base = 0x1000000;
     const size_t adpcm_block_size = 0x400;
 
-    size_t block_start = (((size_t)start - cpu_flash_base)) / adpcm_block_size;
-    size_t block_end = block_start + (length + (adpcm_block_size / 2 - 1)) / (adpcm_block_size / 2);
+    uintptr_t block_start = (((size_t)start - cpu_flash_base)) / adpcm_block_size;
+    uintptr_t block_end = block_start + (length + (adpcm_block_size / 2 - 1)) / (adpcm_block_size / 2);
 
     addresses->start = block_start;
     addresses->end = block_end;

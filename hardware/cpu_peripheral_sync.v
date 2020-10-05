@@ -12,7 +12,7 @@ module cpu_peripheral_sync(
 
     // 1x inputs
     input [3:0] cpu_wstrb,
-    input [23:0] cpu_address,
+    input [31:0] cpu_address,
     input [31:0] cpu_write_data,
     input cpu_mem_valid,
 
@@ -22,7 +22,7 @@ module cpu_peripheral_sync(
 
     output reg [3:0] cpu_wstrb_2x,
     output reg [31:0] cpu_write_data_2x,
-    output reg [23:0] cpu_address_2x,
+    output reg [31:0] cpu_address_2x,
     output reg cpu_mem_valid_2x,
 
     output reg cpu_mem_ready_1x,

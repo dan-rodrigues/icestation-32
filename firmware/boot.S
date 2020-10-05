@@ -102,8 +102,8 @@ crm_setup:
     jal spi_transfer
 #endif
 
-    // dummy address
-    li a0, 0x10 // (0x100000, in defined range)
+    // Dummy address used to initiate CRM, doesn't matter where
+    li a0, 0x20
     jal qpi_transfer
     li a0, 0
     jal qpi_transfer
