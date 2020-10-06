@@ -354,12 +354,12 @@ module vdp #(
     // the two kinds of layers can't be active at the same time so reuse these to save LCs
 
     wire [15:0] affine_pretranslate_x = scroll_x[0];
-    wire [15:0] affine_pretranslate_y = scroll_y[0];
+    wire [15:0] affine_pretranslate_y = scroll_y[1];
 
     wire [15:0] affine_a = scroll_x[1];
     wire [15:0] affine_b = scroll_x[2];
     wire [15:0] affine_c = scroll_x[3];
-    wire [15:0] affine_d = scroll_y[1];
+    wire [15:0] affine_d = scroll_y[0];
 
     wire [15:0] affine_translate_x = scroll_y[2];
     wire [15:0] affine_translate_y = scroll_y[3];

@@ -497,8 +497,8 @@ void write_copper_program() {
     // Top part of screen: enable affine layer
     cop_set_target_x(0);
     cop_wait_target_y(0);
-    cop_write(&VDP_HSCROLL_BASE[0], affine_scroll_x);
-    cop_write(&VDP_VSCROLL_BASE[0], affine_scroll_y);
+    cop_write(&VDP_AFFINE_TRANSLATE_X, affine_scroll_x);
+    cop_write(&VDP_AFFINE_TRANSLATE_Y, affine_scroll_y);
     cop_write(&VDP_AFFINE_PRETRANSLATE_X, affine_pretranslate_x);
     cop_write(&VDP_AFFINE_PRETRANSLATE_Y, affine_pretranslate_y);
     cop_write(&VDP_MATRIX_A, affine_a);

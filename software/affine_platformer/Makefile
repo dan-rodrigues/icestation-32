@@ -28,11 +28,6 @@ main.o: \
 FG_GFX = fg_tiles_snes.bin
 FG_PAL = fg_palette.pal
 
-SPRITE_PNG = miyamoto.png
-
-BALL_PNG = ball.png
-CLOUD_PNG = cloud_small.png
-
 %_tiles.bin %_palette.bin: %.png $(GFX_CONVERT)
 	$(GFX_CONVERT) -f png -o $(GFX_DIR)$*_ $<
 

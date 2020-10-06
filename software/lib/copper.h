@@ -46,4 +46,6 @@ void cop_add_batch_quad(COPBatchWriteConfig *config, uint16_t data0, uint16_t da
 
 void cop_jump(uint16_t address);
 
+void cop_assert_config_consistent(const COPBatchWriteConfig *config);
+
 #endif /* copper_h */
