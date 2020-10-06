@@ -66,7 +66,7 @@ static const VDP_REG VDP_CURRENT_RASTER_BASE = VDP_BASE + 0x00;
 #define VDP_CURRENT_RASTER_X (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 0))
 #define VDP_CURRENT_RASTER_Y (*((VDP_REG) VDP_CURRENT_RASTER_BASE + 2))
 
-void vdp_wait_frame_ended();
+void vdp_wait_frame_ended(void);
 
 // MARK: Write functions
 
@@ -107,6 +107,7 @@ void vdp_set_target_raster_y(uint16_t y);
 
 void vdp_set_affine_matrix(int16_t a, int16_t b, int16_t c, int16_t d);
 void vdp_set_affine_pretranslate(int16_t x, int16_t y);
+void vdp_set_affine_translate(int16_t x, int16_t y);
 
 // MARK: Convenience
 
