@@ -1,6 +1,7 @@
 MEMORY
 {
-	SPRAM (xrw) : ORIGIN = 0x00000000, LENGTH = 0x10000
+	// 2KByte at end is reserved for stack
+	SPRAM (xrw) : ORIGIN = 0x00000000, LENGTH = 0xf800
 
 	// This memory region would be used if the progam was XIP from the flash
 	// Instead it is copied to the SPRAM
