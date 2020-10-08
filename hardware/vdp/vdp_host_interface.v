@@ -102,8 +102,8 @@ module vdp_host_interface #(
 
     always @(posedge clk) begin
         if (!reset && cop_write_en && host_write_en) begin
-            // this is either a software or hardware bug so flag it accordingly
-            `stop($display("CPU / VDP copper write conflict");)
+            // Must be a software or hardware bug so flag it accordingly
+            `stop($display("CPU / VDP copper write conflict. CPU: %x, COP: %x", host_address, cop_write_address);)
         end
     end
 

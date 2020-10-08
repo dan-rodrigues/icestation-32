@@ -2,9 +2,11 @@
 
 This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker)** and [ULX3S](https://github.com/emard/ulx3s)* boards.
 
-A WIP retro-inspired platformer game for this system can be found [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
+As a retro-inspired console, it does not use framebuffers, rasterizers, shaders etc. It uses character maps, sprites and raster effects to implement various effects. This allows it to render 480p scenes from 64KByte.
 
-*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required. Potentially boards with a 25F can be supported by moving the CPU RAM to external memory.
+A platformer game for this system can be found [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
+
+*: Only the ECP5-45F and 85F have the 128kbyte of block RAM required. It's been confirmed working on boards with Winbond flash but thought to work on others too. Potentially boards with a 25F can be supported by moving the CPU RAM to external memory.
 
 **: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
 
