@@ -122,7 +122,7 @@ The `GAMEPAD_PMOD` parameter enabels audio output on a to-be-released PMOD. This
 
 ### ULX3S
 
-Audio is output through the headphone jack in both analog / digital:
+Audio is output through the headphone jack in both analog / digital form:
 
 * Analog output direct to headphones (noisy)
 * Digital SPDIF using a 3.5mm -> RCA cable. The "composite video" cable can be plugged into the coax-in of an SPDIF receiver.

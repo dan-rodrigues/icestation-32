@@ -26,7 +26,7 @@ make ulx3s_prog
 
 ## Super Miyamoto Sprint
 
-Platformer game inspired by other games of the period. Because of its size it is [hosted separately here](https://github.com/dan-rodrigues/icestation-32). It clones this repo as a submodule.
+Platformer game inspired by other games of the period. Because of its size it is [hosted separately here](https://github.com/dan-rodrigues/super-miyamoto-sprint). It clones this repo as a submodule.
 
 ![Game demo](screenshots/sms.png)
 
