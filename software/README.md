@@ -24,6 +24,13 @@ make icebreaker_prog
 make ulx3s_prog
 ```
 
+## Super Miyamoto Sprint
+
+Platformer game inspired by other games of the period. Because of its size it is [hosted separately here](https://github.com/dan-rodrigues/icestation-32). It clones this repo as a submodule.
+
+![Game demo](screenshots/sms.png)
+
+
 ## `affine_platformer/`
 
 Demo with various system features combined into a single scene including:

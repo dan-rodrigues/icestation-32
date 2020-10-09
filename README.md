@@ -4,24 +4,24 @@ This is a compact open-source FPGA game console targetting the Lattice iCE40 Ult
 
 As a retro-inspired console, it does not use framebuffers, rasterizers, shaders etc. It uses character maps, sprites and raster effects to implement various effects. This allows it to render 480p scenes from 64KByte.
 
-A platformer game for this system can be found [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
-
 *: Only the ECP5-45F and 85F have the 128kbyte of block RAM required. It's been confirmed working on boards with Winbond flash but thought to work on others too. Potentially boards with a 25F can be supported by moving the CPU RAM to external memory.
 
 **: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
 
-## Demo running on iCEBreaker
-![Demo photo](photos/main.jpg)
-
 ## Video capture from ULX3S (DVI video)
 ![HDMI capture from ULX3S](photos/ulx3s_hdmi_capture.jpg)
+Platformer game hosted [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
+
+## Demo running on iCEBreaker
+![Demo photo](photos/main.jpg)
+Demo with placeholder assets just for illustration. This along with other similarly copyrighted assets are not published here.
 
 ## Features
 
 * RISC-V CPU (configurable with VexRiscV or PicoRV32)
 * Custom VDP for smooth-scrolling layers and sprites
 * Custom "copper" coprocessor integrated into VDP to perform raster effects
-* [Custom multichannel ADPCM decoder / mixer](https://github.com/dan-rodrigues/ics-adpcm)
+* [Custom multichannel ADPCM decoder / mixer](https://github.com/dan-rodrigues/ics-adpcm) (44.1KHz, 16bit stereo)
 * Configurable video modes of 640x480@60hz or 848x480@60hz
 * 4bpp graphics assembled from 8x8 tiles
 * ARGB16 colors arranged into 16 palettes of 16 colors each
@@ -114,17 +114,30 @@ One of two video modes can be selected and only when the project is built. The v
 
 Note the 848x480 video has two clock domains because the up5k cannot run the CPU at 33.75MHz and meet timing. The dual clock domain setup is automatically enabled when `ENABLE_WIDESCREEN` is set. The `FORCE_FAST_CPU` parameter is also available to force the single clock domain setup which fails timing in the 848x480 case, although the author hasn't seen it break even with substantial overclock.
 
-### Controls
+## Audio
+
+### iCEBreaker
+
+The `GAMEPAD_PMOD` parameter enabels audio output on a to-be-released PMOD. This is untested.
+
+### ULX3S
+
+Audio is output through the headphone jack in both analog / digital:
+
+* Analog output direct to headphones (noisy)
+* Digital SPDIF using a 3.5mm -> RCA cable. The "composite video" cable can be plugged into the coax-in of an SPDIF receiver.
+
+## Controls
 
 The assumed controller layout matches an original SNES gamepad.
 
 By default, the controller is implemented using push buttons on the PCBs. Both the ULX3S and iCEBreaker buttons (on break out board) can be used but inputs are limited.
 
-#### iCEBreaker
+### iCEBreaker
 
 The `GAMEPAD_PMOD` parameter in the [top level module](/hardware/icebreaker/ics32_top_icebreaker.v) can be set to use the gamepad / audio PMOD rather than the 3 buttons on the breakout board. Note this hasn't been fully tested yet.
 
-#### ULX3S
+### ULX3S
 
 The `ENABLE_USB_GAMEPAD` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) can be used to optional enable a USB gamepad on port US2. HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
 

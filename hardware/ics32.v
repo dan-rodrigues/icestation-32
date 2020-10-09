@@ -86,13 +86,13 @@ module ics32 #(
         end
     end
 
-    // --- DSP math support --- (TODO extract)
+    // --- DSP math support ---
 
     reg [15:0] dsp_mult_a, dsp_mult_b;
     reg [31:0] dsp_result;
 
-    // the dsp_mult_a/b assignments can't be in nested if statements to infer the MAC16 FFs
-    // otherwise, SB_DFFs are spent on this
+    // The dsp_mult_a/b assignments can't be in nested if statements to infer the MAC16 FFs
+    // Otherwise, SB_DFFs are spent on this
 
     always @(posedge vdp_clk) begin
         if (dsp_write_en && !cpu_address[2]) begin
@@ -239,7 +239,7 @@ module ics32 #(
     ) bus_arbiter_1x (
         .clk(cpu_clk),
 
-        // inputs
+        // Inputs
 
         .cpu_address(cpu_address_1x),
         .cpu_write_data(cpu_write_data_1x),
@@ -269,7 +269,7 @@ module ics32 #(
         .flash_ctrl_read_data(0),
         .audio_cpu_read_data(0),
 
-        // outputs
+        // Outputs
 
         .cpu_mem_ready(cpu_mem_ready_1x_arbiter),
         .cpu_read_data(cpu_read_data_1x_arbiter)
@@ -571,7 +571,8 @@ module ics32 #(
         end else begin
             picorv32 #(
                 .ENABLE_TRACE(0),
-                // register file gets inferred as BRAMs so using rv32e has little practical gain
+
+                // Register file gets inferred as BRAMs so using rv32e has little practical gain
                 .ENABLE_REGS_16_31(1),
 
                 // MMIO DSP is used instead of the included PCPI implementation
@@ -581,17 +582,17 @@ module ics32 #(
                 // SP defined by software
                 // .STACKADDR(32'h0001_0000),
                 
-                // this greatly helps shfit speed but is still an optional extra that could be removed
+                // Greatly helps shift speed but still an optional extra that could be removed
                 .TWO_STAGE_SHIFT(0),
 
-                // huge cell savings with this enabled
+                // Huge savings with this enabled
                 .TWO_CYCLE_ALU(1),
 
-                // moderate savings on these and not really expecting trouble with aligned C-generated code
+                // Moderate savings and not really expecting trouble with aligned C code
                 .CATCH_MISALIGN(0),
                 .CATCH_ILLINSN(0),
 
-                // this seems neutral at best even with retiming?
+                // Neutral at best even with retiming?
                 .TWO_CYCLE_COMPARE(0),
 
                 // rdcycle(h) instructions are not needed

@@ -26,7 +26,7 @@ public:
     };
 
     /// Initializes the flash model with a given maximum size.
-    QSPIFlashSim(size_t max_size = 0x1000000, MFID mfid = MFID::WINBOND) : max_size(max_size), mfid(mfid) {};
+    QSPIFlashSim(size_t max_size = 0x1000000, MFID mfid = MFID::WINBOND) : mfid(mfid), max_size(max_size) {};
 
     /// Loads the entire contents of source into the given offset in flash memory.
     /// By default, errors are logged on attempts to access flash memory outside of the loaded regions.
