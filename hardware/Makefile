@@ -55,7 +55,7 @@ endif
 ### Supported board targets:
 
 icebreaker: icebreaker.bit
-ulx3s: ulx3s.svf
+ulx3s: ulx3s.bit
 
 .PHONY: icebreaker ulx3s
 
@@ -95,14 +95,14 @@ count: $(SOURCES) $(BOOT_HEX)
 clean: boot_clean
 	rm -f \
 		$(ICEBREAKER_PREFIX).asc $(ICEBREAKER_PREFIX).rpt $(ICEBREAKER_PREFIX).bit $(ICEBREAKER_PREFIX).json \
-		$(ULX3S_PREFIX).config $(ULX3S_PREFIX).svf $(ULX3S_PREFIX).json
+		$(ULX3S_PREFIX).config $(ULX3S_PREFIX).bit $(ULX3S_PREFIX).json
 
 ### iCE40 ###
 
 %.asc: $(ICEBREAKER_PIN_DEF) %.json
 	nextpnr-ice40 --$(ICE40_DEVICE) --package $(ICE40_PACKAGE) --json $(filter-out $<,$^) --placer heap --pcf $< --asc $@ --pre-pack $(TIMING_PY) --seed 0
 
-%.bit: %.asc
+icebreaker.bit: icebreaker.asc
 	icepack $< $@
 
 icebreaker_prog: $(ICEBREAKER_PREFIX).bit
@@ -113,11 +113,11 @@ icebreaker_prog: $(ICEBREAKER_PREFIX).bit
 %.config: $(ULX3S_PIN_DEF) %.json
 	nextpnr-ecp5 --package $(ECP5_PACKAGE) --$(ECP5_SIZE)k --json $(filter-out $<,$^) --placer heap --lpf $< --textcfg $@ --pre-pack $(TIMING_PY) --seed 0
 
-%.svf: %.config
-	ecppack --input $< --svf $@
+ulx3s.bit: ulx3s.config
+	ecppack --input $< --bit $@
 
-ulx3s_prog: $(ULX3S_PREFIX).svf
-	fujprog $<
+ulx3s_prog: $(ULX3S_PREFIX).bit
+	fujprog -j flash $<
 
 .SECONDARY:
 .PHONY: main-build icebreaker_prog ulx3s_prog clean count
