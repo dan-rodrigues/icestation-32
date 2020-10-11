@@ -44,8 +44,8 @@ loop_wait_button:
     li a0, FLASH_CTRL_CSN
     sh a0, (a2)
 
-    // Activate flash, clock low
-    li a0, FLASH_CTRL_ACTIVE
+    // Activate flash, clock low, /WP and /HOLD high
+    li a0, FLASH_CTRL_ACTIVE | | (0xc << FLASH_CTRL_IN_EN_SHIFT) | 0xc
     sh a0, (a2)
 
     // Power up
@@ -178,30 +178,32 @@ spi_transfer:
     li t2, 0
 
 loop_send_spi:
-    // lower clk, set output bit
-    li a1, FLASH_CTRL_ACTIVE | (1 << FLASH_CTRL_IN_EN_SHIFT)
+    // Lower clk, drive all bits except MISO
+    // (|= 0xc) is to keep /WP and /HOLD high
+    // Winbond parts don't seem affected, ISSI parts may be
+    li a1, FLASH_CTRL_ACTIVE | (0xd << FLASH_CTRL_IN_EN_SHIFT) | 0xc
     andi t3, a0, 0x80
     add a0, a0, a0
     srli t3, t3, 7
     or a1, a1, t3
     sh a1, (a2)
 
-    // read input bit
+    // Read input bit
     add t2, t2, t2
     lh t3, (a2)
     andi t3, t3, (1 << 1)
     srli t3, t3, 1
     or t2, t2, t3
 
-    // raise clk
+    // Raise clk
     ori a1, a1, FLASH_CTRL_CLK
     sh a1, (a2)
 
     add t0, t0, 1
     bne t0, t1, loop_send_spi
 
-    // disable outputs
-    li t0, FLASH_CTRL_ACTIVE
+    // Disable outputs, except /WP and /HOLD
+    li t0, FLASH_CTRL_ACTIVE | (0xc << FLASH_CTRL_IN_EN_SHIFT) | 0xc
     sh t0, (a2)
 
     // a0 = read byte
@@ -209,12 +211,12 @@ loop_send_spi:
     
     ret
 
-// deasserts, then reasserts CSN to make the flash ready for next command
+// Deasserts, then reasserts CSN to make the flash ready for next command
 
 spi_complete_cmd:
     li t0, FLASH_CTRL_CSN | FLASH_CTRL_ACTIVE
     sh t0, (a2)
-    li t0, FLASH_CTRL_ACTIVE
+    li t0, FLASH_CTRL_ACTIVE | (0xc << FLASH_CTRL_IN_EN_SHIFT) | 0xc
     sh t0, (a2)
 
     ret
