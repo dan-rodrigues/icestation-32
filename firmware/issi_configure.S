@@ -20,6 +20,7 @@ issi_configure:
     li a0, 0x01
     jal spi_transfer
     mv a0, s0
+    jal spi_transfer
     mv ra, gp
-    j spi_transfer
+    j spi_complete_cmd
 
