@@ -11,11 +11,12 @@ _start:
 #ifdef BOOT_DISPLAY
     jal bp_print_init
 
+#ifdef BOOT_PROMPT
+    // "Press button..."
     li a0, 0x2041   
     la a1, prompt_string
     jal bp_print
 
-#ifdef BOOT_PROMPT
     sw a0, (a1)
     la a0, PAD_DATA
     la a2, LED_DATA
@@ -34,6 +35,10 @@ loop_wait_button:
     sw x0, (a2)
 #endif
 
+    // "Starting..."
+    li a0, 0x2041
+    la a1, starting_string
+    jal bp_print
 #endif
 
 // Flash configuration:
@@ -54,9 +59,7 @@ loop_wait_button:
     jal spi_complete_cmd
 
 #ifdef ASSUME_WINBOND
-
     jal gp, winbond_configure
-
 #else
 
     // Determine flash based on MFID
@@ -222,9 +225,12 @@ spi_complete_cmd:
     ret
 
 prompt_string:
-    .string "PRESS BUTTON"
+    .string "PRESS BUTTON   "
+starting_string:
+    .string "STARTING NOW   "
+
 unknown_flash_string:
-    .string "UNRECOGNIZED FLASH VENDOR "
+    .string "UNRECOGNIZED FLASH VENDOR  "
 
 winbond_flash_string:
     .string "WINBOND"
