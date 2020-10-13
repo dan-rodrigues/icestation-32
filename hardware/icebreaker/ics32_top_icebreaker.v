@@ -188,6 +188,9 @@ module ics32_top_icebreaker #(
 
     generate
         if (GAMEPAD_PMOD) begin
+            wire [1:0] pad_read_data_n;
+            assign pad_read_data = ~pad_read_data_n;
+
             // Gamepad CLK + Latch
             SB_IO #(
                 .PIN_TYPE(6'b010100),
@@ -213,7 +216,7 @@ module ics32_top_icebreaker #(
                 .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
                 .CLOCK_ENABLE(1'b1),
-                .D_IN_0(pad_read_data),
+                .D_IN_0(pad_read_data_n),
 
                 // This isn't used but nextpnr will error without this:
                 .OUTPUT_CLK(clk_2x)
