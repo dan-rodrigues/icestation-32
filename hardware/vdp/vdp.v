@@ -440,21 +440,6 @@ module vdp #(
     reg [9:0] sprites_x;
     reg [8:0] sprites_y;
 
-    reg [3:0] sprites_y_hold_counter;
-    reg sprites_y_held;
-
-    reg [8:0] sprites_y_nx;
-
-    always @* begin
-        sprites_y_nx = sprites_y;
-
-        if (frame_ended) begin
-            sprites_y_nx = 0;
-        end else if (line_ended && !sprites_y_held) begin
-            sprites_y_nx = sprites_y + 1;
-        end
-    end
-
     // alternatively instead of comparing all bits in raster_x, just check for all 1-bits
     // since it counts up and resets to 0 predictably
     wire sprites_x_start = (raster_x == (OFFSCREEN_X_TOTAL - SPRITE_START_LEAD_TIME - 1));
@@ -470,13 +455,15 @@ module vdp #(
         end
 
         sprites_x <= (sprites_x_counting ? sprites_x + 1 : SPRITE_X_INITIAL);
+    end
 
-        sprites_y <= sprites_y_nx;
-        sprites_y_hold_counter <= sprites_y_held ? sprites_y_hold_counter + 1 : 0;
-        sprites_y_held <= sprites_y_held && sprites_y_hold_counter != SPRITE_HOLD_TIME;
-
-        if (active_frame_ended) begin
-            sprites_y_held <= 1;
+    always @(posedge clk) begin
+        if (line_ended) begin
+            if (raster_y == (HEIGHT_TOTAL - 16)) begin
+                sprites_y <= 512 - 16;
+            end else begin
+                sprites_y <= sprites_y + 1;
+            end
         end
     end
 
