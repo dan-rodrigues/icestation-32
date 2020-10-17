@@ -34,8 +34,16 @@ module ics32_top_ulx3s #(
     inout usb_fpga_bd_dp,
     inout usb_fpga_bd_dn,
     output usb_fpga_pu_dp,
-    output usb_fpga_pu_dn
+    output usb_fpga_pu_dn,
+
+    output wifi_en,
+    output wifi_gpio0
 );
+    // Keep ESP32 enabled for programming through WiFi:
+
+    assign wifi_en = 1;
+    assign wifi_gpio0 = 1;
+
     // --- Clocks ---
 
     localparam integer CLK_2X_FREQ = ENABLE_WIDESCREEN ? `CLK_2X_WIDESCREEN : `CLK_2X_STANDARD;
