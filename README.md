@@ -9,10 +9,12 @@ As a retro-inspired console, it does not use framebuffers, rasterizers, shaders 
 **: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
 
 ## Video capture from ULX3S (DVI video)
+
 ![HDMI capture from ULX3S](photos/ulx3s_hdmi_capture.jpg)
 Platformer game hosted [here](https://github.com/dan-rodrigues/super-miyamoto-sprint).
 
 ## Demo running on iCEBreaker
+
 ![Demo photo](photos/main.jpg)
 Demo with placeholder assets just for illustration. This along with other similarly copyrighted assets are not published here.
 
@@ -90,6 +92,8 @@ cd software/sprites/
 make ulx3s_prog
 ```
 
+Note that fujprog can be slow to flash larger files. Programming over WiFi [https://github.com/emard/esp32ecp5](using the ESP32) can be done as a faster alternative.
+
 ### Running simulator (Verilator or CXXRTL, plus SDL2)
 
 A simulator using SDL2 and its documentation is included in the [/simulator](simulator/) directory.
@@ -103,7 +107,7 @@ Demo software and simulator screenshots are included in the [/software](software
 One of two RISC-V implementations can be selected. The implementation is chosen using the boolean `USE_VEXRISCV` parameter in the `ics32` module.
 
 * PicoRV32: Enabled when `USE_VEXRISCV=0`. This was the original choice and the rest of the system was designed around its shared bus interface. While it is not as compact as the Vex, it is much faster to run in simulators as it is fully synchronous.
-* VexRiscV (default): Enabled when `USE_VEXRISCV=1`. This was a later addition. A wrapper module is used to bridge between the Vex split IBus/DBus and the Pico-compatible shared bus. It is the more compact CPU which is especially important considering the size of the up5k target.
+* VexRiscV (default): Enabled when `USE_VEXRISCV=1`. This was a later addition. A wrapper module is used to bridge between the Vex split IBus/DBus and the Pico-compatible shared bus. It is the more compact CPU which is especially important considering the size of the UP5K target.
 
 ### Video modes
 
@@ -112,13 +116,19 @@ One of two video modes can be selected and only when the project is built. The v
 * 640x480@60hz: 25.175MHz VDP/CPU clock
 * 848x480@60hz: 33.75MHz VDP clock, 16.88MHz CPU clock
 
-Note the 848x480 video has two clock domains because the up5k cannot run the CPU at 33.75MHz and meet timing. The dual clock domain setup is automatically enabled when `ENABLE_WIDESCREEN` is set. The `FORCE_FAST_CPU` parameter is also available to force the single clock domain setup which fails timing in the 848x480 case, although the author hasn't seen it break even with substantial overclock.
+### CPU and VDP clock domains
+
+The 848x480 video mode has two clock domains because the UP5K cannot run the CPU at 33.75MHz while also  meeting timing. For the `icebreaker` target, the dual clock domain setup is automatically enabled when `ENABLE_WIDESCREEN` is set. This can otherwise be manually configured using the `ENABLE_FAST_CPU` parameter.
+
+If the `ENABLE_FAST_CPU` parameter is set, there is only one clock domain with the CPU running at the VDP clock. Otherwise, the CPU runs at half the VDP clock as shown above.
+
+The ULX3S can run the CPU at the video clock (and beyond) but it defaults to the same configuration as the iCEBreaker for consistency. This also means software running on one platform will behave identically on the other.
 
 ## Audio
 
 ### iCEBreaker
 
-The `GAMEPAD_PMOD` parameter enabels audio output on a to-be-released PMOD. This is untested.
+The `GAMEPAD_PMOD` parameter enables audio output using the 1BitSquared gamepad / audio PMOD. A stereo PDM DAC is used with this PMOD. This is the only option available for audio on the iCEBreaker.
 
 ### ULX3S
 
@@ -135,17 +145,29 @@ By default, the controller is implemented using push buttons on the PCBs. Both t
 
 ### iCEBreaker
 
-The `GAMEPAD_PMOD` parameter in the [top level module](/hardware/icebreaker/ics32_top_icebreaker.v) can be set to use the gamepad / audio PMOD rather than the 3 buttons on the breakout board. Note this hasn't been fully tested yet.
+The `GAMEPAD_PMOD` parameter in the [top level module](/hardware/icebreaker/ics32_top_icebreaker.v) can be set to use an original SNES gamepad  rather than the 3 buttons on the breakout board.
 
 ### ULX3S
 
-The `ENABLE_USB_GAMEPAD` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) can be used to optional enable a USB gamepad on port US2. HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
+The `ENABLE_USB_GAMEPAD` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) can be set to enable a USB gamepad on port US2. HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
+
+The `USB_GAMEPAD_LED` parameter can also be set to show some of USB button inputs. There are only 8 LEDs so not all can be seen at once. The CPU controlled LED state is otherwise shown.
+
+## Resource usage
+
+The logic resources used can vary a lot based on which commit was used to build yosys. This can break UP5K builds if the LC usage is too high.
+
+yosys commit [c75d8c74](https://github.com/YosysHQ/yosys/commit/c75d8c74) produces this result which fits and routes reasonably quick:
+
+```
+Info: Device utilisation:
+Info: 	         ICESTORM_LC:  4790/ 5280    90%
+```
 
 ## TODO
 
 * A better README file!
 * Many bits of cleanup and optimization
 * Support for more USB gamepads
-* Confirmed working support for original SNES gamepad (using PMOD)
 * Confirm ULX3S boards with ISSI flash work as expected
 
