@@ -53,7 +53,7 @@ endif
 
 CFLAGS := \
 	-std=c11 \
-	-Wall $(OPT_LEVEL) -MMD -MP -flto -march=rv32i -mabi=ilp32 \
+	-Wall -Wextra $(OPT_LEVEL) -MMD -MP -flto -march=rv32i -mabi=ilp32 \
 	-I$(MK_DIR)../common/ -I$(MK_DIR)../lib/ -I./ \
 	-ffreestanding -nostdlib
 
