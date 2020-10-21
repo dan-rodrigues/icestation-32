@@ -14,23 +14,19 @@
 
 // this converts the 1bpp font tiles to the required 4bpp color format
 
-static void upload_font_remapped_main(uint16_t vram_base, uint8_t transparent, uint8_t opaque, const char font[][8]);
-
 void upload_font(uint16_t vram_base) {
     upload_font_remapped(vram_base, 0, 1);
 }
 
 void upload_font_minimal(uint16_t vram_base) {
-    upload_font_remapped_main(vram_base, 0, 1, font8x8_minimal);
+    upload_font_remapped_main(vram_base, 0, 1, font8x8_minimal, sizeof(font8x8_minimal)/8);
 }
 
 void upload_font_remapped(uint16_t vram_base, uint8_t transparent, uint8_t opaque) {
-    upload_font_remapped_main(vram_base, transparent, opaque, font8x8_basic);
+    upload_font_remapped_main(vram_base, transparent, opaque, font8x8_basic, sizeof(font8x8_basic)/8);
 }
 
-void upload_font_remapped_main(uint16_t vram_base, uint8_t transparent, uint8_t opaque, const char font[][8]) {
-    const uint16_t char_total = 128;
-
+void upload_font_remapped_main(uint16_t vram_base, uint8_t transparent, uint8_t opaque, const char font[][8], uint16_t char_total) {
     vdp_seek_vram(vram_base);
     vdp_set_vram_increment(1);
 
