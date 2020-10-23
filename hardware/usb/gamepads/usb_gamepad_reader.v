@@ -42,6 +42,15 @@ module usb_gamepad_reader #(
             );
         end
 
+        if (GAMEPAD == "WINGMAN") begin
+            usbh_report_decoder_wingman usbh_report_decoder(
+                .i_clk(clk),
+                .i_report(S_report),
+                .i_report_valid(S_report_valid),
+                .o_btn(usb_btn)
+            );
+        end
+
         // (...more gamepads)
 
     endgenerate
