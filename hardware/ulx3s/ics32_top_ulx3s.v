@@ -10,7 +10,12 @@
 
 module ics32_top_ulx3s #(
     // Set to one of "PCB", "USB" or "BLUETOOTH"
-    parameter GAMEPAD_SOURCE = "BLUETOOTH",
+    parameter GAMEPAD_SOURCE = "PCB",
+
+    // Selects USB gamepad HID report decoder
+    // Ignored if GAMEPAD_SOURCE != "USB")
+    parameter USB_GAMEPAD = "BUFFALO",
+
     parameter [0:0] GAMEPAD_LED = 0,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0
@@ -260,97 +265,43 @@ module ics32_top_ulx3s #(
     // The mock_gamepad above is driven by gamepad data from one of the sources below.
     // GAMEPAD_SOURCE is used to detmine which one:
 
-    generate
-        if (GAMEPAD_SOURCE == "BLUETOOTH") begin
-            // ESP32 + Bluetooth gamepads
+    ulx3s_gamepad_state #(
+        .GAMEPAD_SOURCE(GAMEPAD_SOURCE),
+        .USB_GAMEPAD(USB_GAMEPAD)
+    ) gamepad_state (
+        .clk(clk_2x),
+        .reset(reset_2x),
 
-            // Inputs:
+        // ESP32:
 
-            reg [2:0] esp_sync_ff [0:1];
+        .esp32_en(wifi_en),
+        .esp32_gpio0(wifi_gpio0),
+        .esp32_gpio12(wifi_gpio12),
 
-            wire esp_spi_mosi = esp_sync_ff[1][2];
-            wire esp_spi_clk = esp_sync_ff[1][1];
-            wire esp_spi_csn = esp_sync_ff[1][0];
+        .esp32_gpio2(wifi_gpio2),
+        .esp32_gpio16(wifi_gpio16),
+        .esp32_gpio4(wifi_gpio4),
 
-            always @(posedge clk_2x) begin
-                esp_sync_ff[1] <= esp_sync_ff[0];
-                esp_sync_ff[0] <= {wifi_gpio4, wifi_gpio16, wifi_gpio2};
-            end
+        // USB:
 
-            // Debouncer (only needed for ESP32 reset):
+        .clk_usb(clk_usb),
+        .usb_reset(!pll_locked_usb),
 
-            wire esp32_reset;
+        .usb_dif(usb_fpga_dp),
+        .usb_dp(usb_fpga_bd_dp),
+        .usb_dn(usb_fpga_bd_dn),
 
-            debouncer #(
-                .BTN_COUNT(1)
-            ) esp32_reset_debouncer (
-                .clk(clk_2x),
-                .reset(reset_2x),
+        .usb_pu_dp(usb_fpga_pu_dp),
+        .usb_pu_dn(usb_fpga_pu_dn),
 
-                .btn(!btn[0]),
-                .level(esp32_reset),
-            );
+        // PCB:
 
-            // SPI gamepad reader:
+        .btn(btn),
 
-            esp32_spi_gamepad esp32_spi_gamepad(
-                .clk(clk_2x),
-                .reset(reset_2x),
+        // Selected gamepad state:
 
-                .user_reset(esp32_reset),
-                .esp32_en(wifi_en),
-                .esp32_gpio0(wifi_gpio0),
-                .esp32_gpio12(wifi_gpio12),
-
-                .spi_csn(esp_spi_csn),
-                .spi_clk(esp_spi_clk),
-                .spi_mosi(esp_spi_mosi),
-
-                .pad_btn(pad_btn)
-            );
-        end else begin
-            // Keep ESP32 enabled for programming through WiFi:
-
-            assign wifi_en = 1;
-            assign wifi_gpio0 = 1;
-
-            if (GAMEPAD_SOURCE == "USB") begin
-                // USB gamepad (US2):
-
-                assign usb_fpga_pu_dp = 1'b0;
-                assign usb_fpga_pu_dn = 1'b0;
-
-                wire [11:0] usb_btn;
-
-                usb_gamepad_reader usb_gamepad_reader(
-                    .clk(clk_usb),
-                    .reset(~pll_locked_usb),
-
-                    .usb_dif(usb_fpga_dp),
-                    .usb_dp(usb_fpga_bd_dp),
-                    .usb_dn(usb_fpga_bd_dn),
-
-                    .usb_btn(usb_btn)
-                );
-
-                reg [11:0] buttons_cdc [0:1];
-                wire [11:0] pad_btn = buttons_cdc[1];
-
-                always @(posedge clk_2x) begin
-                    buttons_cdc[1] <= buttons_cdc[0];
-                    buttons_cdc[0] <= usb_btn;
-                end
-            end else if (GAMEPAD_SOURCE == "PCB") begin
-                // PCB buttons:
-
-                assign pad_btn = {btn[6], btn[5], btn[4], btn[3], 1'b0, !btn[0], btn[1], btn[2]};
-            end else begin
-                // GAMEPAD_SOURCE not set correctly so error out.
-                // Doesn't seem to be a nicer way to do this in Verilog-2005
-                non_existant_module GAMEPAD_SOURCE_INVALID_PARAMETER();
-            end
-        end
-    endgenerate
+        .pad_btn(pad_btn)
+    );
 
     // --- icestation-32 ---
 

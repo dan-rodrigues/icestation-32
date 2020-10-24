@@ -77,6 +77,7 @@ ULX3S_SOURCES := \
 		dacpwm.v \
 		spdif_tx.v \
 		esp32_spi_gamepad.v \
+		ulx3s_gamepad_state.v \
 		../common/spram_256k.v \
 	)
 
