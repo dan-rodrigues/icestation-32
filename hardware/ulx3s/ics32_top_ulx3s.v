@@ -264,7 +264,7 @@ module ics32_top_ulx3s #(
         if (GAMEPAD_SOURCE == "BLUETOOTH") begin
             // ESP32 + Bluetooth gamepads
 
-            // Iinputs:
+            // Inputs:
 
             reg [2:0] esp_sync_ff [0:1];
 
@@ -287,7 +287,7 @@ module ics32_top_ulx3s #(
                 .clk(clk_2x),
                 .reset(reset_2x),
 
-                .btn(btn[0]),
+                .btn(!btn[0]),
                 .level(esp32_reset),
             );
 

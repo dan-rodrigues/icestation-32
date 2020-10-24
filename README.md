@@ -149,9 +149,17 @@ The `GAMEPAD_PMOD` parameter in the [top level module](/hardware/icebreaker/ics3
 
 ### ULX3S
 
-The `ENABLE_USB_GAMEPAD` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) can be set to enable a USB gamepad on port US2. HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
+The `GAMEPAD_SOURCE` parameter in the [top level module](/hardware/ulx3s/ics32_top_ulx3s.v) sets the controller input. This string must be set to one of three values:
 
-The `USB_GAMEPAD_LED` parameter can also be set to show some of USB button inputs. There are only 8 LEDs so not all can be seen at once. The CPU controlled LED state is otherwise shown.
+* `PCB`: PCB buttons (default, limited inputs)
+* `USB`: USB gamepad (if the gamepad to be used has a corresponding HID report decoder)
+* `BLUETOOTH`: Bluetooth gamepad
+
+For the `USB` option, HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
+
+For the `BLUETOOTH` option, an ESP32 program must be flashed first. A [separate repo](https://github.com/dan-rodrigues/ulx3s-bluetooth-gamepad) has the instructions on setting this up. The `BLUETOOTH` option will not do anything useful unless the ESP32 program in the linked repo is flashed first.
+
+The `GAMEPAD_LED` parameter can also be set to show some some of the current button inputs. There are only 8 LEDs so not all can be seen at once. The CPU controlled LED state is otherwise shown.
 
 ## Resource usage
 
