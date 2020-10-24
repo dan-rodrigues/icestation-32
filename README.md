@@ -157,7 +157,7 @@ The `GAMEPAD_SOURCE` parameter in the [top level module](/hardware/ulx3s/ics32_t
 
 For the `USB` option, HID report descriptors aren't parsed so a fixed layout is assumed. More gamepads can be added over time since the only addition needed is a HID report decoder.
 
-For the `BLUETOOTH` option, an ESP32 program must be flashed first. A [separate repo](https://github.com/dan-rodrigues/ulx3s-bluetooth-gamepad) has the instructions on setting this up. The `BLUETOOTH` option will not do anything useful unless the ESP32 program in the linked repo is flashed first.
+For the `BLUETOOTH` option, an ESP32 program must be flashed first. A [separate repo](https://github.com/dan-rodrigues/ulx3s-bluetooth-gamepad) has the instructions on setting this up. The `BLUETOOTH` option will not do anything useful unless the ESP32 program in the linked repo is flashed first. If there's issues getting a Bluetooth gamepad to connect, pressing button 0 will reset the ESP32 (without resetting the rest of the system). This usually fixes any connection problems.
 
 The `GAMEPAD_LED` parameter can also be set to show some some of the current button inputs. There are only 8 LEDs so not all can be seen at once. The CPU controlled LED state is otherwise shown.
 

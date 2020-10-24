@@ -334,7 +334,7 @@ module ics32_top_ulx3s #(
                 );
 
                 reg [11:0] buttons_cdc [0:1];
-                wire [11:0] usb_btn_cdc = buttons_cdc[1];
+                wire [11:0] pad_btn = buttons_cdc[1];
 
                 always @(posedge clk_2x) begin
                     buttons_cdc[1] <= buttons_cdc[0];
