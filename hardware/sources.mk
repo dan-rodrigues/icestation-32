@@ -75,6 +75,7 @@ ULX3S_SOURCES := \
 		hdmi_encoder.v \
 		dacpwm.v \
 		spdif_tx.v \
+		esp32_spi_gamepad.v \
 		../common/spram_256k.v \
 	)
 
