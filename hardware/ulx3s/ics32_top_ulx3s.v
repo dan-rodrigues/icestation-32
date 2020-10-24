@@ -9,8 +9,9 @@
 `include "clocks.vh"
 
 module ics32_top_ulx3s #(
-    parameter [0:0] ENABLE_USB_GAMEPAD = 0,
-    parameter [0:0] USB_GAMEPAD_LED = 0,
+    // Set to one of "PCB", "USB" or "BLUETOOTH"
+    parameter GAMEPAD_SOURCE = "BLUETOOTH",
+    parameter [0:0] GAMEPAD_LED = 0,
     parameter [0:0] ENABLE_WIDESCREEN = 1,
     parameter [0:0] ENABLE_FAST_CPU = 0
 ) (
@@ -37,13 +38,13 @@ module ics32_top_ulx3s #(
     output usb_fpga_pu_dn,
 
     output wifi_en,
-    output wifi_gpio0
+    output wifi_gpio0,
+    output wifi_gpio12,
+
+    input wifi_gpio4,
+    input wifi_gpio16,
+    input wifi_gpio2
 );
-    // Keep ESP32 enabled for programming through WiFi:
-
-    assign wifi_en = 1;
-    assign wifi_gpio0 = 1;
-
     // --- Clocks ---
 
     localparam integer CLK_2X_FREQ = ENABLE_WIDESCREEN ? `CLK_2X_WIDESCREEN : `CLK_2X_STANDARD;
@@ -235,30 +236,16 @@ module ics32_top_ulx3s #(
         .USRMCLKTS(1'b0)
     );
 
-    // --- USB gamepad (US2) ---
-
-    assign usb_fpga_pu_dp = 1'b0;
-    assign usb_fpga_pu_dn = 1'b0;
-
-    wire [11:0] usb_btn;
-
-    usb_gamepad_reader usb_gamepad_reader(
-        .clk(clk_usb),
-        .reset(~pll_locked_usb),
-
-        .usb_dif(usb_fpga_dp),
-        .usb_dp(usb_fpga_bd_dp),
-        .usb_dn(usb_fpga_bd_dn),
-
-        .usb_btn(usb_btn)
-    );
-
     // --- Gamepad reading ---
 
-    wire [11:0] pcb_btn = {btn[6], btn[5], btn[4], btn[3], 1'b0, !btn[0], btn[1], btn[2]};
-    wire [11:0] pad_btn = ENABLE_USB_GAMEPAD ? usb_btn_cdc : pcb_btn;
-
+    wire [11:0] pad_btn;
     wire [1:0] pad_read_data;
+
+    // P2 input is used as a special user button
+    // (This needs to move if an actual P2 is needed)
+
+    wire btn_u = btn[3];
+    assign pad_read_data[1] = btn_u;
 
     mock_gamepad mock_gamepad(
         .clk(clk_2x),
@@ -270,21 +257,106 @@ module ics32_top_ulx3s #(
         .pad_out(pad_read_data[0])
     );
 
-    // P2 input is used as a special user button
-    wire btn_u = btn[3];
-    assign pad_read_data[1] = btn_u;
+    // The mock_gamepad above is driven by gamepad data from one of the sources below.
+    // GAMEPAD_SOURCE is used to detmine which one:
 
-    reg [11:0] buttons_cdc [0:1];
-    wire [11:0] usb_btn_cdc = buttons_cdc[1];
+    generate
+        if (GAMEPAD_SOURCE == "BLUETOOTH") begin
+            // ESP32 + Bluetooth gamepads
 
-    always @(posedge clk_2x) begin
-        buttons_cdc[1] <= buttons_cdc[0];
-        buttons_cdc[0] <= usb_btn;
-    end
+            // Iinputs:
+
+            reg [2:0] esp_sync_ff [0:1];
+
+            wire esp_spi_mosi = esp_sync_ff[1][2];
+            wire esp_spi_clk = esp_sync_ff[1][1];
+            wire esp_spi_csn = esp_sync_ff[1][0];
+
+            always @(posedge clk_2x) begin
+                esp_sync_ff[1] <= esp_sync_ff[0];
+                esp_sync_ff[0] <= {wifi_gpio4, wifi_gpio16, wifi_gpio2};
+            end
+
+            // Debouncer (only needed for ESP32 reset):
+
+            wire esp32_reset;
+
+            debouncer #(
+                .BTN_COUNT(1)
+            ) esp32_reset_debouncer (
+                .clk(clk_2x),
+                .reset(reset_2x),
+
+                .btn(btn[0]),
+                .level(esp32_reset),
+            );
+
+            // SPI gamepad reader:
+
+            esp32_spi_gamepad esp32_spi_gamepad(
+                .clk(clk_2x),
+                .reset(reset_2x),
+
+                .user_reset(esp32_reset),
+                .esp32_en(wifi_en),
+                .esp32_gpio0(wifi_gpio0),
+                .esp32_gpio12(wifi_gpio12),
+
+                .spi_csn(esp_spi_csn),
+                .spi_clk(esp_spi_clk),
+                .spi_mosi(esp_spi_mosi),
+
+                .pad_btn(pad_btn)
+            );
+        end else begin
+            // Keep ESP32 enabled for programming through WiFi:
+
+            assign wifi_en = 1;
+            assign wifi_gpio0 = 1;
+
+            if (GAMEPAD_SOURCE == "USB") begin
+                // USB gamepad (US2):
+
+                assign usb_fpga_pu_dp = 1'b0;
+                assign usb_fpga_pu_dn = 1'b0;
+
+                wire [11:0] usb_btn;
+
+                usb_gamepad_reader usb_gamepad_reader(
+                    .clk(clk_usb),
+                    .reset(~pll_locked_usb),
+
+                    .usb_dif(usb_fpga_dp),
+                    .usb_dp(usb_fpga_bd_dp),
+                    .usb_dn(usb_fpga_bd_dn),
+
+                    .usb_btn(usb_btn)
+                );
+
+                reg [11:0] buttons_cdc [0:1];
+                wire [11:0] usb_btn_cdc = buttons_cdc[1];
+
+                always @(posedge clk_2x) begin
+                    buttons_cdc[1] <= buttons_cdc[0];
+                    buttons_cdc[0] <= usb_btn;
+                end
+            end else if (GAMEPAD_SOURCE == "PCB") begin
+                // PCB buttons:
+
+                assign pad_btn = {btn[6], btn[5], btn[4], btn[3], 1'b0, !btn[0], btn[1], btn[2]};
+            end else begin
+                // GAMEPAD_SOURCE not set correctly so error out.
+                // Doesn't seem to be a nicer way to do this in Verilog-2005
+                non_existant_module GAMEPAD_SOURCE_INVALID_PARAMETER();
+            end
+        end
+    endgenerate
 
     // --- icestation-32 ---
 
-    assign led = USB_GAMEPAD_LED ? usb_btn : status_led;
+    assign led = GAMEPAD_LED ? pad_btn : status_led;
+
+    wire reset_1x, reset_2x;
 
     wire flash_csn_io;
     wire [1:0] flash_clk_ddr;
@@ -311,6 +383,9 @@ module ics32_top_ulx3s #(
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
         .pll_locked(pll_locked),
+
+        .reset_1x(reset_1x),
+        .reset_2x(reset_2x),
 
         .vga_r(vga_r),
         .vga_g(vga_g),

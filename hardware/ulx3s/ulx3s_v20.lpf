@@ -116,20 +116,30 @@ IOBUF  PORT "flash_io[2]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 ## SD card "sdcard", "usb" sheet
 LOCATE COMP "sd_clk" SITE "H2"; # sd_clk WiFi_GPIO14
 LOCATE COMP "sd_cmd" SITE "J1"; # sd_cmd_di (MOSI) WiFi GPIO15
-LOCATE COMP "sd_d[0]" SITE "J3"; # sd_dat0_do (MISO) WiFi GPIO2
-LOCATE COMP "sd_d[1]" SITE "H1"; # sd_dat1_irq WiFi GPIO4
-LOCATE COMP "sd_d[2]" SITE "K1"; # sd_dat2 WiFi_GPIO12
-LOCATE COMP "sd_d[3]" SITE "K2"; # sd_dat3_csn WiFi_GPIO13
+LOCATE COMP "wifi_gpio2" SITE "J3"; # sd_dat0_do (MISO) WiFi GPIO2
+LOCATE COMP "wifi_gpio4" SITE "H1"; # sd_dat1_irq WiFi GPIO4
+LOCATE COMP "wifi_gpio12" SITE "K1"; # sd_dat2 WiFi_GPIO12
+LOCATE COMP "wifi_gpio13" SITE "K2"; # sd_dat3_csn WiFi_GPIO13
+
+# LOCATE COMP "sd_d[0]" SITE "J3"; # sd_dat0_do (MISO) WiFi GPIO2
+# LOCATE COMP "sd_d[1]" SITE "H1"; # sd_dat1_irq WiFi GPIO4
+# LOCATE COMP "sd_d[2]" SITE "K1"; # sd_dat2 WiFi_GPIO12
+# LOCATE COMP "sd_d[3]" SITE "K2"; # sd_dat3_csn WiFi_GPIO13
+
 LOCATE COMP "sd_wp" SITE "P5"; # not connected
 LOCATE COMP "sd_cdn" SITE "N5"; # not connected
 IOBUF  PORT "sd_clk" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 IOBUF  PORT "sd_cmd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
-IOBUF  PORT "sd_d[0]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
-IOBUF  PORT "sd_d[1]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
-IOBUF  PORT "sd_d[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4; # WiFi GPIO12 pulldown bootstrapping requirement
-IOBUF  PORT "sd_d[3]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
-IOBUF  PORT "sd_wp" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
-IOBUF  PORT "sd_cdn" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+
+IOBUF  PORT "wifi_gpio2" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "wifi_gpio4" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF  PORT "wifi_gpio12" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4; # WiFi GPIO12 pulldown bootstrapping requirement
+IOBUF  PORT "wifi_gpio13" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+
+# IOBUF  PORT "sd_d[0]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+# IOBUF  PORT "sd_d[1]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+# IOBUF  PORT "sd_d[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4; # WiFi GPIO12 pulldown bootstrapping requirement
+# IOBUF  PORT "sd_d[3]" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 
 ## ADC SPI (MAX11123) "analog", "ram" sheet
 LOCATE COMP "adc_csn" SITE "R17";
