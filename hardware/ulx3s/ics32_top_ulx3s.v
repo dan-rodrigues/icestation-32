@@ -13,7 +13,7 @@ module ics32_top_ulx3s #(
     parameter GAMEPAD_SOURCE = "PCB",
 
     // Selects USB gamepad HID report decoder
-    // Ignored if GAMEPAD_SOURCE != "USB")
+    // Ignored if (GAMEPAD_SOURCE != "USB")
     parameter USB_GAMEPAD = "BUFFALO",
 
     parameter [0:0] GAMEPAD_LED = 0,

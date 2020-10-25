@@ -92,7 +92,7 @@ cd software/sprites/
 make ulx3s_prog
 ```
 
-Note that fujprog can be slow to flash larger files. Programming over WiFi [https://github.com/emard/esp32ecp5](using the ESP32) can be done as a faster alternative.
+Note that fujprog can be slow to flash larger files. Programming over WiFi [using the ESP32](https://github.com/emard/esp32ecp5) can be done as a faster alternative.
 
 ### Running simulator (Verilator or CXXRTL, plus SDL2)
 
