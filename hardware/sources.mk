@@ -14,6 +14,7 @@ SOURCES := \
 	ics_adpcm.v \
  	cop_ram.v \
  	mock_gamepad.v \
+ 	debouncer.v \
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \
@@ -75,6 +76,8 @@ ULX3S_SOURCES := \
 		hdmi_encoder.v \
 		dacpwm.v \
 		spdif_tx.v \
+		esp32_spi_gamepad.v \
+		ulx3s_gamepad_state.v \
 		../common/spram_256k.v \
 	)
 
