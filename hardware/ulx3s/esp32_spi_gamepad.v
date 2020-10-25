@@ -34,9 +34,9 @@ module esp32_spi_gamepad #(
     assign esp32_en = !user_reset;
 
     // ESP32 "strapping pins" for boot:
-    // Serial console shows ESP32 stuck in reset loop
     // MTDI (GPIO12) apparently has pull down in ESP32 but still need this for whatever reason
-    
+    // Serial console shows ESP32 stuck in reset loop otherwise
+
     // GPIO0 = 1 (SPI flash boot, instead of serial bootloader)
     assign esp32_gpio0 = 1;
 
