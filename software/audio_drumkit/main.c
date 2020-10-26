@@ -67,7 +67,7 @@ int main() {
         ch->volumes.right = volume;
     }
 
-    uint16_t p1_pad_edge, p1_pad;
+    uint16_t p1_pad_edge = 0, p1_pad = 0;
 
     // Play channels according to user input
 

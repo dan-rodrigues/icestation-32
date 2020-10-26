@@ -23,7 +23,7 @@ static void seek_update() {
     vdp_seek_vram(current_vram_base + address);
 }
 
-static void vdp_putc(void *p, char c) {
+static void vdp_putc(__attribute__((unused)) void *p, char c) {
     uint16_t map = c & 0xff;
     map |= current_palette_mask;
 
