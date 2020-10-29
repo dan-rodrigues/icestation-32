@@ -8,9 +8,7 @@
 
 `include "debug.vh"
 
-module vdp_host_interface #(
-    parameter USE_8BIT_BUS = 0
-) (
+module vdp_host_interface(
     input clk,
     input reset,
 
@@ -41,18 +39,12 @@ module vdp_host_interface #(
     output reg [4:0] read_address
 );
     reg host_write_en_r;
+    reg host_write_pending;
     reg host_read_en_r;
 
-    // only used in 8bit mode
-    reg [7:0] host_write_data_r;
-    reg [6:0] host_address_r;
-    
-    wire host_write_en_gated = host_write_en && !vram_write_pending && !pending;
+    wire host_write_en_gated = host_write_en && !host_write_pending && !vram_write_pending;
 
     always @(posedge clk) begin
-        host_address_r <= host_address;
-        host_write_data_r <= host_write_data;
-
         host_write_en_r <= host_write_en;
         host_read_en_r <= host_read_en;
     end
@@ -60,56 +52,39 @@ module vdp_host_interface #(
     always @(posedge clk) begin
         // Reads use the registered input as a 1 cycle delay is required before output valid
         // Writes only need to be delayed if a subsequent write risks clobbering VRAM
-        ready <= ((host_write_en_gated) || host_read_en_r);
+        ready <= (host_write_en_gated || host_read_en_r);
     end
-
-    reg [7:0] data_t;
-
-    reg pending;
 
     always @(posedge clk) begin
         if (reset) begin
             register_write_en <= 0;
-            data_t <= 0;
-            pending <= 0;
-        end else if (USE_8BIT_BUS) begin
-            if (host_address_r[0]) begin
-                register_write_en <= host_write_en_gated;
-
-                data_t <= 0;
-            end else begin
-                data_t <= host_write_data_r[7:0];
-                register_write_en <= 0;
-            end
         end else begin
-            register_write_en <= cop_write_en || (host_write_en_gated);
+            register_write_en <= cop_write_en || host_write_en_gated;
+        end
+    end
 
-            pending <= pending || host_write_en_gated;
-            if (pending && !host_write_en) begin
-                pending <= 0;
+    always @(posedge clk) begin
+        if (reset) begin
+            host_write_pending <= 0;
+        end else begin
+            host_write_pending <= host_write_pending || host_write_en_gated;
+            if (host_write_pending && !host_write_en) begin
+                host_write_pending <= 0;
             end
         end
     end
 
     always @(posedge clk) begin
-        if (USE_8BIT_BUS) begin
-            if (host_write_en && host_address_r[0]) begin
-                register_write_data <= {host_write_data_r[7:0], data_t};
-                register_write_address <= host_address_r[5:1];
-            end
+        if (host_write_en) begin
+            register_write_address <= host_address;
+            register_write_data <= host_write_data;
         end else begin
-            // If there's a conflict, prioritize CPU
-            if (host_write_en) begin
-                register_write_address <= host_address;
-                register_write_data <= host_write_data;
-            end else begin
-                register_write_address <= cop_write_address;
-                register_write_data <= cop_write_data;
-            end
-
-            // CPU is always free to read
-            read_address <= host_address_r;
+            register_write_address <= cop_write_address;
+            register_write_data <= cop_write_data;
         end
+
+        // CPU is always free to read
+        read_address <= host_address;
     end
 
     always @(posedge clk) begin
