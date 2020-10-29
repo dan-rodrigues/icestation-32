@@ -147,6 +147,7 @@ module vdp #(
 
         .host_read_en(host_read_en),
         .ready(host_ready),
+        .vram_write_pending(vram_write_pending),
 
         .host_write_en(host_write_en),
         .register_write_en(register_write_en),
@@ -588,7 +589,7 @@ module vdp #(
         .raster_x(raster_x),
         .raster_y(raster_y),
 
-        // Scroll atrributes
+        // Scroll attributes
 
         .scroll_x_0(scroll_x[0]), .scroll_x_1(scroll_x[1]), .scroll_x_2(scroll_x[2]), .scroll_x_3(scroll_x[3]),
         .scroll_y_0(scroll_y[0]), .scroll_y_1(scroll_y[1]), .scroll_y_2(scroll_y[2]), .scroll_y_3(scroll_y[3]),

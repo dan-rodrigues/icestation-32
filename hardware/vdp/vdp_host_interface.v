@@ -16,6 +16,7 @@ module vdp_host_interface #(
 
     input [5:0] host_address,
     output reg [4:0] register_write_address,
+    input vram_write_pending,
 
     // Writes..
 
@@ -46,6 +47,8 @@ module vdp_host_interface #(
     reg [7:0] host_write_data_r;
     reg [6:0] host_address_r;
     
+    wire host_write_en_gated = host_write_en && !vram_write_pending && !pending;
+
     always @(posedge clk) begin
         host_address_r <= host_address;
         host_write_data_r <= host_write_data;
@@ -55,19 +58,23 @@ module vdp_host_interface #(
     end
 
     always @(posedge clk) begin
-        // There are no additional wait cycles, except the one added by using the registered inputs
-        ready <= (host_write_en_r || host_read_en_r);
+        // Reads use the registered input as a 1 cycle delay is required before output valid
+        // Writes only need to be delayed if a subsequent write risks clobbering VRAM
+        ready <= ((host_write_en_gated) || host_read_en_r);
     end
 
     reg [7:0] data_t;
+
+    reg pending;
 
     always @(posedge clk) begin
         if (reset) begin
             register_write_en <= 0;
             data_t <= 0;
+            pending <= 0;
         end else if (USE_8BIT_BUS) begin
             if (host_address_r[0]) begin
-                register_write_en <= host_write_en_r;
+                register_write_en <= host_write_en_gated;
 
                 data_t <= 0;
             end else begin
@@ -75,13 +82,18 @@ module vdp_host_interface #(
                 register_write_en <= 0;
             end
         end else begin
-            register_write_en <= cop_write_en || (host_write_en && !host_write_en_r);
+            register_write_en <= cop_write_en || (host_write_en_gated);
+
+            pending <= pending || host_write_en_gated;
+            if (pending && !host_write_en) begin
+                pending <= 0;
+            end
         end
     end
 
     always @(posedge clk) begin
         if (USE_8BIT_BUS) begin
-            if (host_write_en_r && host_address_r[0]) begin
+            if (host_write_en && host_address_r[0]) begin
                 register_write_data <= {host_write_data_r[7:0], data_t};
                 register_write_address <= host_address_r[5:1];
             end
