@@ -4,6 +4,8 @@ This is a compact open-source FPGA game console targetting the Lattice iCE40 Ult
 
 As a retro-inspired console, it does not use framebuffers, rasterizers, shaders etc. It uses character maps, sprites and raster effects to implement various effects. This allows it to render 480p scenes from 64KByte.
 
+It is feature-complete and confirmed working on both the iCEBreaker and ULX3S targets. Remaining work is mainly cleanup, adding more supported gamepads, more demos and possibly other optional non-core features.
+
 *: Only the ECP5-45F and 85F have the 128kbyte of block RAM required. It's been confirmed working on boards with Winbond flash but thought to work on others too. Potentially boards with a 25F can be supported by moving the CPU RAM to external memory.
 
 **: iCEBreaker requires the additional 12bpp HDMI PMOD for video output. On the ULX3S, the onboard GPDI port is used for video output.
