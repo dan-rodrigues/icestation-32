@@ -99,7 +99,7 @@ module ics32_top_icebreaker #(
         .clk_2x(clk_2x)
     );
 
-    // --- HDMI (PMOD with DVI over HDMI port) ---
+    // --- DVI video (dual PMOD with HDMI compatible port) ---
 
     // CLK
 

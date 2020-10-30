@@ -147,26 +147,6 @@ module vdp_sprite_raster_collision #(
         width_select_out <= width_select_d;
     end
 
-// FIXME: this logging is outdated
-
-`ifdef LOG_SPRITES
-
-    always @(posedge clk) begin
-        if (!finished) begin
-            $display("COL: reading sprite: %h @ %0t", sprite_test_id, $time);
-
-            if (has_collision && output_valid) begin
-                $display("COL: hit sprite %h (intersect %h) @ %0t", sprite_id, sprite_y_intersect, $time);
-            end else begin
-                // ...
-            end
-        end else if (!finished && finished_t) begin
-            $display("COL: finished @ %0t", $time);
-        end
-    end
-
-`endif
-
 `ifdef FORMAL
 
     reg past_valid = 0;

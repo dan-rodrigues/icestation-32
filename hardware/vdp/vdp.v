@@ -16,7 +16,7 @@ module vdp #(
     input clk,
     input reset,
 
-    // host interface
+    // Host interface
 
     input [15:0] host_address,
     
@@ -38,7 +38,7 @@ module vdp #(
 
     output active_display,
 
-    // single-cycle strobes, NOT suitable for VGA
+    // Single-cycle strobes, NOT suitable for VGA
 
     output line_ended,
     output frame_ended,

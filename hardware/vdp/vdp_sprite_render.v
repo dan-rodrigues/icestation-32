@@ -43,20 +43,6 @@ module vdp_sprite_render(
     input width_select,
     input hit_list_ended
 );
-    // verilator lint_off UNUSED
-    reg finished;
-    // verilator lint_on UNUSED
-
-    wire hit_list_end_reached = x_block_finished;
-
-    always @(posedge clk) begin
-        if (restart) begin
-            finished <= 0;
-        end else if (hit_list_end_reached) begin
-            finished <= 1;
-        end
-    end
-
     // --- Hit list reading ---
 
     reg [7:0] sprite_id_r;
@@ -65,11 +51,11 @@ module vdp_sprite_render(
     reg hit_list_ended_r;
 
     reg hit_list_data_valid;
-
     reg hit_list_input_valid;
-    wire hit_list_ready = hit_list_input_valid && hit_list_dependency_ready;
 
+    wire hit_list_ready = hit_list_input_valid && hit_list_dependency_ready;
     wire hit_list_dependency_ready = x_block_ready;
+    wire hit_list_end_reached = x_block_finished;
 
     always @(posedge clk) begin
         if (hit_list_ready) begin
@@ -97,26 +83,6 @@ module vdp_sprite_render(
             end
         end
     end
-
-`ifdef LOG_SPRITES
-
-    always @(posedge clk) begin
-        if (!restart && hit_list_data_valid && !finished) begin
-            if (hit_list_ended_r) begin
-                $display("BLIT: hit list end reached [%h]",
-                    hit_list_read_address
-                );
-            end else begin
-                $display("BLIT: hit list data in: (sprite %h, row: %h) = [%h]",
-                    sprite_id_r,
-                    line_offset_r,
-                    hit_list_read_address
-                );
-            end
-        end
-    end
-
-`endif
 
     // --- Sprite x_block / g_block reading ---
 
@@ -191,20 +157,6 @@ module vdp_sprite_render(
             x_block_data_valid <= 0;
         end
     end
-
-`ifdef LOG_SPRITES
-
-    always @(posedge clk) begin
-        if (!restart && !finished && x_block_data_valid) begin
-            $display("BLIT: x block data in: (sprite %h, x: %h) = [%h]",
-                sprite_id_r,
-                x_block_read_data_r,
-                hit_list_read_address
-            );
-        end
-    end
-
-`endif
 
     // --- VRAM sprite row fetching ---
 
@@ -301,20 +253,6 @@ module vdp_sprite_render(
         end
     end
 
-`ifdef LOG_SPRITES
-
-    // FIXME: noisy
-    always @(posedge clk) begin
-        if (!restart && sprite_row_is_valid && !finished) begin
-            $display("BLIT: prefetch data in: (row: %h) = [%h]",
-                vf_row_prefetched,
-                vram_read_address
-            );
-        end
-    end
-
-`endif
-
     // --- Blitter ---
 
     wire blitter_input_valid = sprite_row_is_valid;
@@ -365,92 +303,5 @@ module vdp_sprite_render(
             blitter_priority <= vf_priority;
         end
     end
-
-// some simple metrics to measure performance
-// cleanup for nicer toggleable logging
-
-`ifdef LOG_SPRITES
-
-    localparam FILTER_EMPTY_LINES = 1;
-
-    wire blitter_finished = blitter_pixel_counter == 0;
-    reg blitter_finished_d;
-
-    integer cycles_between_sprite = 0;
-    integer cycles_for_all_sprites = 0;
-
-    integer sprites_rendered = 0;
-
-    always @(posedge clk) begin
-        blitter_finished_d <= blitter_finished;
-    end
-
-    always @(posedge clk) begin
-        // this works for the time being since blitter is idle until the valid data comes in
-        if (blitter_finished && !blitter_finished_d) begin
-            if (!FILTER_EMPTY_LINES || sprites_rendered > 0) begin
-                $display("BLITTER completed sprite row in %d cycles", cycles_between_sprite);
-            end
-
-            cycles_between_sprite = 0;
-            sprites_rendered = sprites_rendered + 1;
-        end
-
-        if (sprite_finished) begin
-            $display("completed entire sprite");
-        end
-
-        if (finished) begin
-            if (!FILTER_EMPTY_LINES || sprites_rendered > 0) begin
-                // $display("BLITTER completed %d sprites in %d cycles @ %t",
-                //  sprites_rendered,
-                //  cycles_for_all_sprites,
-                //  $time());
-                // $display("");
-            end
-
-            cycles_for_all_sprites = 0;
-            sprites_rendered = 0;
-        end
-
-        // should be at the top
-        if (restart && !finished) begin
-            // $display("BLITTER out of time! sprites rendered: %d", sprites_rendered);
-            // $display("");
-        end else if (restart) begin
-            cycles_between_sprite = 0;
-            cycles_for_all_sprites = 0;
-            sprites_rendered = 0;
-        end else begin
-            cycles_between_sprite = cycles_between_sprite + 1;
-            cycles_for_all_sprites = cycles_for_all_sprites + 1;
-        end
-    end
-
-`endif
-
-`ifdef LOG_SPRITES
-
-    // FIXME: noisy
-    always @(posedge clk) begin
-        if (!restart && blitter_input_valid && !finished) begin
-            if (line_buffer_we) begin
-                $display("BLIT: write to line buffer: [%h] = %h",
-                    line_buffer_write_address,
-                    line_buffer_write_data
-                );
-            end
-
-            if (blitter_finished) begin
-                $display("BLIT: sprite FINISHED");
-            end else begin
-                $display("BLIT: blitter using input:");
-                $display("- row: %h", vf_row_prefetched);
-                $display("- x start: %h", blitter_x_start);
-            end
-        end
-    end
-
-`endif
 
 endmodule

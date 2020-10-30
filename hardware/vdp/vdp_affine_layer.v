@@ -11,12 +11,12 @@ module vdp_affine_layer #(
 ) (
     input clk,
 
-    // source x/y, derived from current raster position
+    // Source x/y, derived from current raster position
 
     input [9:0] x,
     input [8:0] y,
 
-    // translation vectors
+    // Translation vectors
 
     input signed [15:0] pretranslate_x,
     input signed [15:0] pretranslate_y,
@@ -31,7 +31,7 @@ module vdp_affine_layer #(
     input signed [15:0] c,
     input signed [15:0] d,
 
-    // vram interface
+    // VRAM interface
 
     output [13:0] vram_even_address,
     input [15:0] vram_even_data,
@@ -39,7 +39,7 @@ module vdp_affine_layer #(
     output [13:0] vram_odd_address,
     input [15:0] vram_odd_data,
 
-    // output X cycles later
+    // Output X cycles later
 
     output reg [7:0] output_pixel
 );
@@ -150,21 +150,3 @@ module vdp_affine_layer #(
     end
 
 endmodule
-
-/*
-=== vdp_affine_layer ===
-
-   Number of wires:                 94
-   Number of wire bits:            596
-   Number of public wires:          94
-   Number of public wire bits:     596
-   Number of memories:               0
-   Number of memory bits:            0
-   Number of processes:              0
-   Number of cells:                124
-     SB_CARRY                       30
-     SB_DFF                         30
-     SB_DFFSR                        8
-     SB_LUT4                        52
-     SB_MAC16                        4
-*/

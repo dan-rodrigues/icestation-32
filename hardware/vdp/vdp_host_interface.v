@@ -66,11 +66,10 @@ module vdp_host_interface(
     always @(posedge clk) begin
         if (reset) begin
             host_write_pending <= 0;
-        end else begin
-            host_write_pending <= host_write_pending || host_write_en_gated;
-            if (host_write_pending && !host_write_en) begin
-                host_write_pending <= 0;
-            end
+        end else if (host_write_en_gated) begin
+            host_write_pending <= 1;
+        end else if (!host_write_en) begin
+            host_write_pending <= 0;
         end
     end
 
