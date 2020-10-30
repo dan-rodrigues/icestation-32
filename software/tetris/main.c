@@ -10,16 +10,16 @@
 // - use of gamepad edge triggered actions
 // - unpredictability by seeding a random generator with keypress time
 
-// TODO:
-// - sound (implement scr_beep or something better)
-// - show preview of next block?
-
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "audio.h"
 #include "vdp.h"
 #include "font.h"
 #include "gamepad.h"
+
+#include "shortbeep.h"
+#include "longbeep.h"
 
 // screen and timing
 // cannot use the constant here due to gcc error "error: initializer element is not constant"
@@ -78,6 +78,17 @@ enum game_cmd {
     CMD_DROP,
     CMD_START,
 };
+
+// game sounds
+enum game_sound {
+    SND_SHORTBEEP = 0, // https://freesound.org/people/solernix/sounds/540902/
+    SND_LONGBEEP = 1,  // https://freesound.org/people/pan14/sounds/263133/
+};
+
+static const int16_t *const SAMPLE_POINTERS[] = {shortbeep, longbeep};
+static const size_t *const SAMPLE_LENGTHS[] = {&shortbeep_length, &longbeep_length};
+const int8_t VOLUME = 0x0c;
+const int16_t PITCH = 0x1000; // neutral pitch
 
 // graphics tiles
 enum game_chars {
@@ -414,8 +425,8 @@ static void scr_clear(void) {
 /**
  * Make a sound.
  */
-static void scr_beep(void) {
-    // TODO
+static void sound_play(enum game_sound ch) {
+    AUDIO_GB_PLAY = 1 << ch;
 }
 
 /**
@@ -618,7 +629,7 @@ static void check_remove_completed_rows(void) {
     free_rows += removed;
 
     if (removed) {
-        scr_beep();
+        sound_play(SND_LONGBEEP);
     }
     display_board();
     display_score();
@@ -694,6 +705,7 @@ static void cmd_move_down(void) {
     // we also need a new random block...
     current_row--;
 
+    sound_play(SND_SHORTBEEP);
     copy_block_to_gameboard();
     check_remove_completed_rows(); // repaints all when necessary
 
@@ -993,6 +1005,16 @@ int main(void) {
             vdp_write_palette_color(color);
             color += BLOCK_COLORS[idx][2];
         }
+    }
+
+    // Audio setup
+    for (uint32_t i = 0; i < sizeof(SAMPLE_POINTERS) / sizeof(int16_t*); i++) {
+        volatile AudioChannel *ch = &AUDIO->channels[i];
+        audio_set_aligned_addresses(ch, SAMPLE_POINTERS[i], *SAMPLE_LENGTHS[i]);
+        ch->pitch = PITCH;
+        ch->flags = 0;
+        ch->volumes.left = VOLUME;
+        ch->volumes.right = VOLUME;
     }
 
     // Start frame loop

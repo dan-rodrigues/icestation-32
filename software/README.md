@@ -97,7 +97,7 @@ Minimal example using a single scrolling layer to display monochrome text.
 
 ## Acknowledgements
 
-* IceTetris by [vmedea](https://github.com/dan-rodrigues/icestation-32/pull/12)
+* IceTetris by [vmedea](https://github.com/dan-rodrigues/icestation-32/pull/12), sound effects by [pan14](https://freesound.org/people/pan14/sounds/263133/) and [solernix](https://freesound.org/people/solernix/sounds/540902/).
 * [Rotating crystal graphics](https://opengameart.org/content/rotating-crystal-animation-8-step) by qubodup
 * [8x8 font](https://github.com/dhepper/font8x8) by dhepper
 * [Super Miyamoto spritesheet](https://opengameart.org/content/super-miyamoto) by Lars Doucet & Sean Choate. Minor modifications were made for the `platformer` demo.

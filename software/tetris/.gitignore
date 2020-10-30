@@ -10,3 +10,7 @@
 
 /dasm
 
+# Audio build artefacts
+
+/shortbeep.[ch]
+/longbeep.[ch]
