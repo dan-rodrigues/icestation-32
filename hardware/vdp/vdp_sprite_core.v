@@ -69,7 +69,7 @@ module vdp_sprite_core #(
     // h: height select (8 or 16)
     // w: width select (8 or 16)
     // Y: Y flip - the advantage of doing it here is that it frees up bits in other attribute blocks
-    // -: ?
+    // -: unused
 
     reg [15:0] y_block [0:255];
 
@@ -110,17 +110,10 @@ module vdp_sprite_core #(
 
     // --- x_block ---
 
-    // EaaaaXxx xxxxxxxx
+    // -----Xxx xxxxxxxx
     // x: x position
-    // X: flip, if decided to go here instead of y_block + hit list
-    //  this CAN be moved to yBlock if it's more convenient there - space is available
-    // Eaaaa: enable per sprite alpha? there is space for it (TODO)
-    //  - this would require extra space in line buffer, which there might already be
-    //  - currently 8bit index
-    //  - 2 bit priority
-    //  - + 4bit alpha? TODO
-    //  - + 1bit alpha enable? TODO
-    //  - = 15bits total
+    // X: flip
+    // -: unused
 
     reg [15:0] x_block [0:255];
 
@@ -145,6 +138,7 @@ module vdp_sprite_core #(
     // c: collision Y within sprite (0-15, 16px sprite tall is the max)
     // w: width select (8 or 16)
     // T: terminator bit
+    // -: unused
 
     wire hit_list_select = render_y[0];
 
@@ -332,15 +326,5 @@ module vdp_sprite_core #(
         .width_select(hit_list_render_read_data[12]),
         .hit_list_ended(hit_list_ended)
     );
-
-`ifdef LOG_SPRITES
-
-    always @(posedge clk) begin
-        if (hit_list_write_en) begin
-            $display("CORE: wrote hitlist ([%h] = %h) @ %0t", hit_list_write_address, hit_list_data_in, $time);
-        end
-    end
-
-`endif
 
 endmodule
