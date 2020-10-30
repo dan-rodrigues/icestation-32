@@ -39,7 +39,7 @@ Platformer game inspired by other games of the period. Because of its size it is
 
 Tetris inspired game combining sprites for the falling blocks and tilemaps for the rest of the playfield. Based on tetris4terminals.
 
-![IceTetris game](screenshots/ice_tetris.png)
+![IceTetris game](screenshots/tetris.png)
 
 ## Demos
 
@@ -97,7 +97,7 @@ Minimal example using a single scrolling layer to display monochrome text.
 
 ## Acknowledgements
 
-* IceTetris was contributed by [vmedea](https://github.com/dan-rodrigues/icestation-32/pull/12)
+* IceTetris by [vmedea](https://github.com/dan-rodrigues/icestation-32/pull/12)
 * [Rotating crystal graphics](https://opengameart.org/content/rotating-crystal-animation-8-step) by qubodup
 * [8x8 font](https://github.com/dhepper/font8x8) by dhepper
 * [Super Miyamoto spritesheet](https://opengameart.org/content/super-miyamoto) by Lars Doucet & Sean Choate. Minor modifications were made for the `platformer` demo.
