@@ -127,6 +127,7 @@ crm_setup:
     li a1, FLASH_CTRL_CSN
     sh a1, (a2)
 
+#ifndef BOOT_NO_IPL
 // IPL:
 
     la a0, IPL_START
@@ -138,6 +139,7 @@ loop_ipl:
     addi a0, a0, 4
     addi a2, a2, 4
     blt a0, a1, loop_ipl
+#endif
 
     j CPU_RAM_BASE
 

@@ -83,7 +83,7 @@ YOSYS_DEFINE_ARGS = -f 'verilog -DBOOTLOADER="$(BOOT_HEX_SELECTED)"'
 
 ### Common ###
 
-ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_MULTI_HEX)
+ulx3s.json: $(SOURCES) $(ULX3S_SOURCES) ulx3s/ics32_top_ulx3s.v $(BOOT_MULTI_HEX) $(BOOT_MULTI_NOIPL_BIN)
 	$(call synth, -json $@)
 
 icebreaker.json: $(SOURCES) $(ICEBREAKER_SOURCES) icebreaker/ics32_top_icebreaker.v $(BOOT_HEX)
@@ -95,7 +95,7 @@ count: $(SOURCES) $(BOOT_HEX)
 clean: boot_clean
 	rm -f \
 		$(ICEBREAKER_PREFIX).asc $(ICEBREAKER_PREFIX).rpt $(ICEBREAKER_PREFIX).bit $(ICEBREAKER_PREFIX).json \
-		$(ULX3S_PREFIX).config $(ULX3S_PREFIX).bit $(ULX3S_PREFIX).json
+		$(ULX3S_PREFIX).config $(ULX3S_PREFIX).bit $(ULX3S_PREFIX).json $(ULX3S_PREFIX)_pnr.json
 
 ### iCE40 ###
 
@@ -111,7 +111,7 @@ icebreaker_prog: $(ICEBREAKER_PREFIX).bit
 ### ECP5 ###
 
 %.config: $(ULX3S_PIN_DEF) %.json
-	nextpnr-ecp5 --package $(ECP5_PACKAGE) --$(ECP5_SIZE)k --json $(filter-out $<,$^) --placer heap --lpf $< --textcfg $@ --pre-pack $(TIMING_PY) --seed 0
+	nextpnr-ecp5 --package $(ECP5_PACKAGE) --$(ECP5_SIZE)k --json $(filter-out $<,$^) --placer heap --lpf $< --textcfg $@ --write $(@:.config=_pnr.json) --pre-pack $(TIMING_PY) --seed 0
 
 ulx3s.bit: ulx3s.config
 	ecppack --input $< --bit $@
