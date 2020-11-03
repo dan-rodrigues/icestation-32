@@ -42,7 +42,7 @@ $(call build_util,$(HEADER_GEN_NEEDED),$(HEADER_GEN_DIR),header_gen)
 
 ###
 
-ASM := $(addprefix $(MK_DIR), \
+ASM += $(addprefix $(MK_DIR), \
 	vectors.S \
 	start.S \
 	)
