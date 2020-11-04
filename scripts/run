@@ -1,0 +1,47 @@
+#!/bin/bash
+# Script to quickly test a program on Icestation-32 (currently only on ULX3S board).
+# Usage:
+#     run [<prog.bin>]         Upload and run program
+#
+# You can set the environment variable ULX3S_IP to upload the bitstram through FTP. This is faster than fujprog,
+# which is used by default.
+#
+# (C) Mara "vmedea" 2020
+# SPDX-License-Identifier: MIT
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+TOP="${DIR}/.."
+TMPDIR=/tmp
+if [ -z "$1" ]; then
+    PROGFILE="prog.bin"
+else
+    PROGFILE="$1"
+fi
+BOOTROMFILE="${TOP}/firmware/boot_multi_noipl.bin"
+
+SIZE=$(wc -c "${PROGFILE}" | xargs | cut -f 1 -d ' ')
+echo "Running ${PROGFILE} ($SIZE)..."
+if [ ${SIZE} -gt 65540 ]; then
+    echo -e "\e[91mWarning: program is larger than 64kB so expects assets in flash. Unless they are already there, this is not going to work.\e[0m"
+fi
+
+echo "Replacing BRAM data..."
+${TOP}/scripts/ecp5_brams.py ${TOP}/hardware/ulx3s_pnr.json ${TOP}/hardware/ulx3s.config "${BOOTROMFILE}" "${PROGFILE}" ${TMPDIR}/ulx3s_new.config
+
+echo "Running ecppack..."
+ecppack --input ${TMPDIR}/ulx3s_new.config --bit ${TMPDIR}/ulx3s_new.bit
+
+if [ -z "${ULX3S_IP}" ]; then
+    echo "Uploading to SRAM through fujprog..."
+    fujprog -j sram ${TMPDIR}/ulx3s_new.bit
+else
+    echo "Uploading to SRAM through FTP..."
+    ftp ${ULX3S_IP} << END
+
+put ${TMPDIR}/ulx3s_new.bit fpga
+END
+    echo
+fi
+echo "Completed, cleaning up."
+
+rm ${TMPDIR}/ulx3s_new.config ${TMPDIR}/ulx3s_new.bit

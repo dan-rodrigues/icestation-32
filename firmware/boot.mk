@@ -42,6 +42,8 @@ FW_INCLUDES := $(addprefix $(FW_DIR), \
 FW_MULTI_CFLAGS := -Wall -flto -march=rv32i -mabi=ilp32 -Os -ffreestanding -nostdlib \
 	-I$(SW_DIR)lib/ -I$(SW_DIR)common/
 
+FW_NOIPL_CFLAGS := -DBOOT_NO_IPL
+
 ifeq ($(BOOT_PROMPT), 1)
 FW_MULTI_CFLAGS += -DBOOT_PROMPT
 endif
@@ -68,6 +70,10 @@ BOOT_MULTI_ELF := $(FW_DIR)boot_multi.elf
 BOOT_MULTI_BIN := $(FW_DIR)boot_multi.bin
 BOOT_MULTI_HEX := $(FW_DIR)boot_multi.hex
 
+BOOT_MULTI_NOIPL_ELF := $(FW_DIR)boot_multi_noipl.elf
+BOOT_MULTI_NOIPL_BIN := $(FW_DIR)boot_multi_noipl.bin
+BOOT_MULTI_NOIPL_HEX := $(FW_DIR)boot_multi_noipl.hex
+
 BOOT_LDS := $(FW_DIR)boot.lds
 
 %.hex: %.bin
@@ -82,13 +88,17 @@ $(BOOT_ELF): $(FW_SOURCES) $(SW_SOURCES) $(SW_HEADERS) $(FW_DIR)boot_defines.S
 $(BOOT_MULTI_ELF): $(FW_SOURCES) $(FW_MULTI_SOURCES) $(SW_SOURCES) $(SW_HEADERS) $(FW_INCLUDES)
 	$(CROSS)gcc $(FW_MULTI_CFLAGS) -T $(BOOT_LDS) -o $@ $(FW_SOURCES) $(FW_MULTI_SOURCES) $(SW_SOURCES)
 
+$(BOOT_MULTI_NOIPL_ELF): $(FW_SOURCES) $(FW_MULTI_SOURCES) $(SW_SOURCES) $(SW_HEADERS) $(FW_INCLUDES)
+	$(CROSS)gcc $(FW_MULTI_CFLAGS) $(FW_NOIPL_CFLAGS) -T $(BOOT_LDS) -o $@ $(FW_SOURCES) $(FW_MULTI_SOURCES) $(SW_SOURCES)
+
 boot_dasm: $(BOOT_ELF)
 	$(CROSS)objdump -d $(FW_DFLAGS) $(BOOT_ELF) > $@
 
 boot_clean:
 	rm -f \
 	$(BOOT_ELF) $(BOOT_BIN) $(BOOT_HEX) \
-	$(BOOT_MULTI_ELF) $(BOOT_MULTI_BIN) $(BOOT_MULTI_HEX)
+	$(BOOT_MULTI_ELF) $(BOOT_MULTI_BIN) $(BOOT_MULTI_HEX) \
+	$(BOOT_MULTI_NOIPL_ELF) $(BOOT_MULTI_NOIPL_BIN) $(BOOT_MULTI_NOIPL_HEX)
 
 .PHONY: boot_clean
 .SECONDARY: $(BOOT_BIN) $(BOOT_MULTI_BIN)
