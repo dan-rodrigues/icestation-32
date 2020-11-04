@@ -17,6 +17,7 @@
 #include "vdp.h"
 #include "font.h"
 #include "gamepad.h"
+#include "rand.h"
 
 #include "shortbeep.h"
 #include "longbeep.h"
@@ -237,8 +238,6 @@ static uint16_t p2_current = 0;
 static uint16_t p1_edge = 0;
 static uint16_t p2_edge = 0;
 
-// randomization for choosing blocks
-static uint32_t random_state = 0;     // state of random number generator
 // 2 fair randomizer pools
 static uint8_t shuffled_pool[2][7] = { {0,1,2,3,4,5,6}, {0,1,2,3,4,5,6} };
 static uint8_t active_pool = 0; // alternates 0/1
@@ -247,23 +246,6 @@ static uint8_t pool_index = 0; // 0-7
 // palette fade/blink state
 uint8_t fade_intensity = 0;
 bool fade_direction = true;
-
-/**
- * LFSR "random" bits implementation. No strong randomness is needed here, only
- * unpredictability.
- */
-static uint32_t randbits(uint8_t nbits) {
-    uint32_t val = 0;
-    for (uint8_t i = 0; i < nbits; ++i) {
-        uint32_t lsb = random_state & 1;
-        random_state >>= 1;
-        if (lsb)
-            random_state ^= 0xf00f00f0;
-
-        val = (val << 1) | lsb;
-    }
-    return val;
-}
 
 /**
  * Exchange 2 random indices in the pool.
@@ -746,7 +728,7 @@ static void init_game(void) {
     clear_board();
     display_board();
 
-    random_state = time_now_ms; // seed RNG with current time
+    srand(time_now_ms); // seed RNG with current time
     free_rows = ROWS;
     for(uint8_t i = 0; i < 7; i++) {
       active_pool = 1;
