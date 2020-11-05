@@ -146,7 +146,7 @@ $(ELF): $(LDS_P) $(ALL_OBJ)
 	$(CROSS)gcc $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(ELF) $(BIN) $(ALL_OBJ) $(DEP) $(ARTEFACTS)
+	rm -f $(ELF) $(BIN) $(ALL_OBJ) $(DEP) $(ARTEFACTS) $(LDS_P)
 
 ### Phony helper targets
 

@@ -5,6 +5,7 @@ SOURCES = \
 	../lib/gamepad.c \
 	../lib/vdp.c \
 	../common/font.c \
+	../common/rand.c \
 
 FLASH_ADPCM_SOURCES = shortbeep.c longbeep.c
 

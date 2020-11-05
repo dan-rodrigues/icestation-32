@@ -63,6 +63,10 @@ Interactive audio demo with 3 preloaded samples triggered by 3 buttons.
 
 ![Audio drumkit demo](screenshots/audio_drumkit.png)
 
+### [aquarium](/software/aquarium/)
+
+A demo that demonstrates the animation of large numbers of sprites and shows how sprite priority interacts with scroll layers.
+
 ### [copper_polygon](/software/copper_polygon/)
 
 Copper coprocessor demo using horizontal raster effects to draw a rotated, scaled polygon. The copper has a simple instruction set dedicated to performing raster-synced writes to the VDP. The CPU transforms a polygon each frame, traces its edges, then emits copper machine code used to toggle the display of a static opaque layer. The effective result is a layer mask in the shape of the transformed polygon.
