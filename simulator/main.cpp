@@ -32,7 +32,7 @@ const std::string title = "cxxrtl";
 
 // Audio:
 
- #define AUDIO_SUPPORT
+#define AUDIO_SUPPORT
 
 void audio_callback(void *userdata, Uint8 *stream, int len);
 std::deque<int16_t> audio_callback_samples;
