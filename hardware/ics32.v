@@ -412,8 +412,8 @@ module ics32 #(
     wire [7:0] audio_ctrl_ch_write_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
 
     wire [1:0] audio_ctrl_write_byte_mask = {
-        cpu_wstrb_decoder[0] | cpu_wstrb_decoder[2],
-        cpu_wstrb_decoder[1] | cpu_wstrb_decoder[3]
+        cpu_wstrb_decoder[1] | cpu_wstrb_decoder[3],
+        cpu_wstrb_decoder[0] | cpu_wstrb_decoder[2]
     };
 
     wire [7:0] audio_ctrl_cpu_read_data;
@@ -475,8 +475,6 @@ module ics32 #(
     );
 
     // --- Gamepad IO ---
-
-    // cleanup as needed..
 
     reg [1:0] pad_ctrl;
 
@@ -676,7 +674,7 @@ module ics32 #(
         .flash_out(flash_out)
     );
 
-    // --- Flash CPU control (to extract, possibly with the above two blocks) ---
+    // --- Flash CPU control ---
 
     reg flash_ctrl_active;
 
