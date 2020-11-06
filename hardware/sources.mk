@@ -63,6 +63,7 @@ USB_HID_SOURCES := \
 		usbh_host_hid.v \
 		usbh_sie.v \
 		gamepads/usbh_report_decoder_buffalo.v \
+		gamepads/usbh_report_decoder_keypad.v \
 		gamepads/usbh_report_decoder_wingman.v \
 		gamepads/usb_gamepad_reader.v \
 	)
