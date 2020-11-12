@@ -193,8 +193,8 @@ void vdp_set_affine_pretranslate(int16_t x, int16_t y) {
 }
 
 void vdp_set_affine_translate(int16_t x, int16_t y) {
-    VDP_HSCROLL_BASE[0] = x;
-    VDP_VSCROLL_BASE[1] = y;
+    VDP_AFFINE_TRANSLATE_X = x;
+    VDP_AFFINE_TRANSLATE_Y = y;
 }
 
 void vdp_wait_frame_ended() {
