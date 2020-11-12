@@ -8,7 +8,7 @@
 
 module ics_adpcm #(
     parameter integer OUTPUT_INTERVAL = 33700000 / 44100,
-    parameter [15:0] ADPCM_BLOCK_SIZE = 1024 * 2,
+    parameter [15:0] ADPCM_BLOCK_SIZE = 1024 * 2, // in nibbles
     parameter [3:0] CHANNELS = 8,
     parameter ADPCM_STEP_LUT_PATH = "adpcm_step_lut.hex",
 
