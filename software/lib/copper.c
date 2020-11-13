@@ -78,7 +78,7 @@ void cop_write(VDP_REG reg, uint16_t data) {
 void cop_write_compressed(VDP_REG reg, uint8_t data, bool increment_target_y) {
     uint16_t op_word = WRITE_COMPRESSED << OP_SHIFT;
     op_word |= cop_reg(reg);
-    op_word |= (data & 0x3f) << 6;
+    op_word |= (data & 0x1f) << 6;
     op_word |= increment_target_y ? 1 << 11 : 0;
     COP_RAM[cop_pc++] = op_word;
 }
