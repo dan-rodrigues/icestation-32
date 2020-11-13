@@ -64,8 +64,17 @@ typedef struct {
     uint16_t loop;
 } AudioAlignedAddresses;
 
+/**
+ * Set sample start address and length for a channel. The specified length is in
+ * 16-bit units. The loop address will be the same as the end address, so if
+ * looping is enabled the entire sample will loop.
+ */
 void audio_set_aligned_addresses(volatile AudioChannel *channel, const int16_t *start, size_t length);
 
+/**
+ * Compute sample start address and length for a channel. The specified length
+ * is in 16-bit units.
+ */
 void audio_aligned_addresses(const int16_t *start, size_t length, AudioAlignedAddresses *addresses);
 
 #endif /* audio_h */
