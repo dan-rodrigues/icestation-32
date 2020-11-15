@@ -14,7 +14,7 @@ module vdp_sprite_render(
 
     // line buffer writing
     output reg [9:0] line_buffer_write_address,
-    output reg [12:0] line_buffer_write_data,
+    output reg [9:0] line_buffer_write_data,
     output reg line_buffer_write_en,
 
     // prefetch reading

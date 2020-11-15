@@ -158,7 +158,6 @@ module vdp_vram_bus_arbiter_standard(
     reg [15:0] scroll_map_data_hold [0:3];
 
     wire [3:0] palette_selected = map_selected_word[15:12];
-    wire x_flip_selected = map_selected_word[9];
 
     // A delay is needed on the VRAM word select since the fetches are pipelined
 
