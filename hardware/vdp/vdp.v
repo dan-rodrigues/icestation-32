@@ -46,15 +46,15 @@ module vdp #(
     
     // VRAM interface
 
-    output reg [13:0] vram_address_even,
-    output reg vram_we_even,
+    output [13:0] vram_address_even,
+    output vram_we_even,
     input [15:0] vram_read_data_even,
-    output reg [15:0] vram_write_data_even,
+    output [15:0] vram_write_data_even,
 
-    output reg [13:0] vram_address_odd,
-    output reg vram_we_odd,
+    output [13:0] vram_address_odd,
+    output vram_we_odd,
     input [15:0] vram_read_data_odd,    
-    output reg [15:0] vram_write_data_odd,
+    output [15:0] vram_write_data_odd,
 
     // Copper RAM interface
 
@@ -573,11 +573,11 @@ module vdp #(
         vram_read_data_odd_r <= vram_read_data_odd;
     end
 
-    reg [3:0] scroll_meta_load;
-    reg [3:0] scroll_char_load;
+    wire [3:0] scroll_meta_load;
+    wire [3:0] scroll_char_load;
 
-    reg load_all_scroll_row_data;
-    reg vram_written;
+    wire load_all_scroll_row_data;
+    wire vram_written;
 
     wire [3:0] scroll_palette [0:3];
     wire [3:0] scroll_x_flip;
@@ -649,7 +649,7 @@ module vdp #(
 
     wire [13:0] vram_sprite_address;
     wire vram_sprite_read_data_needs_x_flip;
-    reg vram_sprite_read_data_valid;
+    wire vram_sprite_read_data_valid;
 
     wire sprite_core_reset = line_ended;
 

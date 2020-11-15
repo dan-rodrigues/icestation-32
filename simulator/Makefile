@@ -19,7 +19,7 @@ VEX_USE_BOOTLOADER = 1
 include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
-HDL_SOURCES += $(HDL_TOP).v $(HDL_DIR)/common/spram_256k.v sb_io.v
+HDL_SOURCES += $(HDL_TOP).v $(HDL_DIR)/common/spram_256k.v
 
 CXX_OPT = -O3
 
