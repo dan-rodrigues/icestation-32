@@ -165,7 +165,7 @@ module vdp_sprite_core #(
             reg [15:0] ram [0:255];
             reg [15:0] read_data;
 
-            assign hit_list_read_data[i * 16 + 15: i * 16] = read_data;
+            assign hit_list_read_data[i * 16+:16] = read_data;
 
             always @(posedge clk) begin
                 if (write_en) begin
