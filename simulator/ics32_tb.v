@@ -56,6 +56,8 @@ module ics32_tb(
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
+        .reset_1x(),
+        .reset_2x(),
         .pll_locked(1),
 
         .vga_r(vga_r),
@@ -162,7 +164,8 @@ module ics32_tb(
         .csn(flash_csn_bb),
         .in_en(flash_in_en_bb),
         .in(flash_in_bb),
-        .out(flash_out_bb)
+        .out(flash_out_bb),
+        .out_en()
     );
 
     // --- Audio DAC blackbox ---
