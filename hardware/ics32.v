@@ -185,7 +185,12 @@ module ics32 #(
         .flash_read_en(flash_read_en),
 
         .flash_ctrl_en(flash_ctrl_en),
-        .flash_ctrl_write_en(flash_ctrl_write_en)
+        .flash_ctrl_write_en(flash_ctrl_write_en),
+
+        // Unused (handled by 1x decoder)
+        .cpu_ram_en(),
+        .cpu_ram_write_en(),
+        .bootloader_en()
     );
 
     wire active_display;
@@ -227,7 +232,21 @@ module ics32 #(
         .cpu_ram_en(cpu_ram_en),
         .cpu_ram_write_en(cpu_ram_write_en),
 
-        .bootloader_en(bootloader_en)
+        .bootloader_en(bootloader_en),
+
+        // Unused outputs (handled by 2x decoder)
+        .cpu_wstrb_decoder(),
+        .vdp_en(),
+        .audio_ctrl_en(),
+        .audio_ctrl_write_en(),
+        .status_en(),
+        .status_write_en(),
+        .flash_read_en(),
+        .dsp_write_en(),
+        .pad_en(),
+        .pad_write_en(),
+        .cop_ram_write_en(),
+        .flash_ctrl_en()
     );
 
     wire [31:0] cpu_read_data_1x_arbiter;
@@ -383,7 +402,9 @@ module ics32 #(
 
         .cop_ram_read_en(cop_ram_read_en),
         .cop_ram_read_address(cop_ram_read_address),
-        .cop_ram_read_data(cop_ram_read_data)
+        .cop_ram_read_data(cop_ram_read_data),
+
+        .frame_ended()
     );
 
     vram vram(
@@ -453,7 +474,11 @@ module ics32 #(
 
         .output_l(audio_output_l),
         .output_r(audio_output_r),
-        .output_valid(audio_output_valid)
+        .output_valid(audio_output_valid),
+
+        .gb_write_busy(),
+        .gb_playing(),
+        .gb_ended()
     );
 
     /* verilator public_module */

@@ -95,7 +95,7 @@ verilator_sim_trace: VLT_FLAGS += --trace
 define build-verilator-sim
 	set -e ;\
 	verilator $(VLT_FLAGS) -o $(VLT_SIM_NAME) \
-		--top-module $(HDL_TOP) $(HDL_SOURCES) $(HDL_TOP).v \
+		--top-module $(HDL_TOP) $(HDL_SOURCES) \
 		-CFLAGS "$(VLT_CFLAGS)" -LDFLAGS "$(VLT_LDFLAGS)" --exe $(VLT_CXX_SOURCES) ;\
 	make -C obj_dir/ -f V$(HDL_TOP).mk ;\
 	cp obj_dir/$(VLT_SIM_NAME) $@
