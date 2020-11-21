@@ -25,8 +25,8 @@ typedef struct {
 typedef struct {
     volatile uint16_t sample_start_address;
 
-    uint8_t flags_padding;
     volatile uint8_t flags;
+    uint8_t flags_padding;
 
     volatile uint16_t sample_end_address;
     volatile uint16_t sample_loop_address;
