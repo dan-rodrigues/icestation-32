@@ -153,38 +153,27 @@ module vdp_sprite_core #(
     wire hit_list_write_en;
     wire [15:0] hit_list_data_in;
 
-    wire [31:0] hit_list_read_data;
-    wire [15:0] hit_list_read_data_0 = hit_list_read_data[15:0];
-    wire [15:0] hit_list_read_data_1 = hit_list_read_data[31:16];
+    wire [15:0] hit_list_read_data_0;
+    wire [15:0] hit_list_read_data_1;
 
-    generate
-        genvar i;
-        for (i = 0; i < 2; i = i + 1) begin : hit_list_gen
-            wire write_en = hit_list_write_en & (hit_list_select ^ i);
+    dpram #(
+        .ADDRESS_WIDTH(8),
+        .DATA_WIDTH(16)
+    ) hit_list [1:0] (
+        .clk(clk),
 
-            reg [15:0] ram [0:255];
-            reg [15:0] read_data;
+        .write_en({2{hit_list_write_en}} & {~hit_list_select, hit_list_select}),
+        .write_address(hit_list_write_address),
+        .write_data(hit_list_data_in),
 
-            assign hit_list_read_data[i * 16+:16] = read_data;
-
-            always @(posedge clk) begin
-                if (write_en) begin
-                    ram[hit_list_write_address] <= hit_list_data_in;
-                end
-
-                read_data <= ram[hit_list_read_address];
-            end
-        end
-    endgenerate
+        .read_address(hit_list_read_address),
+        .read_data({hit_list_read_data_1, hit_list_read_data_0})
+    );
 
     // --- Line buffers ---
 
-    // selected buffer toggles every line
+    // Selected buffer toggles every line
     wire line_buffer_select = !render_y[0];
-
-    // there is an offscreen and onscreen buffer at any given time
-    // on: onscreen - being read
-    // off: offscreen - being rendered to
 
     wire [9:0] line_buffer_write_address;
     wire [9:0] line_buffer_write_data;
@@ -193,12 +182,11 @@ module vdp_sprite_core #(
     wire [9:0] line_buffer_clear_write_address;
     wire line_buffer_clear_en;
 
-    // --- Line buffers ---
-
     wire [19:0] line_buffer_data_out;
     wire [9:0] line_buffer_data_out_0 = line_buffer_data_out[9:0];
     wire [9:0] line_buffer_data_out_1 = line_buffer_data_out[19:10];
 
+    genvar i;
     generate
         for (i = 0; i < 2; i = i + 1) begin : line_buffer_gen
             wire select = line_buffer_select ^ i;
@@ -207,22 +195,26 @@ module vdp_sprite_core #(
             wire [9:0] write_data = select ? line_buffer_write_data : line_buffer_clear_data_in;
             wire write_en = select ? line_buffer_write_en : line_buffer_clear_en;
 
-            reg [9:0] line_buffer [0:1023];
-            reg [9:0] read_data;
-
+            wire [9:0] read_data;
             assign line_buffer_data_out[i * 10+:10] = read_data;
 
-            always @(posedge clk) begin
-                if (write_en) begin
-                    line_buffer[write_address] <= write_data;
-                end
+            dpram #(
+                .ADDRESS_WIDTH(10),
+                .DATA_WIDTH(12)
+            ) line_buffer (
+                .clk(clk),
 
-                read_data <= line_buffer[line_buffer_display_read_address];
-            end
+                .write_en(write_en),
+                .write_address(write_address),
+                .write_data(write_data),
+
+                .read_address(line_buffer_display_read_address),
+                .read_data(read_data)
+            );
         end
     endgenerate
     
-    // --- Line buffer clearing ---
+    // Clearing:
 
     reg [9:0] line_buffer_previous_read_address;
     assign line_buffer_clear_write_address = line_buffer_previous_read_address;
@@ -234,7 +226,7 @@ module vdp_sprite_core #(
         line_buffer_previous_read_address <= line_buffer_display_read_address;
     end
     
-    // --- Line buffer reading ---
+    // Reading:
 
     wire [9:0] line_buffer_display_read_address;
     wire [9:0] line_buffer_display_data;
@@ -328,3 +320,46 @@ module vdp_sprite_core #(
     );
 
 endmodule
+
+module dpram #(
+    parameter integer DATA_WIDTH = 16,
+    parameter integer ADDRESS_WIDTH = 8,
+
+    parameter integer DATA_BITS = DATA_WIDTH - 1,
+    parameter integer ADDRESS_BITS = ADDRESS_WIDTH - 1
+) (
+    input clk,
+
+    input write_en,
+    input [ADDRESS_BITS:0] write_address,
+    input [DATA_BITS:0] write_data,
+
+    input [ADDRESS_BITS:0] read_address,
+    output reg [DATA_BITS:0] read_data
+);
+    localparam WORDS = 1 << ADDRESS_WIDTH;
+
+    reg [DATA_BITS:0] mem [0:WORDS - 1];
+
+    always @(posedge clk) begin
+        if (write_en) begin
+            mem[write_address] <= write_data;
+        end
+
+        read_data <= mem[read_address];
+    end
+
+endmodule
+
+/*
+.ADDRESS_WIDTH(8),
+        .DATA_WIDTH(16)
+    ) hit_list [1:0] (
+        .clk(clk),
+
+        .write_en({2{hit_list_write_en}} & {hit_list_select, ~hit_list_select}),
+        .write_address(hit_list_write_address),
+
+        .read_address(hit_list_read_address),
+        .read_data({hit_list_read_data_1, hit_list_read_data_0})
+        */
