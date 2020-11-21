@@ -200,7 +200,7 @@ module vdp_sprite_core #(
 
             dpram #(
                 .ADDRESS_WIDTH(10),
-                .DATA_WIDTH(12)
+                .DATA_WIDTH(10)
             ) line_buffer (
                 .clk(clk),
 
@@ -320,46 +320,3 @@ module vdp_sprite_core #(
     );
 
 endmodule
-
-module dpram #(
-    parameter integer DATA_WIDTH = 16,
-    parameter integer ADDRESS_WIDTH = 8,
-
-    parameter integer DATA_BITS = DATA_WIDTH - 1,
-    parameter integer ADDRESS_BITS = ADDRESS_WIDTH - 1
-) (
-    input clk,
-
-    input write_en,
-    input [ADDRESS_BITS:0] write_address,
-    input [DATA_BITS:0] write_data,
-
-    input [ADDRESS_BITS:0] read_address,
-    output reg [DATA_BITS:0] read_data
-);
-    localparam WORDS = 1 << ADDRESS_WIDTH;
-
-    reg [DATA_BITS:0] mem [0:WORDS - 1];
-
-    always @(posedge clk) begin
-        if (write_en) begin
-            mem[write_address] <= write_data;
-        end
-
-        read_data <= mem[read_address];
-    end
-
-endmodule
-
-/*
-.ADDRESS_WIDTH(8),
-        .DATA_WIDTH(16)
-    ) hit_list [1:0] (
-        .clk(clk),
-
-        .write_en({2{hit_list_write_en}} & {hit_list_select, ~hit_list_select}),
-        .write_address(hit_list_write_address),
-
-        .read_address(hit_list_read_address),
-        .read_data({hit_list_read_data_1, hit_list_read_data_0})
-        */

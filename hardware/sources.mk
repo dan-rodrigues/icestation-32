@@ -15,6 +15,7 @@ SOURCES := \
  	cop_ram.v \
  	mock_gamepad.v \
  	debouncer.v \
+	dpram.v \
 
 VDP_SOURCES := vdp/vdp.v \
 	 $(addprefix vdp/vdp_, \
