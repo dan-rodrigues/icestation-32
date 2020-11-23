@@ -96,6 +96,10 @@ make ulx3s_prog
 
 Note that fujprog can be slow to flash larger files. Programming over WiFi [using the ESP32](https://github.com/emard/esp32ecp5) can be done as a faster alternative.
 
+### Programming documentation
+
+More detailed hardware documentation for the platform can be found in [doc/platform.md](doc/platform.md).
+
 ### Running simulator (Verilator or CXXRTL, plus SDL2)
 
 A simulator using SDL2 and its documentation is included in the [/simulator](simulator/) directory.
