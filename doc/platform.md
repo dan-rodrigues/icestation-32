@@ -422,7 +422,7 @@ map_base[x] = SCMBx << 12
 Sprites
 -------
 
-256 sprites can be active at the same time. Each sprite can be 8×8, 8×16, 16×8 or 16×16 pixels, individually.
+255 sprites can be active at the same time. Each sprite can be 8×8, 8×16, 16×8 or 16×16 pixels, individually.
 
 All sprites are laid out in 8×8 tiles. Larger sprites will have consecutive tile ids for the columns, but rows are separated by an offset of 16. For example a 16×16 sprite has its four tile ids laid out like this:
 
@@ -509,7 +509,7 @@ The flip bits flip (mirror) the contents of the sprite horizontally and/or verti
 
 There is no separate visibility bit. To disable a sprite it is placed outside the view, generally at `y` equal to the screen height.
 
-TODO: what is the priority order *between* sprites?
+Priority between sprites is determined by their position in metadata memory. Sprites with a higher index are always drawn above those with a lower index. This can cause (potentially useful) masking artefacts if a high index sprite with low layer priority overlaps a low index sprite with high layer priority.
 
 Affine layer
 ------------
@@ -768,6 +768,8 @@ A single audio data format is supported: mono IMA-ADPCM\* 44100Hz. The ADPCM blo
 
 Use of the audio peripheral is demonstrated in the `audio_drumkit` demo.
 
+The ADPCM core is also hosted in a [separate repo](https://github.com/dan-rodrigues/ics-adpcm) which contains tests and further documentation. The documentation below is focused on how to use it in the context of this system.
+ 
 Conversion
 ----------
 
@@ -824,7 +826,7 @@ ofs   type     name             description
 
 - The sample start, end and loop address specify from which address (relative to the start address of the program in flash) the sample is played, and where (if enabled) where to restart after loop. The addresses are specified in a multiple of the ADPCM block size, 1024 bytes.
 
-- The sound `VOLUME` can be specified separately for left and right for stereo positioning effects. Volumes are a value between `0` (no sound) and `255` (loudest). At the loudest volumes there can be clipping, values around 16 are safest.
+- The sound `VOLUME` can be specified separately for left and right for stereo positioning effects. Volumes are a signed 8bit value, with commonly used values being `0` (no sound) and `127` (loudest) and `-128` (loudest and inverted). At the loudest volumes there can be clipping, values around 16 are safest.
 
 - A `PITCH` value of `0x1000` plays the sound at the original pitch. A higher value of `PITCH` plays the sound at a higher playback rate, thus a higher pitch. So a value of `0x2000` would double the pitch, and a value of `0x800` half it.
 
