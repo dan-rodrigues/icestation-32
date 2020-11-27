@@ -16,23 +16,23 @@ module vdp_tile_address_generator(
 
     output [13:0] tile_address
 );
-    reg [2:0] scroll_y_granular_h;
-    reg [2:0] raster_y_granular_h;
-    reg [15:0] map_data_h;
-    reg [13:0] tile_base_address_h;
+    reg [2:0] scroll_y_granular_r;
+    reg [2:0] raster_y_granular_r;
+    reg [15:0] map_data_r;
+    reg [13:0] tile_base_address_r;
 
     always @(posedge clk) begin
-        scroll_y_granular_h <= scroll_y_granular;
-        raster_y_granular_h <= raster_y_granular;
-        map_data_h <= vram_data;
-        tile_base_address_h <= tile_base_address;
+        scroll_y_granular_r <= scroll_y_granular;
+        raster_y_granular_r <= raster_y_granular;
+        map_data_r <= vram_data;
+        tile_base_address_r <= tile_base_address;
     end
 
-    wire is_yflipped = map_data_h[10];
-    wire [2:0] tile_row = scroll_y_granular_h + raster_y_granular_h;
-    wire [2:0] resolved_tile_row = is_yflipped ? ~tile_row : tile_row;
-    wire [8:0] tile_number = map_data_h[8:0];
+    wire y_flip = map_data_r[11];
+    wire [2:0] tile_row = scroll_y_granular_r + raster_y_granular_r;
+    wire [2:0] resolved_tile_row = y_flip ? ~tile_row : tile_row;
+    wire [9:0] tile_number = map_data_r[9:0];
 
-    assign tile_address = tile_base_address_h + {tile_number, resolved_tile_row};
+    assign tile_address = tile_base_address_r + {tile_number, resolved_tile_row};
 
 endmodule

@@ -15,8 +15,8 @@ const VDPLayer VDP_ALL_LAYERS = 0x1f;
 
 // scrolling layer map attributes
 
-const uint16_t SCROLL_MAP_X_FLIP_SHIFT = 9;
-const uint16_t SCROLL_MAP_Y_FLIP_SHIFT = 10;
+const uint16_t SCROLL_MAP_X_FLIP_SHIFT = 10;
+const uint16_t SCROLL_MAP_Y_FLIP_SHIFT = 11;
 
 const uint16_t SCROLL_MAP_X_FLIP = 1 << SCROLL_MAP_X_FLIP_SHIFT;
 const uint16_t SCROLL_MAP_Y_FLIP = 1 << SCROLL_MAP_Y_FLIP_SHIFT;
