@@ -57,6 +57,9 @@ int main() {
     const uint8_t p2_base_x = 60;
     const uint8_t p2_base_y = 10;
 
+    const uint8_t user_base_x = 47;
+    const uint8_t user_base_y = 25;
+
     while (true) {
         vdp_wait_frame_ended();
 
@@ -67,6 +70,11 @@ int main() {
 
         vp_printf(p2_base_x, p2_base_y, TEXT_PALETTE_ID, SCROLL0, MAP_VRAM_BASE, "Player 2");
         print_gamepad(p2_current, p2_base_x, p2_base_y + 2);
+
+        vp_printf(user_base_x, user_base_y,
+                  TEXT_PALETTE_ID, SCROLL0, MAP_VRAM_BASE,
+                  "User button: %d",
+                  pad_read_user_button());
     }
 }
 

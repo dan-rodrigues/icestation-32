@@ -133,7 +133,7 @@ void CXXRTLSimulation::step(uint64_t time) {
     top.p_clk__1x = value<1>{clk_1x};
     top.p_clk__2x = value<1>{clk_2x};
 
-    top.p_btn__u.set(!button_user);
+    top.p_btn__u.set(button_user);
     top.p_btn__1.set(button_1);
     top.p_btn__2.set(button_2);
     top.p_btn__3.set(button_3);

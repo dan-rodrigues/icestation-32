@@ -45,4 +45,6 @@ extern const PadInputDecoded PAD_INPUT_DECODED_NO_INPUT;
 void pad_read(uint16_t *p1_current, uint16_t *p2_current, uint16_t *p1_edge, uint16_t *p2_edge);
 void pad_decode_input(uint16_t encoded_input, PadInputDecoded *decoded_input);
 
+bool pad_read_user_button(void);
+
 #endif /* gamepad_h */

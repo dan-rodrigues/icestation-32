@@ -246,11 +246,7 @@ module ics32_top_ulx3s #(
     wire [11:0] pad_btn;
     wire [1:0] pad_read_data;
 
-    // P2 input is used as a special user button
-    // (This needs to move if an actual P2 is needed)
-
-    wire btn_u = btn[3];
-    assign pad_read_data[1] = btn_u;
+    // P1 is supported using the gamepad_state instance below
 
     mock_gamepad mock_gamepad(
         .clk(clk_2x),
@@ -262,9 +258,15 @@ module ics32_top_ulx3s #(
         .pad_out(pad_read_data[0])
     );
 
+    // P2 currently not supported on ULX3S
+
+    assign pad_read_data[1] = 0;
+
     // The mock_gamepad above is driven by gamepad data from one of the sources below.
     // GAMEPAD_SOURCE is used to detmine which one:
 
+    wire user_button;
+    
     ulx3s_gamepad_state #(
         .GAMEPAD_SOURCE(GAMEPAD_SOURCE),
         .USB_GAMEPAD(USB_GAMEPAD)
@@ -301,6 +303,21 @@ module ics32_top_ulx3s #(
         // Selected gamepad state:
 
         .pad_btn(pad_btn)
+    );
+
+    // Unlike the gamepads, user button input is always provided by PCB
+    // btn[0] is shared with the ESP32 reset if (GAMEPAD_SOURCE == "BLUETOOTH")
+
+    wire user_button;
+
+    debouncer #(
+        .BTN_COUNT(1)
+    ) user_button_debouncer (
+        .clk(clk_2x),
+        .reset(reset_2x),
+
+        .btn(!btn[0]),
+        .level(user_button)
     );
 
     // --- icestation-32 ---
@@ -349,6 +366,8 @@ module ics32_top_ulx3s #(
         .pad_latch(pad_latch),
         .pad_clk(pad_clk),
         .pad_data(pad_read_data),
+
+        .user_button(user_button),
 
         .led(status_led),
 

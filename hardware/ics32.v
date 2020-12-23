@@ -46,6 +46,8 @@ module ics32 #(
     output pad_clk,
     input [1:0] pad_data,
 
+    input user_button,
+
     output [1:0] flash_clk_ddr,
     output flash_csn,
     output [3:0] flash_in,
@@ -553,7 +555,7 @@ module ics32 #(
         .flash_read_data(flash_read_data),
         .dsp_read_data(dsp_result),
         .vdp_read_data(vdp_read_data),
-        .pad_read_data(pad_data),
+        .pad_read_data({user_button, pad_data}),
         .flash_ctrl_read_data(flash_ctrl_read_data),
         .audio_cpu_read_data(audio_ctrl_cpu_read_data),
 

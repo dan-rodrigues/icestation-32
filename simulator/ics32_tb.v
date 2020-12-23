@@ -72,6 +72,8 @@ module ics32_tb(
         .pad_clk(pad_clk),
         .pad_data(pad_read_data),
 
+        .user_button(btn_u),
+        
         .led(led),
 
         .flash_clk_ddr(flash_clk_ddr),
@@ -97,9 +99,10 @@ module ics32_tb(
     };
 
     wire [1:0] pad_read_data;
-    assign pad_read_data[1] = ~btn_u;
 
     wire pad_latch, pad_clk;
+
+    // P1 is currently controllable in the sim
 
     mock_gamepad mock_gamepad(
         .clk(clk_2x),
@@ -110,6 +113,11 @@ module ics32_tb(
 
         .pad_out(pad_read_data[0])
     );
+
+    // P2 isn't
+
+    assign pad_read_data[1] = 0;
+
 
     // --- Flash sim blackbox ---
 

@@ -182,7 +182,9 @@ module ics32_top_icebreaker #(
         .D_OUT_1(flash_clk_ddr[1])
     );
 
-    // --- Gamepad reading ---
+    // --- User inputs ---
+
+    // Gamepads:
 
     wire [1:0] pad_read_data;
 
@@ -192,6 +194,7 @@ module ics32_top_icebreaker #(
             assign pad_read_data = ~pad_read_data_n;
 
             // Gamepad CLK + Latch
+
             SB_IO #(
                 .PIN_TYPE(6'b010100),
                 .PULLUP(1'b0),
@@ -204,7 +207,9 @@ module ics32_top_icebreaker #(
                 .D_OUT_0({pad_clk, pad_latch}),
             );
 
-            // Gamepad data (P1 only for now)
+            // Gamepad data
+
+            // There are actually 4 controller ports on the PMOD but the system is 2P only
 
             SB_IO #(
                 .PIN_TYPE(6'b100000),
@@ -212,7 +217,7 @@ module ics32_top_icebreaker #(
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
             ) gp_data_sbio [1:0] (
-                .PACKAGE_PIN({ /*pmod2_9, pmod2_3, pmod2_8,*/ btn_u, pmod2_2}),
+                .PACKAGE_PIN({pmod2_8, pmod2_2}),
                 .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
                 .CLOCK_ENABLE(1'b1),
@@ -224,15 +229,15 @@ module ics32_top_icebreaker #(
         end else begin
             // Breakout board buttons:
 
-            wire [3:0] btn_r;
+            wire [2:0] btn_r;
 
             SB_IO #(
                 .PIN_TYPE(6'b100000),
                 .PULLUP(1'b0),
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
-            ) btn_sbio [3:0] (
-                .PACKAGE_PIN({btn_u, pmod2_10, pmod2_4, pmod2_9}),
+            ) btn_sbio [2:0] (
+                .PACKAGE_PIN({pmod2_10, pmod2_4, pmod2_9}),
                 .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
                 .CLOCK_ENABLE(1'b1),
@@ -242,12 +247,9 @@ module ics32_top_icebreaker #(
                 .OUTPUT_CLK(clk_2x)
             );
 
-            // Only the 3 buttons on the breakboard are used as a partial gamepad
-            // This can be extended later with an actual gamepad PMOD
+            // P1 has limited inputs using the breakout board
 
             wire [11:0] pad_btn = {btn_r[0], btn_r[2], 5'b0, btn_r[1]};
-
-            assign pad_read_data[1] = ~btn_r[3];
 
             mock_gamepad mock_gamepad(
                 .clk(clk_2x),
@@ -258,8 +260,33 @@ module ics32_top_icebreaker #(
 
                 .pad_out(pad_read_data[0])
             );
+
+            // P2 has no inputs when just using the breakout board
+            
+            assign pad_read_data[1] = 0;
         end
     endgenerate
+
+    // User button:
+
+    wire user_button;
+    wire user_button_n = !user_button;
+
+    SB_IO #(
+        .PIN_TYPE(6'b100000),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) btn_sbio (
+        .PACKAGE_PIN(btn_u),
+        .OUTPUT_ENABLE(1'b0),
+        .INPUT_CLK(clk_2x),
+        .CLOCK_ENABLE(1'b1),
+        .D_IN_0(user_button),
+
+        // This isn't used but nextpnr will error without this:
+        .OUTPUT_CLK(clk_2x)
+    );
 
     // --- icestation-32 ---
 
@@ -305,6 +332,8 @@ module ics32_top_icebreaker #(
         .pad_latch(pad_latch),
         .pad_clk(pad_clk),
         .pad_data(pad_read_data),
+
+        .user_button(user_button_n),
 
         .led({led_r, led_b}),
 

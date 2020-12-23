@@ -19,7 +19,7 @@
 .equ FLASH_SR2_QE, (1 << 1)
 
 .equ PAD_DATA, 0x40000
-.equ PAD_USER_BUTTON, (1 << 1)
+.equ PAD_USER_BUTTON, (1 << 2)
 
 .equ LED_DATA, 0x20000
 

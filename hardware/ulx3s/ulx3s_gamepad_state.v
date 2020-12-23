@@ -72,7 +72,7 @@ module ulx3s_gamepad_state #(
                 .reset(reset),
 
                 .btn(!btn[0]),
-                .level(esp32_reset),
+                .level(esp32_reset)
             );
 
             // SPI gamepad reader:

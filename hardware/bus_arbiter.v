@@ -47,7 +47,7 @@ module bus_arbiter #(
     input [31:0] flash_read_data,
     input [15:0] vdp_read_data,
     input [31:0] dsp_read_data,
-    input [1:0] pad_read_data,
+    input [2:0] pad_read_data,
     input [3:0] flash_ctrl_read_data,
     input [7:0] audio_cpu_read_data,
 
@@ -107,7 +107,7 @@ module bus_arbiter #(
         end else if (dsp_en && (READ_SOURCES & `BA_DSP)) begin
             cpu_read_data_ps = dsp_read_data;
         end else if (pad_en && (READ_SOURCES & `BA_PAD)) begin
-            cpu_read_data_ps[1:0] = pad_read_data;
+            cpu_read_data_ps[2:0] = pad_read_data;
         end else if (bootloader_en && (READ_SOURCES & `BA_BOOT)) begin
             cpu_read_data_ps = bootloader_read_data;
         end else if (cpu_ram_en && (READ_SOURCES & `BA_CPU_RAM)) begin

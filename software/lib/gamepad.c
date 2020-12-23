@@ -14,6 +14,7 @@ static volatile uint32_t * const PAD_BASE = (uint32_t *)0x40000;
 
 static const uint32_t PAD_LATCH = 1 << 0;
 static const uint32_t PAD_CLK = 1 << 1;
+static const uint32_t USER_BUTTON = 1 << 2;
 
 #define PAD_IO (*((volatile uint32_t *) PAD_BASE + 0))
 
@@ -71,6 +72,10 @@ void pad_decode_input(uint16_t encoded_input, PadInputDecoded *decoded_input) {
         decoded_input->indexed[i] = encoded_input & 1;
         encoded_input >>= 1;
     }
+}
+
+bool pad_read_user_button() {
+    return (PAD_IO & USER_BUTTON);
 }
 
 const PadInputDecoded PAD_INPUT_DECODED_NO_INPUT = {
