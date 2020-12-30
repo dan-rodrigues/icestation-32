@@ -83,8 +83,12 @@ ULX3S_SOURCES := \
 		../common/spram_256k.v \
 	)
 
+JT51_SOURCES := \
+	$(wildcard jt51/hdl/*.v)
+
 ULX3S_SOURCES += $(USB_HID_SOURCES)
 	
 SOURCES += $(VDP_SOURCES)
+SOURCES += $(JT51_SOURCES)
 SOURCES += $(VEX)
 

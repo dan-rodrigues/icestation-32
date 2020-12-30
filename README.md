@@ -1,3 +1,21 @@
+# icestation-32 (YM2151)
+
+This branch replaces the ADPCM core with a [YM2151 compatible one](https://github.com/jotego/jt51). It also includes a VGM player software demo in [/software/ym2151_demo/](/software/ym2151_demo). The player only works on the ULX3S-85 and outputs analog stereo and SPDIF using the headphone jack.
+
+## Quickstart
+
+This repo includes a `track.vgm` file from the Thunderforce arcade game. It can be replaced with any other YM2151 VGM file. Make sure it's uncompressed (no `.vgz` files) or the player will print an error.
+
+```
+git submodule update --init
+make -C hardware ulx3s_prog
+make -C software/ym2151_demo ulx3s_prog
+```
+
+A status screen should appear and playback should start automatically.
+
+The original README.md contents follow.
+
 # icestation-32
 
 This is a compact open-source FPGA game console targetting the Lattice iCE40 UltraPlus series. It's being developed using the open-source yosys and nextpnr tools and can be run on both the [iCEBreaker](https://github.com/icebreaker-fpga/icebreaker)** and [ULX3S](https://github.com/emard/ulx3s)* boards.

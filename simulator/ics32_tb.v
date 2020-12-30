@@ -48,7 +48,7 @@ module ics32_tb(
         .BOOTLOADER_SIZE(512),
 
         // Vex is smaller but for simulation the Pico is faster (fully synchronous)
-        .USE_VEXRISCV(1),
+        .USE_VEXRISCV(0),
 
         // The boot code configures the QSPI flash which is needed to access any flash resources such as audio
         // If this isn't needed, this can be disabled to speed up the sim start time

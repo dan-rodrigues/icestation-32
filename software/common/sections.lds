@@ -28,6 +28,8 @@ SECTIONS {
 		// this
 		*flash_cpu_*(.*)
 
+		. = ALIGN(4);
+
 		_flash_cpu_end = .;
 	} >FLASH_ASSETS
 

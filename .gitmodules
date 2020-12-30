@@ -1,0 +1,3 @@
+[submodule "hardware/jt51"]
+	path = hardware/jt51
+	url = https://github.com/jotego/jt51.git

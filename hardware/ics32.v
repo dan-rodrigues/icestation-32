@@ -76,17 +76,10 @@ module ics32 #(
 
     // --- LEDs ---
 
-    reg [7:0] status;
+    // LEDs in this demo are controlled by whatever the YM2151 is outputting
+    // The MSB is a "busy" flag and the only one that's really visible
 
-    assign led = status;
-
-    always @(posedge vdp_clk) begin
-        if (vdp_reset) begin
-            status <= 8'h00;
-        end else if (status_write_en) begin
-            status <= cpu_write_data[7:0];
-        end
-    end
+    assign led = ym_read_data;
 
     // --- DSP math support ---
 
@@ -421,66 +414,142 @@ module ics32 #(
         .read_data({vram_read_data_odd, vram_read_data_even})
     );
 
-    // --- ADPCM Audio ---
+    // --- YM2151 Audio (experimental replacement of ADPCM core) ---
 
-    wire audio_ctrl_ch_write_ready, audio_gb_write_ready;
-    wire audio_ctrl_ready = audio_ctrl_ch_write_ready || audio_gb_write_ready || audio_ctrl_read_ready;
+    wire audio_ym_write = !cpu_address[3] && audio_ctrl_write_en;
+    wire audio_prescaler_write = cpu_address[3] && audio_ctrl_write_en;
 
-    wire audio_ctrl_read_request = audio_ctrl_en && !audio_ctrl_write_en;
-    wire audio_ctrl_read_ready;
+    reg audio_ctrl_en_r;
+    wire audio_ctrl_ready = audio_ctrl_en && !audio_ctrl_en_r;
 
-    wire audio_ctrl_ch_write_en = audio_ctrl_write_en && !cpu_address[9];
-    wire audio_ctrl_gb_write_en = audio_ctrl_write_en && cpu_address[9];
+    always @(posedge cpu_clk) begin
+        if (cpu_reset) begin
+            audio_ctrl_en_r <= 0;
+        end else begin
+            audio_ctrl_en_r <= audio_ctrl_en;
+        end
+    end
 
-    wire [7:0] audio_ctrl_ch_write_address = {cpu_address[8:2], (cpu_wstrb_decoder[2] | cpu_wstrb_decoder[3])};
+    // Prescaler defined by software:
 
-    wire [1:0] audio_ctrl_write_byte_mask = {
-        cpu_wstrb_decoder[1] | cpu_wstrb_decoder[3],
-        cpu_wstrb_decoder[0] | cpu_wstrb_decoder[2]
-    };
+    reg [31:0] ym_prescaler;
 
-    wire [7:0] audio_ctrl_cpu_read_data;
+    always @(posedge cpu_clk) begin
+        if (audio_prescaler_write) begin
+            ym_prescaler <= cpu_write_data;
+        end
+    end
 
-    wire [22:0] pcm_read_address;
-    wire pcm_read_en;
-    wire pcm_data_ready;
+    reg [32:0] ym_prescaler_fraction;
+    reg ym_prescaler_tick;
 
-    ics_adpcm #(
-        .OUTPUT_INTERVAL(CLK_2X_FREQ / 44100),
-        .CHANNELS(8),
-        .ADPCM_STEP_LUT_PATH(ADPCM_STEP_LUT_PATH)
-    ) ics_adpcm (
-        .clk(vdp_clk),
-        .reset(vdp_reset),
+    always @(posedge cpu_clk) begin
+        if (cpu_reset) begin
+            ym_prescaler_tick <= 0;
+            ym_prescaler_fraction <= 0;
+        end else begin
+            ym_prescaler_tick <= 0;
+            ym_prescaler_fraction <= ym_prescaler_fraction + {1'b0, ym_prescaler};
 
-        .ch_write_address(audio_ctrl_ch_write_address),
-        .ch_write_data(cpu_write_data[15:0]),
-        .ch_write_byte_mask(audio_ctrl_write_byte_mask),
-        .ch_write_en(audio_ctrl_ch_write_en),
-        .ch_write_ready(audio_ctrl_ch_write_ready),
+            if (ym_prescaler_fraction[32]) begin
+                ym_prescaler_tick <= 1;
+                ym_prescaler_fraction[32] <= 0;
+            end
+        end
+    end
 
-        .gb_write_address(cpu_address[3:2]),
-        .gb_write_data(cpu_write_data[15:0]),
-        .gb_write_en(audio_ctrl_gb_write_en),
-        .gb_write_ready(audio_gb_write_ready),
+    reg ym_cen, ym_cen_p1;
+    reg ym_cen_p1_toggle;
 
-        .status_read_address(cpu_address[3:2]),
-        .status_read_request(audio_ctrl_read_request),
-        .status_read_ready(audio_ctrl_read_ready),
-        .status_read_data(audio_ctrl_cpu_read_data),
+    always @(posedge cpu_clk) begin
+        if (cpu_reset) begin
+            ym_cen <= 0;
+            ym_cen_p1 <= 0;
+            ym_cen_p1_toggle <= 0;
+        end else begin
+            ym_cen <= 0;
+            ym_cen_p1 <= 0;
 
-        .pcm_address_valid(pcm_read_en),
-        .pcm_read_address(pcm_read_address),
-        .pcm_data_ready(pcm_data_ready),
-        .pcm_read_data(flash_read_data[15:0]),
+            if (ym_prescaler_tick) begin
+                // 3.58MHz clock enable
+                ym_cen <= 1;
 
-        .output_l(audio_output_l),
-        .output_r(audio_output_r),
-        .output_valid(audio_output_valid),
+                // 1.79MHz clock enable
+                ym_cen_p1 <= ym_cen_p1_toggle;
+                ym_cen_p1_toggle <= !ym_cen_p1_toggle;
+            end
+        end
+    end
 
-        .gb_write_busy(),
-        .gb_playing(),
-        .gb_ended()
+    // YM control:
+
+    reg audio_ym_write_r;
+    wire ym_write_needed = audio_ym_write && !audio_ym_write_r;
+
+    always @(posedge cpu_clk) begin
+        if (cpu_reset) begin
+            audio_ym_write_r <= 0;
+        end else begin
+            audio_ym_write_r <= audio_ym_write;
+        end
+    end
+
+    // YM pending writes:
+
+    reg [7:0] ym_write_data;
+    reg ym_write_address;
+
+    always @(posedge cpu_clk) begin
+        if (ym_write_needed) begin
+            ym_write_data <= cpu_write_data[7:0];
+            ym_write_address <= cpu_address[2];
+        end
+    end
+
+    // YM sample output (55KHz~, depends on prescaler)
+
+    assign audio_output_l = ym_xleft;
+    assign audio_output_r = ym_xright;
+    assign audio_output_valid = ym_output_valid && !ym_output_valid_r;
+
+    reg ym_output_valid_r;
+
+    always @(posedge cpu_clk) begin
+        ym_output_valid_r <= ym_output_valid;
+    end
+
+    // Writes are handled independently of cen_*
+
+    reg ym_write_en;
+
+    always @(posedge cpu_clk) begin
+        ym_write_en <= ym_write_needed;
+    end
+
+    // YM2151 compatible core:
+
+    wire [7:0] ym_read_data;
+
+    wire [15:0] ym_xleft, ym_xright;
+    wire ym_output_valid;
+
+    jt51 jt51(
+        .clk(cpu_clk),
+        .rst(cpu_reset),
+        .cen(ym_cen),
+        .cen_p1(ym_cen_p1),
+
+        .cs_n(!ym_write_en),
+        .wr_n(!ym_write_en),
+        .a0(ym_write_address),
+        .din(ym_write_data),
+        .dout(ym_read_data),
+
+        .irq_n(),
+
+        .sample(ym_output_valid),
+        .xleft(ym_xleft),
+        .xright(ym_xright)
     );
 
     /* verilator public_module */
@@ -557,7 +626,7 @@ module ics32 #(
         .vdp_read_data(vdp_read_data),
         .pad_read_data({user_button, pad_data}),
         .flash_ctrl_read_data(flash_ctrl_read_data),
-        .audio_cpu_read_data(audio_ctrl_cpu_read_data),
+        .audio_cpu_read_data(ym_read_data),
 
         // Outputs
 
@@ -608,17 +677,11 @@ module ics32 #(
                 // .STACKADDR(32'h0001_0000),
                 
                 // Greatly helps shift speed but still an optional extra that could be removed
-                .TWO_STAGE_SHIFT(0),
-
-                // Huge savings with this enabled
-                .TWO_CYCLE_ALU(1),
+                .BARREL_SHIFTER(1),
 
                 // Moderate savings and not really expecting trouble with aligned C code
                 .CATCH_MISALIGN(0),
                 .CATCH_ILLINSN(0),
-
-                // Neutral at best even with retiming?
-                .TWO_CYCLE_COMPARE(0),
 
                 // rdcycle(h) instructions are not needed
                 .ENABLE_COUNTERS(0),
@@ -678,11 +741,11 @@ module ics32 #(
         // 32bit reads (full size)
         .size_a(1),
 
-        // Reader B: ADPCM DSP
+        // Reader B: None, previously ADPCM core
 
-        .read_address_b({pcm_read_address, 1'b0}),
-        .read_en_b(pcm_read_en),
-        .ready_b(pcm_data_ready),
+        .read_address_b(0),
+        .read_en_b(0),
+        .ready_b(),
         
         // 16bit reads
         .size_b(0),

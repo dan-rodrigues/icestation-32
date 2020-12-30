@@ -8,7 +8,7 @@
 
 module ics32_top_icebreaker #(
     parameter [0:0] ENABLE_WIDESCREEN = 1,
-    parameter [0:0] GAMEPAD_PMOD = 0
+    parameter [0:0] GAMEPAD_PMOD = 1
 ) (
     input clk_12m,
 

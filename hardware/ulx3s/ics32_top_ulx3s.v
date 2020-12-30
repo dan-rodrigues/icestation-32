@@ -116,7 +116,7 @@ module ics32_top_ulx3s #(
 
     spdif_tx #(
       .C_clk_freq(CLK_2X_FREQ),
-      .C_sample_freq(44100)
+      .C_sample_freq(48000)
     ) spdif_tx (
       .clk(clk_2x),
       .data_in(spdif_pcm_in),
@@ -343,10 +343,11 @@ module ics32_top_ulx3s #(
         .CLK_1X_FREQ(CLK_1X_FREQ),
         .CLK_2X_FREQ(CLK_2X_FREQ),
         .ENABLE_WIDESCREEN(ENABLE_WIDESCREEN),
-        .ENABLE_FAST_CPU(ENABLE_FAST_CPU),
+        .ENABLE_FAST_CPU(0),
         .RESET_DURATION_EXPONENT(24),
         .ENABLE_BOOTLOADER(1),
-        .BOOTLOADER_SIZE(512)
+        .BOOTLOADER_SIZE(512),
+        .USE_VEXRISCV(0)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

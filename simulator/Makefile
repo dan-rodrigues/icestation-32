@@ -20,6 +20,7 @@ include ../hardware/sources.mk
 
 HDL_SOURCES := $(SOURCES:%.v=$(HDL_DIR)/%.v)
 HDL_SOURCES += $(HDL_TOP).v $(HDL_DIR)/common/spram_256k.v
+HDL_SOURCES += $(wildcard $(HDL_DIR)/jt51/hdl/*.v)
 
 CXX_OPT = -O3
 
