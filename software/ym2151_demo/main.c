@@ -253,6 +253,31 @@ static uint32_t vgm_player_update() {
 
                 return 0;
             }
+
+            // Ignored commands to allow YM2151 portion to play:
+
+            // OKI PCM:
+
+            case 0xb7: case 0xb8:
+                vgm_index += 2;
+                break;
+
+            // Sega PCM:
+
+            case 0xc0:
+                vgm_index += 3;
+                break;
+
+            // Data blocks:
+
+            case 0x67: {
+                size_t block_size = track[vgm_index + 2];
+                block_size |= track[vgm_index + 3] << 8;
+                block_size |= track[vgm_index + 4] << 16;
+                block_size |= track[vgm_index + 5] << 24;
+                vgm_index += 6 + block_size;
+            } break;
+
             default:
                 print_status("Unsupported command: %X", cmd);
                 while(true) {}
