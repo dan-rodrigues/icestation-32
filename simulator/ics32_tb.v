@@ -36,7 +36,14 @@ module ics32_tb(
     input btn_a,
 
     input btn_select,
-    input btn_start
+    input btn_start,
+
+    // YM PMOD TEST
+
+    output ym_pmod_clk,
+    output ym_pmod_shift_clk,
+    output ym_pmod_shift_out,
+    output ym_pmod_shift_load
 );
     ics32 #(
         .CLK_1X_FREQ(`CLK_1X_WIDESCREEN),
@@ -81,6 +88,15 @@ module ics32_tb(
         .flash_in_en(flash_in_en),
         .flash_in(flash_in),
         .flash_out(flash_out),
+
+        // YM PMOD TEST
+
+        .ym_pmod_clk(ym_pmod_clk),
+        .ym_pmod_shift_clk(ym_pmod_shift_clk),
+        .ym_pmod_shift_out(ym_pmod_shift_out),
+        .ym_pmod_shift_load(ym_pmod_shift_load),
+
+        // ---
 
         .audio_output_valid(audio_valid),
         .audio_output_l(audio_l),
@@ -188,7 +204,39 @@ module ics32_tb(
         .in_r(audio_r)
     );
 
+
+    // TEMP: YM2151 PMOD testing
+
+    reg [13:0] ym_pmod_shift;
+    reg [13:0] ym_pmod_loaded;
+
+    wire [7:0] ym_pmod_data = ym_pmod_loaded[7:0];
+    wire ym_pmod_a0 = ym_pmod_loaded[8];
+    wire ym_pmod_csn = ym_pmod_loaded[9];
+    wire ym_pmod_wrn = ym_pmod_loaded[10];
+    wire ym_pmod_icn = ym_pmod_loaded[11];
+
+    wire volume_up_down = ym_pmod_loaded[12];
+    wire volume_clk = ym_pmod_loaded[13];
+
+    always @(posedge ym_pmod_shift_clk) begin
+        ym_pmod_shift <= {ym_pmod_shift[12:0], ym_pmod_shift_out};
+    end
+
+    always @(posedge ym_pmod_shift_load) begin
+        ym_pmod_loaded <= ym_pmod_shift;
+
+        $display("YM PMOD: shift loaded: %x", ym_pmod_shift);
+    end
+
+    always @* begin
+        $display("YM PMOD: data: %x, a0: %d, wr_n: %d, ic_n: %d, cs_n: %d, vctrl: %d, vclk: %d",
+            ym_pmod_data, ym_pmod_a0, ym_pmod_wrn, ym_pmod_icn, ym_pmod_csn,
+            volume_up_down, volume_clk);
+    end
+
 endmodule
+
 
 (* cxxrtl_blackbox *)
 module flash_bb(

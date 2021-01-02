@@ -52,6 +52,7 @@ ICEBREAKER_SOURCES := \
 		pll_ice40.v \
 		spram_256k.v \
 		pdm_dac.v \
+		../ulx3s/spdif_tx.v \
 	)
 
 USB_HID_SOURCES := \
@@ -91,4 +92,7 @@ ULX3S_SOURCES += $(USB_HID_SOURCES)
 SOURCES += $(VDP_SOURCES)
 SOURCES += $(JT51_SOURCES)
 SOURCES += $(VEX)
+
+SOURCES += ym2151_pmod_interface.v
+SOURCES += ym3012.v
 

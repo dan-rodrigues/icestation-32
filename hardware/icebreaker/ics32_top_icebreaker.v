@@ -8,19 +8,21 @@
 
 module ics32_top_icebreaker #(
     parameter [0:0] ENABLE_WIDESCREEN = 1,
-    parameter [0:0] GAMEPAD_PMOD = 1
+
+    parameter [0:0] SPDIF_PMOD = 1,
+    parameter [0:0] GAMEPAD_PMOD = 0
 ) (
     input clk_12m,
 
-    output [3:0] vga_r,
-    output [3:0] vga_g,
-    output [3:0] vga_b,
+    // output [3:0] vga_r,
+    // output [3:0] vga_g,
+    // output [3:0] vga_b,
 
-    output vga_hsync,
-    output vga_vsync,
+    // output vga_hsync,
+    // output vga_vsync,
 
-    output vga_clk,
-    output vga_de,
+    // output vga_clk,
+    // output vga_de,
 
     output led_r,
     output led_b,
@@ -30,6 +32,18 @@ module ics32_top_icebreaker #(
     inout [3:0] flash_io,
 
     input btn_u,
+
+    // PMOD 1B
+
+    inout pmod1b_1,
+    inout pmod1b_2,
+    inout pmod1b_3,
+    inout pmod1b_4,
+
+    inout pmod1b_7,
+    inout pmod1b_8,
+    inout pmod1b_9,
+    inout pmod1b_10,
 
     // PMOD 2 (3-button breakout board PMOD *OR* gamepad + audio PMOD)
 
@@ -76,8 +90,48 @@ module ics32_top_icebreaker #(
 
                 .pdm_out({pdm_audio_l, pdm_audio_r})
             );
+        end else if (SPDIF_PMOD) begin
+            // SPDIF (dedicated PMOD):
+
+            wire spdif;
+
+            SB_IO #(
+                .PIN_TYPE(6'b010100),
+                .PULLUP(1'b0),
+                .NEG_TRIGGER(1'b0),
+                .IO_STANDARD("SB_LVCMOS")
+            ) spdif_out_sbio (
+                .PACKAGE_PIN(pmod2_7),
+                .CLOCK_ENABLE(1'b1),
+                .OUTPUT_CLK(clk_2x),
+                .D_OUT_0(spdif)
+            );
+
+            reg [15:0] audio_output_l_valid, audio_output_r_valid;
+
+            always @(posedge clk_2x) begin
+                if (audio_output_valid) begin
+                    audio_output_l_valid <= audio_output_l;
+                    audio_output_r_valid <= audio_output_r;
+                end
+            end
+
+            wire spdif_channel_select;
+            wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
+            wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
+
+            spdif_tx #(
+              .C_clk_freq(CLK_2X_FREQ),
+              .C_sample_freq(44100)
+            ) spdif_tx (
+              .clk(clk_2x),
+              .data_in(spdif_pcm_in),
+              .address_out(spdif_channel_select),
+              .spdif_out(spdif)
+            );
         end
     endgenerate
+
 
     // --- Clocks ---
 
@@ -103,32 +157,32 @@ module ics32_top_icebreaker #(
 
     // CLK
 
-    SB_IO #(
-        .PIN_TYPE(6'b010000),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) vga_clk_sbio (
-        .PACKAGE_PIN(vga_clk),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(clk_2x),
-        .D_OUT_0(1'b0),
-        .D_OUT_1(1'b1)
-    );
+    // SB_IO #(
+    //     .PIN_TYPE(6'b010000),
+    //     .PULLUP(1'b0),
+    //     .NEG_TRIGGER(1'b0),
+    //     .IO_STANDARD("SB_LVCMOS")
+    // ) vga_clk_sbio (
+    //     .PACKAGE_PIN(vga_clk),
+    //     .CLOCK_ENABLE(1'b1),
+    //     .OUTPUT_CLK(clk_2x),
+    //     .D_OUT_0(1'b0),
+    //     .D_OUT_1(1'b1)
+    // );
 
-    // RGBS + DE
+    // // RGBS + DE
 
-    SB_IO #(
-        .PIN_TYPE(6'b010100),
-        .PULLUP(1'b0),
-        .NEG_TRIGGER(1'b0),
-        .IO_STANDARD("SB_LVCMOS")
-    ) vga_rgbsde_sbio [14:0] (
-        .PACKAGE_PIN({vga_de, vga_vsync, vga_hsync, vga_r, vga_g, vga_b}),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(clk_2x),
-        .D_OUT_0({vga_de_io, vga_vsync_io, vga_hsync_io, vga_r_io, vga_g_io, vga_b_io}),
-    );
+    // SB_IO #(
+    //     .PIN_TYPE(6'b010100),
+    //     .PULLUP(1'b0),
+    //     .NEG_TRIGGER(1'b0),
+    //     .IO_STANDARD("SB_LVCMOS")
+    // ) vga_rgbsde_sbio [14:0] (
+    //     .PACKAGE_PIN({vga_de, vga_vsync, vga_hsync, vga_r, vga_g, vga_b}),
+    //     .CLOCK_ENABLE(1'b1),
+    //     .OUTPUT_CLK(clk_2x),
+    //     .D_OUT_0({vga_de_io, vga_vsync_io, vga_hsync_io, vga_r_io, vga_g_io, vga_b_io}),
+    // );
 
     // --- iCE40 Flash IO ---
 
@@ -236,12 +290,12 @@ module ics32_top_icebreaker #(
                 .PULLUP(1'b0),
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
-            ) btn_sbio [2:0] (
-                .PACKAGE_PIN({pmod2_10, pmod2_4, pmod2_9}),
+            ) btn_sbio [1:0] (
+                .PACKAGE_PIN({/*pmod2_10*/pmod2_4, pmod2_9}),
                 .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
                 .CLOCK_ENABLE(1'b1),
-                .D_IN_0(btn_r),
+                .D_IN_0(btn_r[1:0]),
 
                 // This isn't used but nextpnr will error without this:
                 .OUTPUT_CLK(clk_2x)
@@ -305,6 +359,48 @@ module ics32_top_icebreaker #(
     wire audio_output_valid;
     wire [15:0] audio_output_l, audio_output_r;
 
+    // YM2151 PMOD outputs:
+
+    wire ym_core_clk;
+    wire ym_shift_clk;
+    wire ym_shift_out;
+    wire ym_shift_load;
+
+    SB_IO #(
+        .PIN_TYPE(6'b010100),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) ym_pmod_in_sbio [3:0] (
+        .PACKAGE_PIN({pmod1b_1, pmod1b_2, pmod1b_3, pmod1b_4}),
+        .CLOCK_ENABLE(1'b1),
+        .OUTPUT_CLK(clk_2x),
+        .D_OUT_0({ym_core_clk, ym_shift_clk, ym_shift_out, ym_shift_load}),
+    );
+
+    // YM2151 PMOD inputs:
+
+    wire ym_dac_sh1;
+    wire ym_dac_sh2;
+    wire ym_dac_clk;
+    wire ym_dac_so;
+
+    SB_IO #(
+        .PIN_TYPE(6'b100000),
+        .PULLUP(1'b0),
+        .NEG_TRIGGER(1'b0),
+        .IO_STANDARD("SB_LVCMOS")
+    ) ym_pmod_out_sbio [3:0] (
+        .PACKAGE_PIN({pmod1b_7, pmod1b_8, pmod1b_9, pmod1b_10}),
+        .OUTPUT_ENABLE(1'b0),
+        .INPUT_CLK(clk_2x),
+        .CLOCK_ENABLE(1'b1),
+        .D_IN_0({ym_dac_sh1, ym_dac_sh2, ym_dac_clk, ym_dac_so}),
+
+        // This isn't used but nextpnr will error without this:
+        .OUTPUT_CLK(clk_2x)
+    );
+
     ics32 #(
         .CLK_1X_FREQ(CLK_1X_FREQ),
         .CLK_2X_FREQ(CLK_2X_FREQ),
@@ -321,13 +417,15 @@ module ics32_top_icebreaker #(
         .reset_1x(reset_1x),
         .reset_2x(reset_2x),
 
-        .vga_r(vga_r_io),
-        .vga_g(vga_g_io),
-        .vga_b(vga_b_io),
+        // YM PMOD uses one of the PMODs
+        
+        // .vga_r(vga_r_io),
+        // .vga_g(vga_g_io),
+        // .vga_b(vga_b_io),
 
-        .vga_hsync(vga_hsync_io),
-        .vga_vsync(vga_vsync_io),
-        .vga_de(vga_de_io),
+        // .vga_hsync(vga_hsync_io),
+        // .vga_vsync(vga_vsync_io),
+        // .vga_de(vga_de_io),
 
         .pad_latch(pad_latch),
         .pad_clk(pad_clk),
@@ -345,7 +443,19 @@ module ics32_top_icebreaker #(
 
         .audio_output_l(audio_output_l),
         .audio_output_r(audio_output_r),
-        .audio_output_valid(audio_output_valid)
+        .audio_output_valid(audio_output_valid),
+
+        // YM2151 PMOD
+
+        .ym_pmod_clk(ym_core_clk),
+        .ym_pmod_shift_clk(ym_shift_clk),
+        .ym_pmod_shift_out(ym_shift_out),
+        .ym_pmod_shift_load(ym_shift_load),
+
+        .ym_pmod_dac_sh1(ym_dac_sh1),
+        .ym_pmod_dac_sh2(ym_dac_sh2),
+        .ym_pmod_dac_clk(ym_dac_clk),
+        .ym_pmod_dac_so(ym_dac_so)
     );
 
 endmodule

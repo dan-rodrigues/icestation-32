@@ -19,6 +19,7 @@ module ics32 #(
     parameter [0:0] ENABLE_BOOTLOADER = 1,
     parameter integer BOOTLOADER_SIZE = 256,
     parameter ADPCM_STEP_LUT_PATH = "adpcm_step_lut.hex",
+    parameter [0:0] YM2151_PMOD = 1,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
 `else
@@ -54,6 +55,19 @@ module ics32 #(
     output [3:0] flash_in_en,
     input [3:0] flash_out,
 
+    // YM PMOD test
+
+    output ym_pmod_clk,
+    output ym_pmod_shift_clk,
+    output ym_pmod_shift_out,
+    output ym_pmod_shift_load,
+
+    input ym_pmod_dac_clk,
+    input ym_pmod_dac_so,
+    input ym_pmod_dac_sh1,
+    input ym_pmod_dac_sh2,
+
+    // Original outputs 
     output [15:0] audio_output_l,
     output [15:0] audio_output_r,
     output audio_output_valid
@@ -76,11 +90,7 @@ module ics32 #(
 
     // --- LEDs ---
 
-    // LEDs in this demo are controlled by whatever the YM2151 is outputting
-    // The MSB is a "busy" flag and the only one that's really visible
-
-    assign led = ym_read_data;
-
+    // LEDs are used to track some 2151 state below
     // --- DSP math support ---
 
     reg [15:0] dsp_mult_a, dsp_mult_b;
@@ -443,13 +453,18 @@ module ics32 #(
     reg [32:0] ym_prescaler_fraction;
     reg ym_prescaler_tick;
 
+    // jt51 uses a clock enable so it doesn't need to be multiplied (1x)
+    // Real YM2151 is given an actual clock signal so it must toggle twice in a given period (2x)
+
+    localparam YM_PRESCALER_MULITPLIER = YM2151_PMOD ? 2 : 1;
+
     always @(posedge cpu_clk) begin
         if (cpu_reset) begin
             ym_prescaler_tick <= 0;
             ym_prescaler_fraction <= 0;
         end else begin
             ym_prescaler_tick <= 0;
-            ym_prescaler_fraction <= ym_prescaler_fraction + {1'b0, ym_prescaler};
+            ym_prescaler_fraction <= ym_prescaler_fraction + {1'b0, ym_prescaler * YM_PRESCALER_MULITPLIER};
 
             if (ym_prescaler_fraction[32]) begin
                 ym_prescaler_tick <= 1;
@@ -526,31 +541,111 @@ module ics32 #(
         ym_write_en <= ym_write_needed;
     end
 
-    // YM2151 compatible core:
 
     wire [7:0] ym_read_data;
 
     wire [15:0] ym_xleft, ym_xright;
     wire ym_output_valid;
 
-    jt51 jt51(
-        .clk(cpu_clk),
-        .rst(cpu_reset),
-        .cen(ym_cen),
-        .cen_p1(ym_cen_p1),
+    generate
+        if (YM2151_PMOD) begin
+            // Option A: Real YM2151 in a PMOD
 
-        .cs_n(!ym_write_en),
-        .wr_n(!ym_write_en),
-        .a0(ym_write_address),
-        .din(ym_write_data),
-        .dout(ym_read_data),
+            reg ym_clk;
 
-        .irq_n(),
+            always @(posedge cpu_clk) begin
+                if (ym_prescaler_tick) begin
+                    ym_clk <= !ym_clk;
+                end
+            end
 
-        .sample(ym_output_valid),
-        .xleft(ym_xleft),
-        .xright(ym_xright)
-    );
+            assign ym_pmod_clk = ym_clk;
+
+            wire dbg_dac_clk_rose;
+
+            // LEDs:
+
+            // 0: Audio sample counter (assuming DAC is actually doing something useful)
+
+            reg [15:0] audio_output_counter;
+            assign led[0] = audio_output_counter[15];
+
+            always @(posedge cpu_clk) begin
+                if (audio_output_valid) begin
+                    audio_output_counter <= audio_output_counter + 1;
+                end
+            end
+
+            // 1: YM2151 DAC clock input
+
+            reg [19:0] dac_clk_in_counter;
+            assign led[1] = dac_clk_in_counter[19];
+
+            always @(posedge cpu_clk) begin
+                if (dbg_dac_clk_rose) begin
+                    dac_clk_in_counter <= dac_clk_in_counter + 1;
+                end
+            end
+
+            ym2151_pmod_interface ym2151_pmod_interface(
+                .clk(cpu_clk),
+                .ym_clk(ym_clk),
+                .reset(cpu_reset),
+
+                .wr_n(!ym_write_en),
+                .a0(ym_write_address),
+                .din(ym_write_data),
+                .busy(ym_read_data[7]),
+
+                // PMOD I/O
+
+                .pmod_shift_clk(ym_pmod_shift_clk),
+                .pmod_shift_out(ym_pmod_shift_out),
+                .pmod_shift_load(ym_pmod_shift_load),
+
+                .pmod_dac_clk(ym_pmod_dac_clk),
+                .pmod_dac_so(ym_pmod_dac_so),
+                .pmod_dac_sh1(ym_pmod_dac_sh1),
+                .pmod_dac_sh2(ym_pmod_dac_sh2),
+
+                // Audio output
+
+                .audio_valid(ym_output_valid),
+                .audio_left(audio_output_l),
+                .audio_right(audio_output_r),
+
+                // Test
+
+                .dbg_dac_clk_rose(dbg_dac_clk_rose)
+            );
+        end else begin
+            // Option B: YM2151 compatible core:
+
+            assign ym_pmod_clk = 0;
+            assign ym_pmod_shift_clk = 0;
+            assign ym_pmod_shift_out = 0;
+            assign ym_pmod_shift_load = 0;
+
+            jt51 jt51(
+                .clk(cpu_clk),
+                .rst(cpu_reset),
+                .cen(ym_cen),
+                .cen_p1(ym_cen_p1),
+
+                .cs_n(!ym_write_en),
+                .wr_n(!ym_write_en),
+                .a0(ym_write_address),
+                .din(ym_write_data),
+                .dout(ym_read_data),
+
+                .irq_n(),
+
+                .sample(ym_output_valid),
+                .xleft(ym_xleft),
+                .xright(ym_xright)
+            );
+        end
+    endgenerate
 
     /* verilator public_module */
 
