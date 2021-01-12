@@ -10,7 +10,7 @@
 
 module ics32_top_ulx3s #(
     // Set to one of "PCB", "USB" or "BLUETOOTH"
-    parameter GAMEPAD_SOURCE = "PCB",
+    parameter GAMEPAD_SOURCE = "USB",
 
     // Selects USB gamepad HID report decoder
     // Ignored if (GAMEPAD_SOURCE != "USB")
@@ -347,7 +347,8 @@ module ics32_top_ulx3s #(
         .RESET_DURATION_EXPONENT(24),
         .ENABLE_BOOTLOADER(1),
         .BOOTLOADER_SIZE(512),
-        .USE_VEXRISCV(0)
+        .USE_VEXRISCV(0),
+        .YM2151_PMOD(0)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

@@ -59,7 +59,9 @@ module ics32_tb(
 
         // The boot code configures the QSPI flash which is needed to access any flash resources such as audio
         // If this isn't needed, this can be disabled to speed up the sim start time
-        .ENABLE_BOOTLOADER(1)
+        .ENABLE_BOOTLOADER(1),
+
+        .YM2151_PMOD(0)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

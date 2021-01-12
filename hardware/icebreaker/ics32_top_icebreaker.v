@@ -10,7 +10,7 @@ module ics32_top_icebreaker #(
     parameter [0:0] ENABLE_WIDESCREEN = 1,
 
     parameter [0:0] SPDIF_PMOD = 1,
-    parameter [0:0] GAMEPAD_PMOD = 0
+    parameter [0:0] GAMEPAD_PMOD = 1
 ) (
     input clk_12m,
 
@@ -32,6 +32,18 @@ module ics32_top_icebreaker #(
     inout [3:0] flash_io,
 
     input btn_u,
+
+    // PMOD 1A
+
+    inout pmod1a_1,
+    inout pmod1a_2,
+    inout pmod1a_3,
+    inout pmod1a_4,
+
+    inout pmod1a_7,
+    inout pmod1a_8,
+    inout pmod1a_9,
+    inout pmod1a_10,
 
     // PMOD 1B
 
@@ -62,7 +74,48 @@ module ics32_top_icebreaker #(
     localparam PCM_WIDTH = 16;
 
     generate
-        if (GAMEPAD_PMOD) begin
+        if (SPDIF_PMOD) begin
+            // SPDIF (dedicated PMOD):
+
+            wire spdif;
+
+            SB_IO #(
+                .PIN_TYPE(6'b010100),
+                .PULLUP(1'b0),
+                .NEG_TRIGGER(1'b0),
+                .IO_STANDARD("SB_LVCMOS")
+            ) spdif_out_sbio (
+                .PACKAGE_PIN(pmod1a_4),
+                .CLOCK_ENABLE(1'b1),
+                .OUTPUT_CLK(clk_2x),
+                .D_OUT_0(spdif),
+
+                .INPUT_CLK(clk_2x)
+            );
+
+            reg [15:0] audio_output_l_valid, audio_output_r_valid;
+
+            always @(posedge clk_2x) begin
+                if (audio_output_valid) begin
+                    audio_output_l_valid <= audio_output_l;
+                    audio_output_r_valid <= audio_output_r;
+                end
+            end
+
+            wire spdif_channel_select;
+            wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
+            wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
+
+            spdif_tx #(
+              .C_clk_freq(CLK_2X_FREQ),
+              .C_sample_freq(44100)
+            ) spdif_tx (
+              .clk(clk_2x),
+              .data_in(spdif_pcm_in),
+              .address_out(spdif_channel_select),
+              .spdif_out(spdif)
+            );
+        end else if (GAMEPAD_PMOD) begin
             wire pdm_audio_l, pdm_audio_r;
 
             // PDM stereo output
@@ -89,45 +142,6 @@ module ics32_top_icebreaker #(
                 .pcm_valid({audio_output_valid, audio_output_valid}),
 
                 .pdm_out({pdm_audio_l, pdm_audio_r})
-            );
-        end else if (SPDIF_PMOD) begin
-            // SPDIF (dedicated PMOD):
-
-            wire spdif;
-
-            SB_IO #(
-                .PIN_TYPE(6'b010100),
-                .PULLUP(1'b0),
-                .NEG_TRIGGER(1'b0),
-                .IO_STANDARD("SB_LVCMOS")
-            ) spdif_out_sbio (
-                .PACKAGE_PIN(pmod2_7),
-                .CLOCK_ENABLE(1'b1),
-                .OUTPUT_CLK(clk_2x),
-                .D_OUT_0(spdif)
-            );
-
-            reg [15:0] audio_output_l_valid, audio_output_r_valid;
-
-            always @(posedge clk_2x) begin
-                if (audio_output_valid) begin
-                    audio_output_l_valid <= audio_output_l;
-                    audio_output_r_valid <= audio_output_r;
-                end
-            end
-
-            wire spdif_channel_select;
-            wire [15:0] spdif_selected_sample = spdif_channel_select ? audio_output_r_valid : audio_output_l_valid;
-            wire [23:0] spdif_pcm_in = {spdif_selected_sample, 8'b0};
-
-            spdif_tx #(
-              .C_clk_freq(CLK_2X_FREQ),
-              .C_sample_freq(44100)
-            ) spdif_tx (
-              .clk(clk_2x),
-              .data_in(spdif_pcm_in),
-              .address_out(spdif_channel_select),
-              .spdif_out(spdif)
             );
         end
     endgenerate
@@ -218,7 +232,9 @@ module ics32_top_icebreaker #(
         .PACKAGE_PIN(flash_csn),
         .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(clk_2x),
-        .D_OUT_0(flash_csn_io)
+        .D_OUT_0(flash_csn_io),
+
+        .INPUT_CLK(clk_2x),
     );
 
     // CLK
@@ -233,7 +249,9 @@ module ics32_top_icebreaker #(
         .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(clk_2x),
         .D_OUT_0(flash_clk_ddr[0]),
-        .D_OUT_1(flash_clk_ddr[1])
+        .D_OUT_1(flash_clk_ddr[1]),
+
+        .INPUT_CLK(clk_2x),
     );
 
     // --- User inputs ---
@@ -259,6 +277,8 @@ module ics32_top_icebreaker #(
                 .CLOCK_ENABLE(1'b1),
                 .OUTPUT_CLK(clk_2x),
                 .D_OUT_0({pad_clk, pad_latch}),
+
+                .INPUT_CLK(clk_2x),
             );
 
             // Gamepad data
@@ -376,6 +396,8 @@ module ics32_top_icebreaker #(
         .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(clk_2x),
         .D_OUT_0({ym_core_clk, ym_shift_clk, ym_shift_out, ym_shift_load}),
+
+        .INPUT_CLK(clk_2x)
     );
 
     // YM2151 PMOD inputs:
@@ -409,6 +431,7 @@ module ics32_top_icebreaker #(
         .RESET_DURATION_EXPONENT(24),
         .ENABLE_BOOTLOADER(1),
         .BOOTLOADER_SIZE(256),
+        .YM2151_PMOD(1)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),

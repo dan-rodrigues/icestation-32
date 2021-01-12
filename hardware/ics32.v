@@ -19,7 +19,7 @@ module ics32 #(
     parameter [0:0] ENABLE_BOOTLOADER = 1,
     parameter integer BOOTLOADER_SIZE = 256,
     parameter ADPCM_STEP_LUT_PATH = "adpcm_step_lut.hex",
-    parameter [0:0] YM2151_PMOD = 1,
+    parameter [0:0] YM2151_PMOD = 0,
 `ifdef BOOTLOADER
     parameter BOOTLOADER_PATH = `BOOTLOADER
 `else
@@ -529,7 +529,8 @@ module ics32 #(
 
     reg ym_output_valid_r;
 
-    always @(posedge cpu_clk) begin
+    // FIXME: cpu_clk is ok on hw, no good on sim where vdpclk is used
+    always @(posedge vdp_clk) begin
         ym_output_valid_r <= ym_output_valid;
     end
 
