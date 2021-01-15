@@ -426,8 +426,23 @@ module ics32 #(
 
     // --- YM2151 Audio (experimental replacement of ADPCM core) ---
 
-    wire audio_ym_write = !cpu_address[3] && audio_ctrl_write_en;
-    wire audio_prescaler_write = cpu_address[3] && audio_ctrl_write_en;
+    reg audio_ym_write;
+    reg audio_prescaler_write;
+    reg audio_volume_ctrl_write;
+
+    always @* begin
+        audio_ym_write = 0;
+        audio_prescaler_write = 0;
+        audio_volume_ctrl_write = 0;
+
+        if (audio_ctrl_write_en) begin
+            case (cpu_address_1x[4:3])
+                2'b00: audio_ym_write = 1;
+                2'b01: audio_prescaler_write = 1;
+                2'b10: audio_volume_ctrl_write = 1;
+            endcase
+        end
+    end
 
     reg audio_ctrl_en_r;
     wire audio_ctrl_ready = audio_ctrl_en && !audio_ctrl_en_r;
@@ -521,10 +536,6 @@ module ics32 #(
         end
     end
 
-    // YM sample output (55KHz~, depends on prescaler)
-
-    assign audio_output_l = ym_xleft;
-    assign audio_output_r = ym_xright;
     assign audio_output_valid = ym_output_valid && !ym_output_valid_r;
 
     reg ym_output_valid_r;
@@ -588,6 +599,11 @@ module ics32 #(
                 end
             end
 
+            // Volume control (LM4811)
+
+            wire ym_volume_up = audio_volume_ctrl_write && cpu_write_data_1x[0];
+            wire ym_volume_down = audio_volume_ctrl_write && !cpu_write_data_1x[0];
+
             ym2151_pmod_interface ym2151_pmod_interface(
                 .clk(cpu_clk),
                 .ym_clk(ym_clk),
@@ -609,6 +625,11 @@ module ics32 #(
                 .pmod_dac_sh1(ym_pmod_dac_sh1),
                 .pmod_dac_sh2(ym_pmod_dac_sh2),
 
+                // Volume control
+
+                .volume_up(ym_volume_up),
+                .volume_down(ym_volume_down),
+
                 // Audio output
 
                 .audio_valid(ym_output_valid),
@@ -621,6 +642,11 @@ module ics32 #(
             );
         end else begin
             // Option B: YM2151 compatible core:
+
+            // YM sample output (55KHz~, depends on prescaler)
+
+            assign audio_output_l = ym_xleft;
+            assign audio_output_r = ym_xright;
 
             assign ym_pmod_clk = 0;
             assign ym_pmod_shift_clk = 0;

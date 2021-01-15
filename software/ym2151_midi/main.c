@@ -134,6 +134,14 @@ int main() {
             ym_key_off(2);
         }
 
+        // Volume control
+
+        if (pad_decoded.up) {
+            YM2151_EXT_VOLUME = 0x01;
+        } else if (pad_decoded.down) {
+            YM2151_EXT_VOLUME = 0x00;
+        }
+
         vdp_wait_frame_ended();
     }
 }

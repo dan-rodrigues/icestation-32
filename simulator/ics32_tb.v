@@ -61,7 +61,7 @@ module ics32_tb(
         // If this isn't needed, this can be disabled to speed up the sim start time
         .ENABLE_BOOTLOADER(1),
 
-        .YM2151_PMOD(0)
+        .YM2151_PMOD(1)
     ) ics32 (
         .clk_1x(clk_1x),
         .clk_2x(clk_2x),
@@ -234,7 +234,7 @@ module ics32_tb(
     always @* begin
         $display("YM PMOD: data: %x, a0: %d, wr_n: %d, ic_n: %d, cs_n: %d, vctrl: %d, vclk: %d",
             ym_pmod_data, ym_pmod_a0, ym_pmod_wrn, ym_pmod_icn, ym_pmod_csn,
-            volume_up_down, volume_clk);
+            volume_clk, volume_up_down);
     end
 
 endmodule

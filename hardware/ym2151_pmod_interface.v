@@ -19,6 +19,11 @@ module ym2151_pmod_interface(
 
 	output busy,
 
+	// Volume control
+
+	input volume_up,
+	input volume_down,
+
 	// PMOD I/O
 
 	output pmod_shift_clk,
@@ -77,7 +82,8 @@ module ym2151_pmod_interface(
 
 	reg [$clog2(BUSY_INTERVAL):0] busy_counter;
 
-	assign busy = (busy_counter > 0) || write_begun || wr_n_fell || !wr_n_r;
+	assign busy = (busy_counter > 0) || write_begun || wr_n_fell || !wr_n_r
+		|| volume_up || volume_down || volume_adjusting;
 
 	always @(posedge clk) begin
 		if (reset) begin
@@ -96,7 +102,8 @@ module ym2151_pmod_interface(
 		STATE_REG_WRITE = 1,
 		STATE_REG_WRITE_HOLD = 2,
 		STATE_WRITING = 4,
-		STATE_IDLE = 5;
+		STATE_IDLE = 5,
+		STATE_VOLUME_SETTING = 6;
 
 	reg [2:0] state;
 	reg [2:0] next_state;
@@ -117,10 +124,17 @@ module ym2151_pmod_interface(
 	reg wr_n_shift;
 	reg ic_n_shift;
 
+	reg volume_clk_shift;
+	reg volume_up_down_shift;
+	reg volume_adjusting;
+
 	always @(posedge clk) begin
 		if (reset) begin
 			write_begun <= 0;
 			shift_needs_load <= 0;
+
+			volume_adjusting <= 0;
+			volume_clk_shift <= 0;
 
 			ic_n_shift <= 0;
 			state <= STATE_ADDRESS_SETUP;
@@ -136,6 +150,8 @@ module ym2151_pmod_interface(
 							din_write <= reg_address_pending_write;
 							reg_data_pending_write <= din_r;
 
+							volume_clk_shift <= 0;
+
 							reg_address_writing <= 1;
 							write_begun <= 1;
 
@@ -143,6 +159,15 @@ module ym2151_pmod_interface(
 						end else begin
 							reg_address_pending_write <= din_r;
 						end
+					end else if (volume_up || volume_down) begin
+						volume_up_down_shift <= volume_up;
+						volume_clk_shift <= 0;
+						volume_adjusting <= 1;
+						cs_n_shift <= 1;
+
+						shift_needs_load <= 1;
+						state <= STATE_WRITING;
+						next_state <= STATE_VOLUME_SETTING;
 					end
 				end
 				STATE_ADDRESS_SETUP: begin
@@ -189,8 +214,16 @@ module ym2151_pmod_interface(
 					shift_needs_load <= 1;
 					state <= STATE_WRITING;
 				end
+				STATE_VOLUME_SETTING: begin
+					volume_clk_shift <= 1;
+
+					shift_needs_load <= 1;
+					state <= STATE_WRITING;
+					next_state <= STATE_IDLE;
+				end
 				STATE_WRITING: begin
 					if (shift_completed) begin
+						volume_adjusting <= 0;
 						state <= next_state;
 					end
 				end
@@ -218,7 +251,7 @@ module ym2151_pmod_interface(
 	wire volume_up_down = 0;
 
 	wire [SHIFT_MSB:0] shift_preload = {
-		volume_up_down, volume_clk,
+		volume_up_down_shift, volume_clk_shift,
 		ic_n_shift, wr_n_shift, cs_n_shift, a0_shift, din_shift
 	};
 

@@ -21,5 +21,8 @@ typedef volatile uint32_t * const AUDIO_REG;
 
 #define YM2151_STATUS (*((AUDIO_REG) AUDIO_BASE + 0))
 
+// External volume control (LM4811)
+
+#define YM2151_EXT_VOLUME (*((AUDIO_REG) AUDIO_BASE + 4))
 
 #endif /* ym2151_h */
