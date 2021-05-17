@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <vector>
 #include <set>
+#include <string>
 
 class QSPIFlashSim {
 
