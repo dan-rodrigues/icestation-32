@@ -59,9 +59,9 @@ module ics32_top_icebreaker #(
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
             ) pdm_stereo_dac_sbio [1:0] (
-                .PACKAGE_PIN({pmod2_4, pmod2_10}),
-                .CLOCK_ENABLE(1'b1),
                 .OUTPUT_CLK(clk_2x),
+
+                .PACKAGE_PIN({pmod2_4, pmod2_10}),
                 .D_OUT_0({pdm_audio_l, pdm_audio_r}),
             );
 
@@ -109,9 +109,9 @@ module ics32_top_icebreaker #(
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) vga_clk_sbio (
-        .PACKAGE_PIN(vga_clk),
-        .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(clk_2x),
+
+        .PACKAGE_PIN(vga_clk),
         .D_OUT_0(1'b0),
         .D_OUT_1(1'b1)
     );
@@ -124,9 +124,9 @@ module ics32_top_icebreaker #(
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) vga_rgbsde_sbio [14:0] (
-        .PACKAGE_PIN({vga_de, vga_vsync, vga_hsync, vga_r, vga_g, vga_b}),
-        .CLOCK_ENABLE(1'b1),
         .OUTPUT_CLK(clk_2x),
+
+        .PACKAGE_PIN({vga_de, vga_vsync, vga_hsync, vga_r, vga_g, vga_b}),
         .D_OUT_0({vga_de_io, vga_vsync_io, vga_hsync_io, vga_r_io, vga_g_io, vga_b_io}),
     );
 
@@ -144,12 +144,12 @@ module ics32_top_icebreaker #(
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) flash_inout_sbio [3:0] (
-        .PACKAGE_PIN(flash_io),
-        .OUTPUT_ENABLE(flash_in_en),
-        .CLOCK_ENABLE(1'b1),
-        .OUTPUT_CLK(clk_2x),
-        .D_OUT_0(flash_in),
         .INPUT_CLK(clk_2x),
+        .OUTPUT_CLK(clk_2x),
+
+        .OUTPUT_ENABLE(flash_in_en),
+        .PACKAGE_PIN(flash_io),
+        .D_OUT_0(flash_in),
         .D_IN_0(flash_out)
     );
 
@@ -161,9 +161,10 @@ module ics32_top_icebreaker #(
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) flash_csn_sbio (
-        .PACKAGE_PIN(flash_csn),
-        .CLOCK_ENABLE(1'b1),
+        .INPUT_CLK(clk_2x),
         .OUTPUT_CLK(clk_2x),
+
+        .PACKAGE_PIN(flash_csn),
         .D_OUT_0(flash_csn_io)
     );
 
@@ -175,9 +176,10 @@ module ics32_top_icebreaker #(
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) flash_clk_sbio (
-        .PACKAGE_PIN(flash_clk),
-        .CLOCK_ENABLE(1'b1),
+        .INPUT_CLK(clk_2x),
         .OUTPUT_CLK(clk_2x),
+
+        .PACKAGE_PIN(flash_clk),
         .D_OUT_0(flash_clk_ddr[0]),
         .D_OUT_1(flash_clk_ddr[1])
     );
@@ -201,10 +203,11 @@ module ics32_top_icebreaker #(
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
             ) gp_clk_latch_sbio [1:0] (
-                .PACKAGE_PIN({pmod2_1, pmod2_7}),
-                .CLOCK_ENABLE(1'b1),
+                .INPUT_CLK(clk_2x),
                 .OUTPUT_CLK(clk_2x),
-                .D_OUT_0({pad_clk, pad_latch}),
+
+                .PACKAGE_PIN({pmod2_1, pmod2_7}),
+                .D_OUT_0({pad_clk, pad_latch})
             );
 
             // Gamepad data
@@ -212,19 +215,16 @@ module ics32_top_icebreaker #(
             // There are actually 4 controller ports on the PMOD but the system is 2P only
 
             SB_IO #(
-                .PIN_TYPE(6'b100000),
+                .PIN_TYPE(6'b000000),
                 .PULLUP(1'b0),
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
             ) gp_data_sbio [1:0] (
-                .PACKAGE_PIN({pmod2_8, pmod2_2}),
-                .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
-                .CLOCK_ENABLE(1'b1),
-                .D_IN_0(pad_read_data_n),
+                .OUTPUT_CLK(clk_2x),
 
-                // This isn't used but nextpnr will error without this:
-                .OUTPUT_CLK(clk_2x)
+                .PACKAGE_PIN({pmod2_8, pmod2_2}),
+                .D_IN_0(pad_read_data_n)
             );
         end else begin
             // Breakout board buttons:
@@ -232,19 +232,16 @@ module ics32_top_icebreaker #(
             wire [2:0] btn_r;
 
             SB_IO #(
-                .PIN_TYPE(6'b100000),
+                .PIN_TYPE(6'b000000),
                 .PULLUP(1'b0),
                 .NEG_TRIGGER(1'b0),
                 .IO_STANDARD("SB_LVCMOS")
             ) btn_sbio [2:0] (
-                .PACKAGE_PIN({pmod2_10, pmod2_4, pmod2_9}),
-                .OUTPUT_ENABLE(1'b0),
                 .INPUT_CLK(clk_2x),
-                .CLOCK_ENABLE(1'b1),
-                .D_IN_0(btn_r),
+                .OUTPUT_CLK(clk_2x),
 
-                // This isn't used but nextpnr will error without this:
-                .OUTPUT_CLK(clk_2x)
+                .PACKAGE_PIN({pmod2_10, pmod2_4, pmod2_9}),
+                .D_IN_0(btn_r)
             );
 
             // P1 has limited inputs using the breakout board
@@ -273,19 +270,16 @@ module ics32_top_icebreaker #(
     wire user_button_n = !user_button;
 
     SB_IO #(
-        .PIN_TYPE(6'b100000),
+        .PIN_TYPE(6'b000000),
         .PULLUP(1'b0),
         .NEG_TRIGGER(1'b0),
         .IO_STANDARD("SB_LVCMOS")
     ) btn_sbio (
-        .PACKAGE_PIN(btn_u),
-        .OUTPUT_ENABLE(1'b0),
         .INPUT_CLK(clk_2x),
-        .CLOCK_ENABLE(1'b1),
-        .D_IN_0(user_button),
+        .OUTPUT_CLK(clk_2x),
 
-        // This isn't used but nextpnr will error without this:
-        .OUTPUT_CLK(clk_2x)
+        .PACKAGE_PIN(btn_u),
+        .D_IN_0(user_button)
     );
 
     // --- icestation-32 ---
