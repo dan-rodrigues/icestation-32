@@ -166,7 +166,7 @@ def ram_interleave_test():
 
 def bootrom_test(config, design, firmware='../../firmware/boot_multi.bin'):
     # check that contents of the specified bram match the bootrom as expected
-    wid = design.wid_by_name['ics32.bootloader.0.0.0']
+    wid = design.wid_by_name['ics32.bootloader.0.0']
     bootrom = config.parse_bram_data(wid)
     data_check = open(firmware, 'rb').read()
     import struct
@@ -203,8 +203,8 @@ if __name__ == '__main__':
     # cpu_ram_1 has bits [31:16]
     # two RAMs (upper, lower 16 bit) each consisting of 16 BELs
     # seems the individual RAMs are sliced per bit 0..15, each item contains 8 bits (8 consecutive addresses)
-    cpu_ram = [design.wid_by_name['ics32.cpu_ram.cpu_ram_%d.mem.%d.0.0' % (bit // 16, bit % 16)] for bit in range(32)]
-    bootrom_wid = design.wid_by_name['ics32.bootloader.0.0.0']
+    cpu_ram = [design.wid_by_name['ics32.cpu_ram.cpu_ram_%d.mem.0.%d' % (bit // 16, bit % 16)] for bit in range(32)]
+    bootrom_wid = design.wid_by_name['ics32.bootloader.0.0']
 
     if perform_checks: # check for an initial RAM test pattern provided in verilog
         ram_data = [config.parse_bram_data(cpu_ram[bit]) for bit in range(32)]
