@@ -33,10 +33,12 @@ module cop_ram(
 
     wire has_contention =  read_en && write_en && read_address == write_address;
 
+`ifndef SYNTHESIS
     always @(posedge clk) begin
         if (has_contention) begin
             $display("COP RAM contention: %x", read_address);
         end
     end
+`endif
 
 endmodule
