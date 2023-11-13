@@ -157,40 +157,76 @@ module ics32_top_ulx3s #(
     wire [3:0] flash_in_en_r;
     wire [3:0] flash_in_r;
 
-    (* BEL="X11/Y93/SLICEA" *) TRELLIS_SLICE flash_in_r_0 (
+    (* BEL="X11/Y93/SLICEA.FF0" *) TRELLIS_FF flash_in_r_0 (
         .CLK(clk_2x),
-        .M0(flash_in[0]), .M1(flash_in[1]),
-        .Q0(flash_in_r[0]), .Q1(flash_in_r[1])
+        .DI(flash_in[0]),
+        .Q(flash_in_r[0]),
     );
 
-    (* BEL="X11/Y93/SLICEB" *) TRELLIS_SLICE flash_in_r_1 (
+    (* BEL="X11/Y93/SLICEA.FF1" *) TRELLIS_FF flash_in_r_1 (
         .CLK(clk_2x),
-        .M0(flash_in[2]), .M1(flash_in[3]),
-        .Q0(flash_in_r[2]), .Q1(flash_in_r[3])
+        .DI(flash_in[1]),
+        .Q(flash_in_r[1]),
     );
 
-    (* BEL="X11/Y93/SLICEC" *) TRELLIS_SLICE flash_in_en_r_0 (
+    (* BEL="X11/Y93/SLICEB.FF0" *) TRELLIS_FF flash_in_r_2 (
         .CLK(clk_2x),
-        .M0(~flash_in_en[0]), .M1(~flash_in_en[1]),
-        .Q0(flash_in_en_r[0]), .Q1(flash_in_en_r[1])
+        .DI(flash_in[2]),
+        .Q(flash_in_r[2]),
     );
 
-    (* BEL="X11/Y93/SLICED" *) TRELLIS_SLICE flash_in_en_r_1 (
+    (* BEL="X11/Y93/SLICEB.FF1" *) TRELLIS_FF flash_in_r_3 (
         .CLK(clk_2x),
-        .M0(~flash_in_en[2]), .M1(~flash_in_en[3]),
-        .Q0(flash_in_en_r[2]), .Q1(flash_in_en_r[3])
+        .DI(flash_in[3]),
+        .Q(flash_in_r[3]),
     );
 
-    (* BEL="X9/Y93/SLICEA" *) TRELLIS_SLICE flash_out_r_0 (
+    (* BEL="X11/Y93/SLICEC.FF0" *) TRELLIS_FF flash_in_en_r_0 (
         .CLK(clk_2x),
-        .M0(flash_out[0]), .M1(flash_out[1]),
-        .Q0(flash_out_r[0]), .Q1(flash_out_r[1]),
+        .DI(~flash_in_en[0]),
+        .Q(flash_in_en_r[0]),
     );
 
-    (* BEL="X9/Y93/SLICEB" *) TRELLIS_SLICE flash_out_r_1 (
+    (* BEL="X11/Y93/SLICEC.FF1" *) TRELLIS_FF flash_in_en_r_1 (
         .CLK(clk_2x),
-        .M0(flash_out[2]), .M1(flash_out[3]),
-        .Q0(flash_out_r[2]), .Q1(flash_out_r[3]),
+        .DI(~flash_in_en[1]),
+        .Q(flash_in_en_r[1]),
+    );
+
+    (* BEL="X11/Y93/SLICED.FF0" *) TRELLIS_FF flash_in_en_r_2 (
+        .CLK(clk_2x),
+        .DI(~flash_in_en[2]),
+        .Q(flash_in_en_r[2]),
+    );
+
+    (* BEL="X11/Y93/SLICED.FF1" *) TRELLIS_FF flash_in_en_r_3 (
+        .CLK(clk_2x),
+        .DI(~flash_in_en[3]),
+        .Q(flash_in_en_r[3]),
+    );
+
+    (* BEL="X9/Y93/SLICEA.FF0" *) TRELLIS_FF flash_out_r_0 (
+        .CLK(clk_2x),
+        .DI(flash_out[0]),
+        .Q(flash_out_r[0]),
+    );
+
+    (* BEL="X9/Y93/SLICEA.FF1" *) TRELLIS_FF flash_out_r_1 (
+        .CLK(clk_2x),
+        .DI(flash_out[1]),
+        .Q(flash_out_r[1]),
+    );
+
+    (* BEL="X9/Y93/SLICEB.FF0" *) TRELLIS_FF flash_out_r_2 (
+        .CLK(clk_2x),
+        .DI(flash_out[2]),
+        .Q(flash_out_r[2]),
+    );
+
+    (* BEL="X9/Y93/SLICEB.FF1" *) TRELLIS_FF flash_out_r_3 (
+        .CLK(clk_2x),
+        .DI(flash_out[3]),
+        .Q(flash_out_r[3]),
     );
 
     BB flash_io_bb[3:0] (
@@ -204,10 +240,10 @@ module ics32_top_ulx3s #(
 
     wire flash_csn_r;
 
-    (* BEL="X15/Y93/SLICEA" *) TRELLIS_SLICE flash_csn_r_0 (
+    (* BEL="X15/Y93/SLICEA.FF0" *) TRELLIS_FF flash_csn_r_0 (
         .CLK(clk_2x),
-        .M0(flash_csn_io),
-        .Q0(flash_csn_r)
+        .DI(flash_csn_io),
+        .Q(flash_csn_r)
     );
 
     OB flash_csn_ob(
@@ -224,16 +260,16 @@ module ics32_top_ulx3s #(
     wire [1:0] flash_clk_ddr_r;
     wire flash_clk_out = clk_2x ? flash_clk_ddr_r[0] : flash_clk_ddr_r[1];
 
-    (* BEL="X2/Y93/SLICEA" *) TRELLIS_SLICE ddr_ff_0 (
+    (* BEL="X2/Y93/SLICEA.FF0" *) TRELLIS_FF ddr_ff_0 (
         .CLK(clk_2x),
-        .M0(flash_clk_ddr[0]),
-        .Q0(flash_clk_ddr_r[0])
+        .DI(flash_clk_ddr[0]),
+        .Q(flash_clk_ddr_r[0])
     );
 
-    (* BEL="X2/Y92/SLICEA" *) TRELLIS_SLICE #(.CLKMUX("INV")) ddr_ff_1 (
+    (* BEL="X2/Y92/SLICEA.FF0" *) TRELLIS_FF #(.CLKMUX("INV")) ddr_ff_1 (
         .CLK(clk_2x),
-        .M0(flash_clk_ddr[1]),
-        .Q0(flash_clk_ddr_r[1])
+        .DI(flash_clk_ddr[1]),
+        .Q(flash_clk_ddr_r[1])
     );
     
     USRMCLK spi_clk (
